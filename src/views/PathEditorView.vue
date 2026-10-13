@@ -32,6 +32,8 @@ const importText = ref('')
 const IMPORT_PLACEHOLDER = '在此貼上完整物件代碼 (包含 char 和 strokes)'
 const importPlaceholder = ref(IMPORT_PLACEHOLDER)
 let importPlaceholderTimer: ReturnType<typeof setTimeout> | null = null
+// 匯入失敗訊息：顯示在匯入框下方並保留貼上的內容；再次匯入或修改內容時清除
+const importError = ref('')
 const isPickerOpen = ref(false)
 const isHoveringPoint = ref(false)
 // 原版直接改按鈕 innerHTML 與 classList.replace，這裡改用狀態
@@ -143,7 +145,7 @@ const clearPath = () => {
   render()
 }
 
-// 匯入結果訊息：顯示在 placeholder，3 秒後恢復（連續匯入時重新計時）
+// 匯入成功訊息：顯示在 placeholder，3 秒後恢復（連續匯入時重新計時）
 const showImportMessage = (message: string) => {
   importPlaceholder.value = message
   cancel(importPlaceholderTimer)
@@ -174,6 +176,7 @@ const copyCode = async () => {
 const importPath = () => {
   const rawInput = importText.value
   if (!rawInput) return
+  importError.value = ''
 
   // 1. 先解析 strokes；解析不到任何路徑就顯示失敗，不改動字底圖與畫布
   const parsedStrokes: Point[][] = []
@@ -200,8 +203,7 @@ const importPath = () => {
   }
 
   if (parsedStrokes.length === 0) {
-    importText.value = ''
-    showImportMessage('❌ 匯入失敗：找不到筆順路徑（M 開頭），畫布未變更')
+    importError.value = '❌ 匯入失敗：找不到筆順路徑（M 開頭），畫布未變更'
     return
   }
 
@@ -593,7 +595,8 @@ onMounted(() => {
 
       <div class="space-y-1 pt-1 border-t border-dashed border-gray-200">
         <h1 class="text-xs font-bold text-gray-700 uppercase tracking-wide">3. 匯入編輯 </h1>
-        <textarea id="import-input" v-model="importText" class="w-full h-16 p-2 text-[9px] font-mono border rounded-lg bg-blue-50 text-slate-700 resize-none focus:outline-hidden focus:border-blue-400 placeholder-gray-400 leading-tight" :placeholder="importPlaceholder"></textarea>
+        <textarea id="import-input" v-model="importText" class="w-full h-16 p-2 text-[9px] font-mono border rounded-lg bg-blue-50 text-slate-700 resize-none focus:outline-hidden focus:border-blue-400 placeholder-gray-400 leading-tight" :placeholder="importPlaceholder" @input="importError = ''"></textarea>
+        <p v-if="importError" class="text-[10px] font-bold text-red-500 leading-tight">{{ importError }}</p>
         <button class="w-full px-2 py-1.5 bg-blue-500 text-white text-xs font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-xs" @click="importPath">
           📥 解析並載入
         </button>
