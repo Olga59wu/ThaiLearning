@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { usePlayerPageContext } from '@/composables/player/usePlayerPage'
-import OfflineAudioModal from '@/components/common/OfflineAudioModal.vue'
 
 const {
-  isModalOpen, searchQuery, modalCategory, allCategories, filteredModalWords, downloadModal,
+  isModalOpen, searchQuery, modalCategory, allCategories, filteredModalWords,
   getCatIcon, resetAllProgress, replayCurrent, isKnownWord, toggleKnownWord, isCustomWord, toggleCustomWord,
-  closeDownloadModal, executeDownload,
 } = usePlayerPageContext()
 </script>
 
@@ -107,8 +105,5 @@ const {
         找不到相關單字...
       </div>
     </div>
-    <!-- 原版下載彈窗寫在清單彈窗內（只有清單開啟時才顯示），照原版保留 -->
-    <OfflineAudioModal :modal="downloadModal" success-message="現在可以安心開啟飛航模式了！"
-      @close="closeDownloadModal" @confirm="executeDownload" />
   </div>
 </template>

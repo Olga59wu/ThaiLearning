@@ -73,6 +73,19 @@ export const createPlayerPage = () => {
     if (!isSyncingFromCloud.value) {
       syncToCloud()
     }
+
+    // 已學會清空時，比照「自訂單字」移除已選的「已學會」分類（原版沒有處理，清單重建時會出錯）
+    if (newVal.length === 0) {
+      if (selectedCategories.value.includes('已學會')) {
+        selectedCategories.value = selectedCategories.value.filter((cat) => cat !== '已學會')
+        updatePlaylist()
+        currentIndex.value = 0
+        if (isPlaying.value) stop()
+      }
+      if (modalCategory.value === '已學會') {
+        modalCategory.value = Object.keys(VOCAB_DATA)[0]!
+      }
+    }
   }, { deep: true })
 
   const isKnownWord = (item: VocabWord | null | undefined) => {
@@ -126,7 +139,10 @@ export const createPlayerPage = () => {
 
   // 儲存選中的分類（localStorage 由 playerSettings store 處理）
   watch(selectedCategories, () => {
-    syncToCloud() // 觸發 Firebase 同步
+    // 從雲端恢復分類時不回傳（原版這裡沒有檢查鎖，每次進頁面都會再上傳一次）
+    if (!isSyncingFromCloud.value) {
+      syncToCloud() // 觸發 Firebase 同步
+    }
   }, { deep: true })
 
   const playlist = ref<VocabWord[]>([])
@@ -296,8 +312,8 @@ export const createPlayerPage = () => {
       list = Object.values(allCategories.value).flat()
     } else {
       selectedCategories.value.forEach((cat) => {
-        // 原版：分類不存在時（例如已學會清單被清空）展開 undefined 會丟出錯誤，照原版保留
-        list = [...list, ...allCategories.value[cat]!]
+        // 分類不存在時（例如已學會清單被清空）視為空清單（原版展開 undefined 會丟出錯誤）
+        list = [...list, ...(allCategories.value[cat] || [])]
       })
     }
     // 1. 如果開啟過濾，且目前沒有選擇「已學會」分類，就隱藏這些單字
@@ -741,6 +757,7 @@ export const createPlayerPage = () => {
       // 2. 恢復壞音檔名單
       if (thai.brokenAudio) {
         brokenAudio.value = thai.brokenAudio
+        localStorage.setItem('thai-broken-audio', JSON.stringify(brokenAudio.value))
       }
       // 3. 恢復自訂單字
       if (thai.customList) {

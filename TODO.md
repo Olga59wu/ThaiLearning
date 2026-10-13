@@ -18,11 +18,11 @@
 - [ ] 學習卡片有 `animationDelay` 樣式，但卡片沒有任何動畫，該樣式沒有作用
 
 ### 隨身聽（/player）
-- [ ] **頂部「離線語音」按鈕看不到確認視窗**：下載確認／成功彈窗寫在「單字清單」彈窗（`v-if="isModalOpen"`）裡面，所以按按鈕只會把狀態設為顯示，畫面沒反應；之後打開單字清單時確認視窗才會跳出來。下載完成的成功視窗也只有清單開著時才看得到
-- [ ] **選取的分類消失後會出錯**：選了「已學會」分類後，在清單裡把已學會全部取消，`allCategories` 裡就沒有「已學會」，但 `selectedCategories` 仍保留它；之後任何重建清單的動作（切換隱藏已學會、隨機等）都會丟出 TypeError。若帶著這個狀態重新進入頁面，`onMounted` 在 `updatePlaylist()` 就中斷，雲端載入不會執行，畫面會**一直停在 LOADING**（「自訂單字」有 watch 處理，「已學會」沒有）
+- [x] ~~**頂部「離線語音」按鈕看不到確認視窗**~~（已修正：`OfflineAudioModal` 移到 View 外層，與清單彈窗同層，按按鈕直接跳出確認視窗；Typing 原版就在外層，共用元件同樣適用）：下載確認／成功彈窗寫在「單字清單」彈窗（`v-if="isModalOpen"`）裡面，所以按按鈕只會把狀態設為顯示，畫面沒反應；之後打開單字清單時確認視窗才會跳出來。下載完成的成功視窗也只有清單開著時才看得到
+- [x] ~~**選取的分類消失後會出錯**~~（已修正：`updatePlaylist` 遇到不存在的分類當作空清單，畫面顯示空狀態；已學會清空時比照自訂單字移除「已學會」分類並把清單 tab 切回第一個分類）：選了「已學會」分類後，在清單裡把已學會全部取消，`allCategories` 裡就沒有「已學會」，但 `selectedCategories` 仍保留它；之後任何重建清單的動作（切換隱藏已學會、隨機等）都會丟出 TypeError。若帶著這個狀態重新進入頁面，`onMounted` 在 `updatePlaylist()` 就中斷，雲端載入不會執行，畫面會**一直停在 LOADING**（「自訂單字」有 watch 處理，「已學會」沒有）
 - [ ] 播放中的光暈 `.playing-glow` 被同權重、較晚輸出的 `shadow-xl` 覆蓋，淺色模式下看不到（深色模式的 `.dark-mode .player-card.playing-glow` 權重較高才看得到）
-- [ ] 從雲端恢復 `lastSelectedCategories` 時，分類的 watch 沒有檢查 `isSyncingFromCloud` 鎖，所以每次進頁面載入完雲端資料都會立刻再上傳一次
-- [ ] 從雲端載入的 `brokenAudio`（原版 `mp3History`）不會寫回 localStorage，要等下一次回報壞音檔才會存
+- [x] ~~從雲端恢復 `lastSelectedCategories` 時~~（已修正：分類 watch 也檢查 `isSyncingFromCloud`；UUID 遷移時仍會主動上傳一次），分類的 watch 沒有檢查 `isSyncingFromCloud` 鎖，所以每次進頁面載入完雲端資料都會立刻再上傳一次
+- [x] ~~從雲端載入的 `brokenAudio`（原版 `mp3History`）不會寫回 localStorage~~（已修正：載入時寫入 `thai-broken-audio`），要等下一次回報壞音檔才會存
 - [ ] 開啟隨機模式時清單會洗牌兩次（`updatePlaylist()` 內已洗牌，watch 又洗一次），結果無差異
 
 ## 部署

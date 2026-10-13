@@ -7,13 +7,15 @@ import CategoryBar from '@/components/player/CategoryBar.vue'
 import PlayerCard from '@/components/player/PlayerCard.vue'
 import PlayerControls from '@/components/player/PlayerControls.vue'
 import WordListModal from '@/components/player/WordListModal.vue'
+import OfflineAudioModal from '@/components/common/OfflineAudioModal.vue'
 
 usePageShell({
   htmlClass: 'shell-player',
   bodyClass: 'text-slate-800',
 })
 
-const { isLoading, setMainPlayer, setSilentAudio, mount, unmount } = providePlayerPage()
+const { isLoading, downloadModal, closeDownloadModal, executeDownload, setMainPlayer, setSilentAudio, mount, unmount } =
+  providePlayerPage()
 
 onMounted(mount)
 onBeforeUnmount(unmount)
@@ -34,5 +36,8 @@ onBeforeUnmount(unmount)
     <PlayerCard />
     <PlayerControls />
     <WordListModal />
+    <!-- 下載確認／成功彈窗：原版寫在清單彈窗內（按頂部按鈕看不到），已移到外層 -->
+    <OfflineAudioModal :modal="downloadModal" success-message="現在可以安心開啟飛航模式了！"
+      @close="closeDownloadModal" @confirm="executeDownload" />
   </div>
 </template>
