@@ -16,8 +16,10 @@
 | 泰語學習機（`/thai`） | ✅ 使用者已對照確認 | `66fe35a` |
 | `/thai` 原版 bug 修正（挑戰模式、翻牌通關、收藏範圍） | ✅ 使用者已測試通過 | `59d8edd` |
 | `/thai` 數字鍵只在挑戰模式作答 | ✅ | `306b4e4` |
-| 隨身聽（`/player`） | ⏳ 已搬完，待使用者對照確認 | （見 git log） |
-| **打字練習（`/typing`）** | ⏭️ **下一個**（等 player 確認後） | |
+| 隨身聽（`/player`） | ✅ 使用者已對照確認 | `4d7da27` |
+| `/player` 原版 bug 修正（離線語音彈窗、分類消失卡 LOADING、恢復分類不上傳、壞音檔寫回 localStorage） | ✅ | `fdb176a` |
+| 撤銷 player 錯誤的顏色排序相容規則；確認 Home／thai 無顏色排序差異 | ✅ | （本 commit） |
+| **打字練習（`/typing`）** | ⏭️ **下一個** | |
 | 音檔打包（`/downloader`） | 待辦 | |
 | 筆順產生器（`/path`） | 待辦 | |
 | 第 5 步 對照檢查 | 待辦 | |
@@ -92,6 +94,20 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 聲調訓練「挑戰」按鈕可進入挑戰模式（`enterToneChallenge`）；數字鍵 1～5 只在挑戰模式作答
 - 翻牌記憶全部 6 組配對完才顯示「恭喜通關」
 - 測驗範圍新增「收藏」按鈕（樣式同範圍按鈕，`disabled:opacity-50 disabled:cursor-not-allowed`，沒有收藏時 disabled）
+
+### /player 的決策與已修正 bug
+- 壞音檔名單啟動時從 localStorage `thai-broken-audio` 讀取（原版不讀；使用者確認保留）；雲端有 `brokenAudio` 時覆蓋並寫回 localStorage
+- 「離線語音」確認／成功彈窗放在 View 外層（原版誤包在單字清單彈窗內）
+- `updatePlaylist` 遇到不存在的分類當空清單；已學會清空時比照自訂單字移除「已學會」分類
+- 從雲端恢復分類時不觸發上傳（分類 watch 檢查 `isSyncingFromCloud`）
+- 保留未修：`.playing-glow` 淺色模式被 `shadow-xl` 蓋掉、隨機模式洗牌兩次（見 TODO.md）
+
+### 給 /typing 的接手提示
+- 共用：`useOfflineAudioDownload()` + `<OfflineAudioModal :modal success-message="現在打字練習時，發音會更加流暢無延遲！" @close @confirm>`（Typing 原版彈窗本來就在 `#app` 第一層）
+- 共用：`useVocabProgressStore()`（setup 時呼叫 `loadFromStorage()`，再用 `migrateToId()` 遷移，符合決策「Typing 啟動先讀 localStorage」與「一律用 id 比對」）、`useCloudStore()`（`loadThai()`／`saveThai()`）
+- Typing 上傳欄位只有 `customList, knownWords`（展開快取）
+- 參考 `src/composables/player/usePlayerPage.ts` 的寫法：`createXxxPage()` + provide／inject、`useTimers().later()`、`mount()`／`unmount()` 清理、`disposed` 旗標
+- 搬完先跑 `docs/tools/scan-color-order.cjs`（見 §4.5）
 
 ---
 
@@ -236,8 +252,9 @@ usePageShell({
 另外：
 - 原版 CSS 寫 `border: none` 的元素若同時有 Tailwind `border` class，v4 的 `.border` 會透過 `--tw-border-style` 把樣式設回 solid → 在該 CSS 規則加 `--tw-border-style: none;`（見 `learning.css` 的 `.active-tab`）
 - 原版色票覆寫（`tailwind.config` 的 emerald/indigo/rose）與 v3 預設值相同，`@theme` 已涵蓋
-- **同一元素有兩個同屬性的顏色 class 時，輸出順序不同**：v3 依色票順序（slate → gray → … → blue → … → rose，後面的勝），v4 依 class 名稱字母排序。例如 `border-slate-100` + `border-blue-50`：v3 是 blue-50 勝、v4 是 slate-100 勝。搬頁時要找出這類組合，在頁面 CSS 用較高權重的規則還原（見 `player.css` 的 `.player-card.border-blue-50`），不要改 DOM 的 class
-- `space-y-*`／`space-x-*` 以外，build 後可用 `grep -b -o -F` 比對 `dist/assets/index-*.css` 中兩個 class 的位置確認誰勝出
+- **同一元素有兩個同屬性的顏色 class**（例如 `bg-white` + `bg-emerald-100`）：已用 Tailwind v3.4.17 實際編譯驗證，**v3 與 v4 都依 class 名稱字母排序輸出**（`bg-black < bg-blue-* < … < bg-white`），勝出結果相同，**不需要處理**。Home、/thai、/player 全部組合已掃描確認一致（player 24 組、thai 52 組、index 無）
+  - 搬新頁時用 `docs/tools/scan-color-order.cjs` 掃一次（使用方式寫在檔案開頭）；script 內組出來的 class 字串要人工確認
+  - 注意：在 build 後的 CSS 用 grep 找位置時，`.bg-white` 會先比對到頁面自訂 CSS（如 `.dark-mode .bg-white`）或 `.bg-white\/50`，要找 Tailwind 區段的 `.bg-white{`
 
 ### 4.6 Safelist（`@source inline(...)`）
 - Tailwind 會掃描 `.vue`／`.ts` 原始碼中的完整字串，所以寫在 template、TS 字串、`v-html` 內容字串裡的**完整 class 名**都抓得到

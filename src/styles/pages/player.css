@@ -47,13 +47,6 @@
   /* 稍微縮小一點 */
 }
 
-/* v4 相容：卡片同時有 border-slate-100 與播放中的 border-blue-50。
-   v3 依色票順序輸出（blue 在 slate 之後 → blue-50 勝），v4 依字母排序（slate-100 勝），
-   這裡提高權重還原 v3 結果；深色模式的 !important 規則仍優先。 */
-:where(html.shell-player) .player-card.border-blue-50 {
-  border-color: #eff6ff;
-}
-
 :where(html.shell-player) .playing-glow {
   box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.15);
 }

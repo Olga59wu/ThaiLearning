@@ -11,8 +11,9 @@
 @import "./pages/player.css" layer(utilities);
 @import "tailwindcss";
 
-/* legacy/ 只是參考來源，不掃描其中的 class */
+/* legacy/ 只是參考來源、docs/ 是文件與工具，不掃描其中的 class */
 @source not "../../legacy";
+@source not "../../docs";
 
 /* 原版以字串拼接產生的 class（thai 手寫墨水顏色的 ring），掃描不到需手動加入 */
 @source inline("ring-emerald-600 ring-blue-600 ring-gray-300 ring-gray-800");
