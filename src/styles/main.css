@@ -1,10 +1,18 @@
+/*
+ * 圖層順序：原版自訂 CSS 與 Tailwind utilities 放在同一個 utilities 圖層，
+ * 且排在 Tailwind 之前，讓衝突依「選擇器權重 → 先後順序」決定，與原版 v3 Play CDN（無圖層）一致。
+ */
+@layer theme, base, components, utilities;
+@import "./legacy-common.css" layer(utilities);
+@import "./pages/home.css" layer(utilities);
+@import "./pages/not-found.css" layer(utilities);
 @import "tailwindcss";
 
 /* legacy/ 只是參考來源，不掃描其中的 class */
 @source not "../../legacy";
 
-/* 原版 Tailwind v3 Play CDN 設定：darkMode: 'class' */
-@custom-variant dark (&:where(.dark, .dark *));
+/* 原版 Tailwind v3.4 Play CDN 設定：darkMode: 'class'，產生 :is(.dark *)（權重與 v3 相同） */
+@custom-variant dark (&:is(.dark *));
 
 /* v3 的 hover 在觸控裝置上也會生效（v4 預設只在支援 hover 的裝置生效） */
 @custom-variant hover (&:hover);
@@ -182,6 +190,10 @@
   --color-rose-800: #9f1239;
   --color-rose-900: #881337;
   --color-rose-950: #4c0519;
+
+  /* v3 預設字體堆疊（v4.3 的預設值不同） */
+  --font-sans: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
   /* v3 ring 預設：3px、blue-500 / 50% */
   --default-ring-width: 3px;

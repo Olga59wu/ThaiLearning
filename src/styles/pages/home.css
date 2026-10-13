@@ -1,0 +1,9 @@
+/* legacy/index.html 的 <style>（範圍限定 html.shell-home，權重與原版相同） */
+:where(html.shell-home) body {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+:where(html.shell-home) body.ready {
+  opacity: 1;
+}

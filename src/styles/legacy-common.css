@@ -1,0 +1,43 @@
+/*
+ * legacy/css/common.css
+ * 原版只有 index、thai、path 載入；以 html.shell-common 限定範圍。
+ * 使用 :where() 包住範圍選擇器，保持與原版相同的權重。
+ */
+:where(html.shell-common) body {
+  font-family: 'Noto Sans TC', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 玻璃擬態效果 (Index & Nav) */
+:where(html.shell-common) .glass-panel,
+:where(html.shell-common) .glass-nav {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* 自定義捲軸 (Custom Scrollbar) */
+:where(html.shell-common)::-webkit-scrollbar,
+:where(html.shell-common) ::-webkit-scrollbar {
+  width: 6px;
+}
+:where(html.shell-common)::-webkit-scrollbar-track,
+:where(html.shell-common) ::-webkit-scrollbar-track {
+  background: transparent;
+}
+:where(html.shell-common)::-webkit-scrollbar-thumb,
+:where(html.shell-common) ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+:where(html.shell-common)::-webkit-scrollbar-thumb:hover,
+:where(html.shell-common) ::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+:where(html.shell-common).dark::-webkit-scrollbar-thumb,
+:where(html.shell-common).dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+:where(html.shell-common).dark::-webkit-scrollbar-track,
+:where(html.shell-common).dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}

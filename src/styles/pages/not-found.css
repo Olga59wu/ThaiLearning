@@ -1,0 +1,4 @@
+/* legacy/404.html 的 <style>（範圍限定 html.shell-404） */
+:where(html.shell-404) body {
+  font-family: 'Noto Sans TC', sans-serif;
+}
