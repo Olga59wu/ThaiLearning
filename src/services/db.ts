@@ -5,10 +5,11 @@ import { auth, db } from '@/services/firebase'
  * 上傳學習進度到雲端（users/{uid}，merge 寫入，不覆蓋其他欄位）
  * @param lang 欄位名稱（如 'thai'）
  * @param data 要存的資料
+ * @returns 是否上傳成功（錯誤照原版只印 console；需要顯示失敗狀態的頁面看回傳值）
  */
-export const saveProgressToCloud = async (lang: string, data: unknown): Promise<void> => {
+export const saveProgressToCloud = async (lang: string, data: unknown): Promise<boolean> => {
   const user = auth.currentUser
-  if (!user) return
+  if (!user) return false
 
   try {
     const userDocRef = doc(db, 'users', user.uid)
@@ -21,8 +22,10 @@ export const saveProgressToCloud = async (lang: string, data: unknown): Promise<
       { merge: true },
     )
     console.log(`☁️ ${lang} 進度已同步到雲端`)
+    return true
   } catch (error) {
     console.error('上傳失敗:', error)
+    return false
   }
 }
 

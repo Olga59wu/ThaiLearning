@@ -20,9 +20,10 @@
 | `/player` 原版 bug 修正（離線語音彈窗、分類消失卡 LOADING、恢復分類不上傳、壞音檔寫回 localStorage） | ✅ | `fdb176a` |
 | 撤銷 player 錯誤的顏色排序相容規則；確認 Home／thai 無顏色排序差異 | ✅ | `a96f880` |
 | 打字練習（`/typing`） | ✅ 使用者已對照確認 | `b5c76c3` |
-| `/typing` 原版 bug 修正（發音與 TTS 重疊、剩餘顯示、清空分類、雲端資料寫回 localStorage、同字多義用 id） | ✅ | （本 commit） |
-| **音檔打包（`/downloader`）** | ⏳ **已搬遷，等使用者對照確認** | （本 commit） |
-| 筆順產生器（`/path`） | 待辦 | |
+| `/typing` 原版 bug 修正（發音與 TTS 重疊、剩餘顯示、清空分類、雲端資料寫回 localStorage、同字多義用 id） | ✅ | `9aff9eb` |
+| 音檔打包（`/downloader`） | ✅ 使用者已對照確認 | `ffa5aa4` |
+| `/downloader` 原版 bug 修正（抓取失敗判斷、下載中鎖住選取、待抓數、已打包寫入時機、上傳失敗狀態、按鈕改名） | ✅ | （本 commit） |
+| **筆順產生器（`/path`）** | **下一步** | |
 | 第 5 步 對照檢查 | 待辦 | |
 
 順序：**player → typing → downloader → path**，之後第 5 步逐項對照第 1 步盤點清單。
@@ -125,6 +126,13 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - SPA 清理：離開頁面時 `disposed` + `AbortController` 中止抓取迴圈與進行中的 fetch，不產生 ZIP、不寫入名單（等同原版換頁）；延遲改用 `useTimers().later()`
 - 右下角通知照抄 `animate-in slide-in-from-right-10 duration-500`（v3／v4 都沒有前兩個 class，無動畫）
 - 顏色排序掃描：無 DIFF；`hover:bg-blue-700` 在 `disabled:bg-slate-200` 之前、`border-white/30` 在 `border-t-white` 之前（同 v3）
+- 已修正 bug：
+  - 以 `successCount`（實際放進 ZIP 的檔案數）判斷，0 個 → 通知顯示「任務失敗」（`isFailed`）、不產生 ZIP；移除原版永遠不會觸發的「ZIP 檔過小」alert
+  - 下載中鎖住選取：函式開頭 `if (isDownloading) return`，按鈕／勾選框 `:disabled` + `disabled:opacity-50 disabled:cursor-not-allowed`，列的游標改 `cursor-not-allowed`；迴圈走訪 `[...selectedWords]` 快照
+  - 「待抓」= `pendingCount`（庫存中未打包的字）
+  - 泰文與中文都抓到才記入 `completedWords`；`saveAs` 之後才寫入已打包名單、localStorage 並上傳
+  - `saveProgressToCloud()` 改為回傳 `boolean`（其他呼叫端忽略回傳值，不影響）；`cloud.saveThai()` 一併回傳；失敗時 `isSyncFailed` → 紅點 + 「Sync Failed」，下次上傳成功即恢復
+  - 「✨ 只選機械音」改名「✨ 只選未打包」
 
 ### 給 /typing 的接手提示（已完成）
 - 共用：`useOfflineAudioDownload()` + `<OfflineAudioModal :modal success-message="現在打字練習時，發音會更加流暢無延遲！" @close @confirm>`（Typing 原版彈窗本來就在 `#app` 第一層）
