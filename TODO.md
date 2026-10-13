@@ -25,6 +25,12 @@
 - [x] ~~從雲端載入的 `brokenAudio`（原版 `mp3History`）不會寫回 localStorage~~（已修正：載入時寫入 `thai-broken-audio`），要等下一次回報壞音檔才會存
 - [ ] 開啟隨機模式時清單會洗牌兩次（`updatePlaylist()` 內已洗牌，watch 又洗一次），結果無差異
 
+### 打字練習（/typing）
+- [ ] **切換分類／重置遊戲時，發音會和 TTS 重疊**：`initGame` 把 `currentIndex` 歸零時，`watch(currentIndex)` 先念一次，`nextTick` 又念一次；第二次的 `pause()` 中斷第一次的 `play()`（AbortError），`playMediaWithFallback` 沒有過濾 AbortError，於是同一個字再用 TTS 念一次，與 mp3 重疊。連續快速滑動切題、抽掉最後一張卡（index 改變 + 明確呼叫 `playCurrentWord`）也會發生，此時 TTS 念的是**上一個字**（Player 有過濾 AbortError，Typing 沒有）
+- [ ] 練習完成後「剩餘」顯示 1（`currentIndex` 停在最後一題，`words.length - currentIndex` = 1）
+- [ ] 「自訂單字」或「已學會」被清空後，該分類按鈕消失但仍留在已選分類中；若它是唯一選取的分類，畫面直接顯示「練習完成！」，只能按「全部」離開
+- [ ] 從雲端載入的 `customList`／`knownWords` 不會寫回 localStorage，要等下一次點星星／打勾才會存（新版啟動時會先讀 localStorage，雲端資料仍會覆蓋，影響不大）
+
 ## 部署
 
 - [ ] 新的 Firebase Hosting site 網域確定後，到 Firebase Console → Authentication → Settings → **Authorized domains** 加入新網域，否則 Google 登入會失敗（`localhost` 預設已授權）

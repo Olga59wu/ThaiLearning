@@ -18,9 +18,9 @@
 | `/thai` 數字鍵只在挑戰模式作答 | ✅ | `306b4e4` |
 | 隨身聽（`/player`） | ✅ 使用者已對照確認 | `4d7da27` |
 | `/player` 原版 bug 修正（離線語音彈窗、分類消失卡 LOADING、恢復分類不上傳、壞音檔寫回 localStorage） | ✅ | `fdb176a` |
-| 撤銷 player 錯誤的顏色排序相容規則；確認 Home／thai 無顏色排序差異 | ✅ | （本 commit） |
-| **打字練習（`/typing`）** | ⏭️ **下一個** | |
-| 音檔打包（`/downloader`） | 待辦 | |
+| 撤銷 player 錯誤的顏色排序相容規則；確認 Home／thai 無顏色排序差異 | ✅ | `a96f880` |
+| **打字練習（`/typing`）** | ⏳ **已搬遷，等使用者對照確認** | （本 commit） |
+| 音檔打包（`/downloader`） | 待辦（typing 確認後） | |
 | 筆順產生器（`/path`） | 待辦 | |
 | 第 5 步 對照檢查 | 待辦 | |
 
@@ -102,7 +102,17 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 從雲端恢復分類時不觸發上傳（分類 watch 檢查 `isSyncingFromCloud`）
 - 保留未修：`.playing-glow` 淺色模式被 `shadow-xl` 蓋掉、隨機模式洗牌兩次（見 TODO.md）
 
-### 給 /typing 的接手提示
+### /typing 的實作與決策
+- `src/composables/typing/useTypingPage.ts`（`createTypingPage()` + provide／inject）、`useTypingSounds.ts`（WebAudio；每次進頁建立 AudioContext、離開時 `close()`，原版存在 `window.audioCtx`）
+- 元件 `components/typing/{TypingHeader, TypingCard, TypingInputBar}.vue`；分類圖例與 `OfflineAudioModal` 直接寫在 View（原版位置：`#app` 的 `v-else` 內，LOADING 時不顯示）
+- `styles/pages/typing.css`（`shell-typing`）：`@keyframes shake` 改名 `typing-shake`（原版沒用到）；原版 `@keyframes pulse` 與 Tailwind 內建完全相同，不重複定義
+- 啟動：setup 時 `loadFromStorage()` + `migrateToId()`（遷移後寫回 localStorage）→ mount 載入雲端（有資料就覆蓋並遷移，遷移後回寫雲端）→ **一律** `initGame(false)`（原版只有雲端有 thai 資料才開始）
+- 收藏／已學會判斷、`initGame` 的已學會過濾、抽卡的 `inOtherCats`／`findIndex` 全部改用 `id`；清單去重與 Transition `:key` 仍用 `th`（同原版）
+- 兩段重複的「抽掉卡片」程式合併為 `removeFromGame()`（行為相同）
+- SPA 清理：離開頁面時被中斷的 `play()` 不再退回 TTS（`disposed` 檢查）
+- 顏色排序掃描：無 DIFF
+
+### 給 /typing 的接手提示（已完成）
 - 共用：`useOfflineAudioDownload()` + `<OfflineAudioModal :modal success-message="現在打字練習時，發音會更加流暢無延遲！" @close @confirm>`（Typing 原版彈窗本來就在 `#app` 第一層）
 - 共用：`useVocabProgressStore()`（setup 時呼叫 `loadFromStorage()`，再用 `migrateToId()` 遷移，符合決策「Typing 啟動先讀 localStorage」與「一律用 id 比對」）、`useCloudStore()`（`loadThai()`／`saveThai()`）
 - Typing 上傳欄位只有 `customList, knownWords`（展開快取）
@@ -147,11 +157,12 @@ src/
 │  ├─ thai/  ✅ ThaiHeader, LearnSection, ToneTrainingSection, QuizSection, SentenceSection,
 │  │           MemoryGameSection, ToneCalcModal, HelpModal, HandwritingModal
 │  ├─ player/ ✅ PlayerHeader, CategoryBar, PlayerCard, PlayerControls, WordListModal
+│  ├─ typing/ ✅ TypingHeader, TypingCard, TypingInputBar
 │  └─ path/     CharPickerModal —待建
 ├─ composables/
 │  ├─ usePageShell.ts ✅   useTimers.ts ✅   thai/useThaiPage.ts ✅
 │  ├─ player/usePlayerPage.ts ✅（播放、滑動、Media Session、語音清單都在這裡）  useWakeLock.ts ✅  useOfflineAudioDownload.ts ✅
-│  └─ （待建）useTypingAudio, useTypingSounds
+│  └─ typing/useTypingPage.ts ✅  typing/useTypingSounds.ts ✅
 ├─ stores/
 │  ├─ auth.ts ✅        thaiLearn.ts ✅
 │  └─ cloud.ts ✅  vocabProgress.ts ✅  playerSettings.ts ✅
@@ -161,7 +172,7 @@ src/
 ├─ utils/{storage.ts ✅（safeStorage）, shuffle.ts ✅（shuffleArray 回傳新陣列 / shuffleInPlace 原地）}
 └─ styles/
    ├─ main.css ✅ v3-compat.css ✅ legacy-common.css ✅
-   └─ pages/{home.css ✅, not-found.css ✅, learning.css ✅}   // 之後新增 player.css、typing.css、downloader.css、path.css
+   └─ pages/{home.css ✅, not-found.css ✅, learning.css ✅}   // 已新增 player.css ✅、typing.css ✅；之後新增 downloader.css、path.css
 ```
 
 原則：**DOM 結構與 class 一字不改**（只做 v3→v4 必要改名），只是把 template 切到子元件。

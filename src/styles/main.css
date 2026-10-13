@@ -9,6 +9,7 @@
 @import "./pages/home.css" layer(utilities);
 @import "./pages/not-found.css" layer(utilities);
 @import "./pages/player.css" layer(utilities);
+@import "./pages/typing.css" layer(utilities);
 @import "tailwindcss";
 
 /* legacy/ 只是參考來源、docs/ 是文件與工具，不掃描其中的 class */

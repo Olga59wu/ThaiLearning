@@ -1,0 +1,117 @@
+/*
+ * thaiTyping.html 的 <style>（以 html.shell-typing 限定範圍，:where 不增加權重）
+ * 原版 #app 為 id 選擇器，保留其權重。
+ */
+
+:where(html.shell-typing) body {
+  font-family: 'Sarabun', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #f8fafc;
+  overflow: hidden;
+  height: 100dvh;
+  position: fixed;
+  width: 100%;
+}
+
+:where(html.shell-typing) .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+:where(html.shell-typing) .no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 1. 泰文字體優化 */
+:where(html.shell-typing) .thai-text {
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+  word-break: break-word;
+  padding: 10px 0;
+}
+
+/* 2. 🌟 優化泰文字群組在單個 span 裡的疊加 🌟 */
+:where(html.shell-typing) .Thai-typography-fix {
+  display: inline-block;
+}
+
+/* 🌟 下一個字閃爍與底線動畫 🌟 */
+@keyframes guide-pulse {
+  0%,
+  100% {
+    color: #3b82f6; /* 藍色 */
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    text-decoration-color: #3b82f6; /* 藍色底線 */
+  }
+  50% {
+    color: #cbd5e1; /* slate-300 灰色 (與底層一致) */
+    text-shadow: none;
+    text-decoration-color: transparent; /* 底線消失 */
+  }
+}
+
+:where(html.shell-typing) .next-char-guide > span:last-child {
+  /* 只讓最後一個字 (也就是 nextCharToType) 閃爍和有底線 */
+  animation: guide-pulse 1.5s infinite;
+  text-decoration: underline; /* 使用原生 text-decoration 最安全，不會破壞疊加 */
+  text-decoration-thickness: 3px;
+  text-underline-offset: 8px; /* 距離字體底部遠一點 */
+}
+
+:where(html.shell-typing) #app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 答錯時的抖動樣式（原版未使用；與 learning.css 的 shake 同名但內容不同，故改名） */
+@keyframes typing-shake {
+  0%,
+  100% {
+    transform: translateX(0) scale(1.02);
+  }
+  25% {
+    transform: translateX(-6px) scale(1.02);
+  }
+  75% {
+    transform: translateX(6px) scale(1.02);
+  }
+}
+
+/* 確保打錯時字卡不要抖動，移除原本樣式中 class 綁定的 shake */
+:where(html.shell-typing) .active-wrong {
+  /* 這裡可以留空，或者只改背景色但不加動畫 */
+  background-color: #fffafa !important;
+}
+
+/* 原版另有 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .5 } }，與 Tailwind 內建的 pulse 完全相同，不重複定義 */
+
+/* 🌟 大字卡抽換動畫 (真實物理上滑效果) */
+:where(html.shell-typing) .card-enter-active {
+  /* 加上 !important 強制覆蓋所有其他設定 */
+  transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  position: relative;
+  z-index: 1 !important; /* 確保新卡在底層 */
+}
+
+:where(html.shell-typing) .card-leave-active {
+  transition: all 0.35s ease-in !important;
+  position: relative;
+  z-index: 50 !important; /* 確保舊卡在最上層飛走 */
+}
+
+:where(html.shell-typing) .card-enter-from {
+  opacity: 0;
+  /* 從下方縮小狀態浮現 */
+  transform: scale(0.85) translateY(40px);
+}
+
+:where(html.shell-typing) .card-leave-to {
+  opacity: 0;
+  /* 狠狠往上飛走並傾斜 */
+  transform: translateY(-120%) rotate(5deg);
+}
+
+:where(html.shell-typing) .bg-slate-50\/70 {
+  background-color: rgba(248, 250, 252, 0.7);
+}
