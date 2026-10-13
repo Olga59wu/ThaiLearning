@@ -1,0 +1,128 @@
+/*
+ * thaiPlayer.html 的 <style>（以 html.shell-player 限定範圍，:where 不增加權重）
+ * 原版 body.dark-mode / .dark-mode .x 依原權重改寫。
+ */
+
+:where(html.shell-player) body {
+  font-family: 'Sarabun', 'Microsoft JhengHei', sans-serif;
+  background-color: #f8fafc;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+:where(html.shell-player) body.dark-mode {
+  background-color: #0f172a !important;
+  /* 深藍底 */
+}
+
+/* 泰文字體優化 */
+:where(html.shell-player) .thai-text {
+  line-height: 1.8;
+  padding-top: 0.5rem;
+  letter-spacing: 0.02em;
+  display: block;
+  word-break: keep-all;
+  /* 保持泰文單字完整性 */
+  overflow-wrap: break-word;
+  /* 溢出時換行 */
+  width: 100%;
+  transition: all 0.3s ease;
+  /* 縮放時平滑過渡 */
+}
+
+:where(html.shell-player) .player-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  max-width: 90%;
+  /* 讓它更寬一點 */
+  /* 移除 max-height 限制，讓它隨內容撐大 */
+}
+
+/* 新增：切換時的透明狀態 */
+:where(html.shell-player) .card-transitioning {
+  opacity: 0;
+  transform: scale(0.95);
+  /* 稍微縮小一點 */
+}
+
+/* v4 相容：卡片同時有 border-slate-100 與播放中的 border-blue-50。
+   v3 依色票順序輸出（blue 在 slate 之後 → blue-50 勝），v4 依字母排序（slate-100 勝），
+   這裡提高權重還原 v3 結果；深色模式的 !important 規則仍優先。 */
+:where(html.shell-player) .player-card.border-blue-50 {
+  border-color: #eff6ff;
+}
+
+:where(html.shell-player) .playing-glow {
+  box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.15);
+}
+
+:where(html.shell-player) .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+:where(html.shell-player) .no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+:where(html.shell-player) .progress-bar-inner {
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 3D 單字卡翻轉所需的 CSS */
+:where(html.shell-player) .perspective-1000 {
+  perspective: 1000px;
+}
+
+:where(html.shell-player) .transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+:where(html.shell-player) .backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+:where(html.shell-player) .rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+:where(html.shell-player) .dark-mode .bg-white {
+  background-color: #1e293b !important;
+  /* 內容背景變深 */
+}
+
+:where(html.shell-player) .dark-mode .text-slate-800,
+:where(html.shell-player) .dark-mode .text-slate-700 {
+  color: #f1f5f9 !important;
+  /* 主文字變白 */
+}
+
+:where(html.shell-player) .dark-mode .border-b,
+:where(html.shell-player) .dark-mode .border {
+  border-color: #334155 !important;
+  /* 邊框變深 */
+}
+
+:where(html.shell-player) .dark-mode .bg-slate-50,
+:where(html.shell-player) .dark-mode .bg-slate-100 {
+  background-color: #0f172a !important;
+  /* 次要背景 */
+}
+
+:where(html.shell-player) .dark-mode .player-card {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+:where(html.shell-player) .dark-mode .player-card.playing-glow {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+:where(html.shell-player) .dark-mode input {
+  background-color: #334155 !important;
+  color: white !important;
+}

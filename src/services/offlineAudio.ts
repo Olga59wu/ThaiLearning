@@ -9,8 +9,10 @@ export const getAudioUrl = (text: string, type: 'th' | 'zh' = 'th'): string => {
 
 // 🎧 一鍵下載所有離線音檔 (掃描泰文與中文發音)
 // 逐一 fetch，由 Service Worker 寫入 lang-audio-cache-v3
+// isCancelled：SPA 離開頁面時中止（原版換頁時由瀏覽器中斷）
 export const downloadOfflineAudio = async (
   onProgress?: (current: number, total: number) => void,
+  isCancelled?: () => boolean,
 ): Promise<number> => {
   const audioUrls: string[] = []
 
@@ -34,6 +36,7 @@ export const downloadOfflineAudio = async (
 
   // 逐一下載
   for (let i = 0; i < uniqueUrls.length; i++) {
+    if (isCancelled?.()) break
     try {
       const response = await fetch(uniqueUrls[i])
       if (response.ok) {

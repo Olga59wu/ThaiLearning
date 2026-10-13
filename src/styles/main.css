@@ -8,6 +8,7 @@
 @import "./pages/learning.css" layer(utilities);
 @import "./pages/home.css" layer(utilities);
 @import "./pages/not-found.css" layer(utilities);
+@import "./pages/player.css" layer(utilities);
 @import "tailwindcss";
 
 /* legacy/ 只是參考來源，不掃描其中的 class */

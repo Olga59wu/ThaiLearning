@@ -16,8 +16,8 @@
 | 泰語學習機（`/thai`） | ✅ 使用者已對照確認 | `66fe35a` |
 | `/thai` 原版 bug 修正（挑戰模式、翻牌通關、收藏範圍） | ✅ 使用者已測試通過 | `59d8edd` |
 | `/thai` 數字鍵只在挑戰模式作答 | ✅ | `306b4e4` |
-| **隨身聽（`/player`）** | ⏭️ **下一個** | |
-| 打字練習（`/typing`） | 待辦 | |
+| 隨身聽（`/player`） | ⏳ 已搬完，待使用者對照確認 | （見 git log） |
+| **打字練習（`/typing`）** | ⏭️ **下一個**（等 player 確認後） | |
 | 音檔打包（`/downloader`） | 待辦 | |
 | 筆順產生器（`/path`） | 待辦 | |
 | 第 5 步 對照檢查 | 待辦 | |
@@ -127,18 +127,18 @@ src/
 ├─ router/{index.ts, pageMeta.ts}
 ├─ views/{Home,Thai,ThaiPlayer,ThaiTyping,ThaiDownloader,PathEditor,NotFound}View.vue
 ├─ components/
-│  ├─ common/OfflineAudioModal.vue      // Player/Typing 共用下載確認/成功彈窗（成功文字以 prop 帶入，兩頁不同）—待建
+│  ├─ common/OfflineAudioModal.vue ✅  // Player/Typing 共用下載確認/成功彈窗（成功訊息以 successMessage prop 帶入）
 │  ├─ thai/  ✅ ThaiHeader, LearnSection, ToneTrainingSection, QuizSection, SentenceSection,
 │  │           MemoryGameSection, ToneCalcModal, HelpModal, HandwritingModal
-│  ├─ player/   PlayerHeader, CategoryBar, PlayerCard, PlayerControls, WordListModal —待建
+│  ├─ player/ ✅ PlayerHeader, CategoryBar, PlayerCard, PlayerControls, WordListModal
 │  └─ path/     CharPickerModal —待建
 ├─ composables/
 │  ├─ usePageShell.ts ✅   useTimers.ts ✅   thai/useThaiPage.ts ✅
-│  └─ （待建）usePlayerAudio, useTypingAudio, useTypingSounds, useOfflineAudioDownload,
-│            useSwipe, useWakeLock, useMediaSession, useThaiVoices
+│  ├─ player/usePlayerPage.ts ✅（播放、滑動、Media Session、語音清單都在這裡）  useWakeLock.ts ✅  useOfflineAudioDownload.ts ✅
+│  └─ （待建）useTypingAudio, useTypingSounds
 ├─ stores/
 │  ├─ auth.ts ✅        thaiLearn.ts ✅
-│  └─ （待建）cloud.ts, vocabProgress.ts, playerSettings.ts
+│  └─ cloud.ts ✅  vocabProgress.ts ✅  playerSettings.ts ✅
 ├─ services/{firebase.ts ✅, db.ts ✅, offlineAudio.ts ✅}
 ├─ data/{thai.ts ✅, thaiVocab.ts ✅}       // 原文複製，只加型別標註；已用腳本驗證與原版一致
 ├─ types/thai.ts ✅
@@ -156,9 +156,9 @@ src/
 |---|---|---|
 | `auth` ✅ | `user`、`isLoading`、`errorMessage`、`isLoggedIn`、`isAdmin`、`ready`（Promise）；`init()`、`login()`、`logout()` | `js/auth.js`、`config.js`、index.html |
 | `thaiLearn` ✅ | `isDark`(`theme`)、`showPinyin`、`speechRate`(`preferredRate`)、`favorites`、`mistakeList`、`correctCounts`；`syncToCloud()`、`resetOwnData()` | thai.html |
-| `cloud`（待建） | `cachedThai`（雲端 `thai` 快取）、`syncStatus`；`loadThai()`、`saveThai(payload)`（`{...cachedThai, ...payload}`） | Player/Typing/Downloader 的 `cachedCloudThaiData` + `syncToCloud` |
-| `vocabProgress`（待建） | `customList`、`knownWords`（id 比對）、`brokenAudio`、`mp3History`；寫回 localStorage；`migrateToId()`；`applyCloud(thai)`（舊 `mp3History` 歸到已打包） | Player/Typing/Downloader 共用清單 |
-| `playerSettings`（待建） | `isShuffle`、`repeatMode`、`playbackRate`、`speakChineseOrder`、`isMultiSelect`、`hideKnownWords`、`isDarkMode`、`selectedVoice`、`isFlashcardMode`、`selectedCategories`、`lastWordTh`；**值格式維持原始字串**（`"true"`、`"0"`） | thaiPlayer.html |
+| `cloud` ✅ | `cachedThai`（雲端 `thai` 快取）；`loadThai()`（每頁重抓、有 thai 才快取並回傳）、`saveThai(payload)`（`{...cachedThai, ...payload}`）；`syncStatus` 放在各頁（原版每頁從 synced 開始） | Player/Typing/Downloader 的 `cachedCloudThaiData` + `syncToCloud` |
+| `vocabProgress` ✅ | `customList`、`knownWords`（id 比對）、`brokenAudio`、`mp3History`；`loadFromStorage()`（每頁 setup 時重讀）；匯出 `migrateToId()`（th+zh → th 第一筆）。寫回 localStorage 與套用雲端資料由各頁 watch 處理（照原版各頁邏輯） | Player/Typing/Downloader 共用清單 |
+| `playerSettings` ✅ | `isShuffle`、`repeatMode`、`playbackRate`、`speakChineseOrder`、`isMultiSelect`、`hideKnownWords`、`isDarkMode`、`selectedVoice`、`isFlashcardMode`、`selectedCategories`；store 內 watch 負責寫 localStorage，**值格式維持原始字串**（`"true"`、`"0"`）；`thai-last-word-th` 照原版直接讀寫 localStorage | thaiPlayer.html |
 
 - 頁面暫時狀態（quiz、memory、playlist、typing words/input）放在 View 或頁面 composable，換頁即重置（同原版）
 - 每頁 mount 時重新從雲端載入（等同原版每頁重新載入）
@@ -236,6 +236,8 @@ usePageShell({
 另外：
 - 原版 CSS 寫 `border: none` 的元素若同時有 Tailwind `border` class，v4 的 `.border` 會透過 `--tw-border-style` 把樣式設回 solid → 在該 CSS 規則加 `--tw-border-style: none;`（見 `learning.css` 的 `.active-tab`）
 - 原版色票覆寫（`tailwind.config` 的 emerald/indigo/rose）與 v3 預設值相同，`@theme` 已涵蓋
+- **同一元素有兩個同屬性的顏色 class 時，輸出順序不同**：v3 依色票順序（slate → gray → … → blue → … → rose，後面的勝），v4 依 class 名稱字母排序。例如 `border-slate-100` + `border-blue-50`：v3 是 blue-50 勝、v4 是 slate-100 勝。搬頁時要找出這類組合，在頁面 CSS 用較高權重的規則還原（見 `player.css` 的 `.player-card.border-blue-50`），不要改 DOM 的 class
+- `space-y-*`／`space-x-*` 以外，build 後可用 `grep -b -o -F` 比對 `dist/assets/index-*.css` 中兩個 class 的位置確認誰勝出
 
 ### 4.6 Safelist（`@source inline(...)`）
 - Tailwind 會掃描 `.vue`／`.ts` 原始碼中的完整字串，所以寫在 template、TS 字串、`v-html` 內容字串裡的**完整 class 名**都抓得到
