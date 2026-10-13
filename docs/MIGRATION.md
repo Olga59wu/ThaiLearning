@@ -19,8 +19,8 @@
 | 隨身聽（`/player`） | ✅ 使用者已對照確認 | `4d7da27` |
 | `/player` 原版 bug 修正（離線語音彈窗、分類消失卡 LOADING、恢復分類不上傳、壞音檔寫回 localStorage） | ✅ | `fdb176a` |
 | 撤銷 player 錯誤的顏色排序相容規則；確認 Home／thai 無顏色排序差異 | ✅ | `a96f880` |
-| **打字練習（`/typing`）** | ⏳ **已搬遷，等使用者對照確認** | （本 commit） |
-| 音檔打包（`/downloader`） | 待辦（typing 確認後） | |
+| 打字練習（`/typing`） | ✅ 使用者指示繼續下一頁 | `b5c76c3` |
+| **音檔打包（`/downloader`）** | ⏳ **已搬遷，等使用者對照確認** | （本 commit） |
 | 筆順產生器（`/path`） | 待辦 | |
 | 第 5 步 對照檢查 | 待辦 | |
 
@@ -112,6 +112,15 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - SPA 清理：離開頁面時被中斷的 `play()` 不再退回 TTS（`disposed` 檢查）
 - 顏色排序掃描：無 DIFF
 
+### /downloader 的實作與決策
+- 頁面小，邏輯直接寫在 `ThaiDownloaderView.vue`（不拆元件／composable）；`styles/pages/downloader.css`（`shell-downloader`），body class `p-4 md:p-8`
+- `jszip`、`file-saver` 改用 npm 套件靜態 import（頁面本身已 lazy load）
+- 已打包名單用 `vocabProgress.mp3History`（`thai-mp3-history`／雲端 `mp3History`）；不碰 `thai-broken-audio`
+- 自訂單字照原版每次從 localStorage `thai-custom-list` 讀取並以 `th` 去重；雲端 `customList` 照原版寫回 localStorage（不做 id 遷移，其他頁載入時會遷移）
+- SPA 清理：離開頁面時 `disposed` + `AbortController` 中止抓取迴圈與進行中的 fetch，不產生 ZIP、不寫入名單（等同原版換頁）；延遲改用 `useTimers().later()`
+- 右下角通知照抄 `animate-in slide-in-from-right-10 duration-500`（v3／v4 都沒有前兩個 class，無動畫）
+- 顏色排序掃描：無 DIFF；`hover:bg-blue-700` 在 `disabled:bg-slate-200` 之前、`border-white/30` 在 `border-t-white` 之前（同 v3）
+
 ### 給 /typing 的接手提示（已完成）
 - 共用：`useOfflineAudioDownload()` + `<OfflineAudioModal :modal success-message="現在打字練習時，發音會更加流暢無延遲！" @close @confirm>`（Typing 原版彈窗本來就在 `#app` 第一層）
 - 共用：`useVocabProgressStore()`（setup 時呼叫 `loadFromStorage()`，再用 `migrateToId()` 遷移，符合決策「Typing 啟動先讀 localStorage」與「一律用 id 比對」）、`useCloudStore()`（`loadThai()`／`saveThai()`）
@@ -172,7 +181,7 @@ src/
 ├─ utils/{storage.ts ✅（safeStorage）, shuffle.ts ✅（shuffleArray 回傳新陣列 / shuffleInPlace 原地）}
 └─ styles/
    ├─ main.css ✅ v3-compat.css ✅ legacy-common.css ✅
-   └─ pages/{home.css ✅, not-found.css ✅, learning.css ✅}   // 已新增 player.css ✅、typing.css ✅；之後新增 downloader.css、path.css
+   └─ pages/{home.css ✅, not-found.css ✅, learning.css ✅}   // 已新增 player.css ✅、typing.css ✅、downloader.css ✅；之後新增 path.css
 ```
 
 原則：**DOM 結構與 class 一字不改**（只做 v3→v4 必要改名），只是把 template 切到子元件。

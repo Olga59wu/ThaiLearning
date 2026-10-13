@@ -1,0 +1,43 @@
+/*
+ * thaiDownloader.html 的 <style>（以 html.shell-downloader 限定範圍，:where 不增加權重）
+ * 原版 [v-cloak] 規則：SPA 不需要，省略。
+ */
+
+:where(html.shell-downloader) body {
+  font-family: 'Sarabun', 'Inter', system-ui, sans-serif;
+  background-color: #f8fafc;
+  color: #334155;
+}
+
+:where(html.shell-downloader) .custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+:where(html.shell-downloader) .custom-scroll::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+:where(html.shell-downloader) .compact-panel {
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+:where(html.shell-downloader) .word-item {
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #f7fafc;
+}
+
+:where(html.shell-downloader) .word-item:hover {
+  background-color: #f9fbff;
+}
+
+:where(html.shell-downloader) .word-item.selected {
+  background-color: #f0f7ff;
+}
+
+:where(html.shell-downloader) .progress-fill {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  transition: width 0.4s ease;
+}
