@@ -64,28 +64,38 @@ const isFirebaseUrl = (url: URL) =>
 const isHttpGet = (request: Request) =>
   request.method === 'GET' && request.url.startsWith('http')
 
-// 原版 fetch handler：有快取先回快取，同時背景向網路更新；沒快取就等網路
-const cacheWithRevalidate =
+// 向網路抓取，status 200 時寫入指定快取
+const fetchAndCache = (req: Request, targetCacheName: string) =>
+  fetch(req)
+    .then((networkResponse) => {
+      if (networkResponse && networkResponse.status === 200) {
+        const responseToCache = networkResponse.clone()
+        caches.open(targetCacheName).then((cache) => {
+          cache.put(req, responseToCache)
+        })
+      }
+      return networkResponse
+    })
+    .catch((error) => {
+      console.log('離線狀態，使用快取', error)
+      return undefined
+    })
+
+// 音檔：純 cache-first。有快取就直接回傳，不發任何網路請求；沒有快取才走網路並寫入
+const audioCacheFirst: RouteHandlerCallback = async ({ request }) => {
+  const req = request as Request
+  const cachedResponse = await caches.match(req)
+  if (cachedResponse) return cachedResponse
+  return (await fetchAndCache(req, AUDIO_CACHE_NAME)) ?? Response.error()
+}
+
+// 其他資源（原版 app cache 策略）：有快取先回快取，同時背景向網路更新；沒快取就等網路
+const staleWhileRevalidate =
   (targetCacheName: string): RouteHandlerCallback =>
   async ({ request }) => {
     const req = request as Request
     const cachedResponse = await caches.match(req)
-    const fetchPromise = fetch(req)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone()
-          caches.open(targetCacheName).then((cache) => {
-            cache.put(req, responseToCache)
-          })
-        }
-        return networkResponse
-      })
-      .catch((error) => {
-        console.log('離線狀態，使用快取', error)
-        return undefined
-      })
-
-    // 音檔策略：有快取就直接用快取(比較省流量且播放快)，沒有才去網路抓
+    const fetchPromise = fetchAndCache(req, targetCacheName)
     if (cachedResponse) return cachedResponse
     return (await fetchPromise) ?? Response.error()
   }
@@ -96,5 +106,5 @@ const matchAudio: RouteMatchCallback = ({ request, url }) =>
 const matchRuntime: RouteMatchCallback = ({ request, url }) =>
   isHttpGet(request) && !isAudioUrl(url) && !isFirebaseUrl(url)
 
-registerRoute(matchAudio, cacheWithRevalidate(AUDIO_CACHE_NAME))
-registerRoute(matchRuntime, cacheWithRevalidate(RUNTIME_CACHE_NAME))
+registerRoute(matchAudio, audioCacheFirst)
+registerRoute(matchRuntime, staleWhileRevalidate(RUNTIME_CACHE_NAME))

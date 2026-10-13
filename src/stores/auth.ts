@@ -46,18 +46,20 @@ export const useAuthStore = defineStore('auth', () => {
           errorMessage.value = '抱歉，此帳號沒有存取權限'
         }
       } else {
-        // 未登入狀態：原版 onLoginFail(null) 會把錯誤訊息清成空字串
+        // 未登入狀態：保留錯誤訊息（例如白名單拒絕後的強制登出），直到使用者再次點擊登入
         user.value = null
-        errorMessage.value = ''
       }
       resolveReady()
     })
   }
 
-  const login = () =>
-    signInWithPopup(auth, provider).catch((err: Error) => {
+  const login = () => {
+    // 再次點擊登入時才清除先前的錯誤訊息
+    errorMessage.value = ''
+    return signInWithPopup(auth, provider).catch((err: Error) => {
       errorMessage.value = '登入失敗：' + err.message
     })
+  }
 
   const logout = () => signOut(auth)
 

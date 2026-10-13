@@ -1,0 +1,9 @@
+# 統一使用 LF 換行
+* text=auto eol=lf
+
+# 二進位檔
+*.mp3 binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
