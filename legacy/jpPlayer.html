@@ -1,0 +1,1636 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>日文隨身聽 - 單字自動播放</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="apple-touch-icon" href="icon-192x192.png">
+  <style>
+    [v-cloak] {
+      display: none !important;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', 'Microsoft JhengHei', sans-serif;
+      background-color: #f8fafc;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.dark-mode {
+      background-color: #0f172a !important;
+    }
+
+    .jp-text {
+      line-height: 1.5;
+      padding-top: 0.5rem;
+      letter-spacing: 0.05em;
+      display: block;
+      word-break: keep-all; /* 防止假名與注音在強制換行時錯位 */
+      overflow-wrap: break-word;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    .player-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+      max-width: 90%;
+    }
+
+    .card-transitioning {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    .playing-glow {
+      box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.15);
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .progress-bar-inner {
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+
+    .dark-mode .bg-white {
+      background-color: #1e293b !important;
+    }
+
+    .dark-mode .text-slate-800,
+    .dark-mode .text-slate-700 {
+      color: #f1f5f9 !important;
+    }
+
+    .dark-mode .border-b,
+    .dark-mode .border {
+      border-color: #334155 !important;
+    }
+
+    .dark-mode .bg-slate-50,
+    .dark-mode .bg-slate-100 {
+      background-color: #0f172a !important;
+    }
+
+    .dark-mode .player-card {
+      background-color: #1e293b !important;
+      border-color: #334155 !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .dark-mode .player-card.playing-glow {
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .dark-mode input {
+      background-color: #334155 !important;
+      color: white !important;
+    }
+  </style>
+</head>
+
+<body class="text-slate-800">
+  <audio id="silent-audio" loop preload="auto">
+    <source src="data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=="
+      type="audio/wav">
+  </audio>
+  <audio id="main-player" playsinline preload="auto"></audio>
+  <div id="app" class="w-full max-w-md mx-auto h-full flex flex-col bg-white shadow-2xl relative" v-cloak>
+    <div v-if="isLoading" class="fixed inset-0 flex items-center justify-center bg-white z-[100]">
+      <div class="text-blue-500 font-bold animate-pulse">LOADING...</div>
+    </div>
+    <!-- 頂部導覽 -->
+    <div class="px-2 py-3 flex items-center justify-between border-b shrink-0 bg-white z-10">
+
+      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <a href="index.html" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </a>
+        <h1 class="text-[13px] sm:text-sm font-black text-rose-600 tracking-tight flex items-center gap-1.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          JP PLAYER
+        </h1>
+      </div>
+
+      <div class="flex items-center gap-0.5 sm:gap-2 shrink-0">
+        <a href="jpTyping.html"
+          class="p-1.5 sm:p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full active:scale-90 transition-all"
+          title="日文打字練習">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+        </a>
+        <div class="flex items-center justify-center text-slate-400 transition-all p-1"
+          :title="syncStatus === 'syncing' ? '同步中...' : (syncStatus === 'synced' ? '已同步' : '同步失敗')">
+          <svg v-if="syncStatus === 'synced'" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="text-emerald-500">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+            <polyline points="9 15 11 17 15 12"></polyline>
+          </svg>
+          <svg v-if="syncStatus === 'syncing'" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="animate-spin text-blue-500">
+            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+            <path d="M21 3v5h-5"></path>
+          </svg>
+          <svg v-if="syncStatus === 'error'" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="text-red-500">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+            <line x1="12" y1="12" x2="12" y2="16"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </div>
+
+        <button @click="isDarkMode = !isDarkMode" class="p-1.5 sm:p-2 text-slate-400 active:scale-90 transition-all">
+          <svg v-if="!isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="yellow" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <button @click="startDownload" :disabled="isDownloading"
+          :class="['flex items-center gap-1 px-1.5 py-1.5 rounded-lg transition-colors text-[10px] sm:text-[11px] font-bold shadow-sm whitespace-nowrap',
+               isDownloading ? 'bg-indigo-50 text-indigo-400 cursor-wait' : 'bg-white text-indigo-500 border border-indigo-100 hover:bg-indigo-50']">
+          <svg v-if="isDownloading" class="animate-spin h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-500"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-3.5 sm:w-3.5" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          {{ isDownloading ? `下載中 ${downloadProgress}/${downloadTotal}` : '離線語音' }}
+        </button>
+
+        <button @click="isModalOpen = true"
+          class="p-1.5 sm:p-2 text-rose-500 hover:bg-rose-50 rounded-full transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- 分類選擇器 -->
+    <div class="px-4 py-2 bg-slate-50 border-b shrink-0 z-10">
+      <div class="flex gap-2 overflow-x-auto no-scrollbar py-1 items-center">
+        <button @click="toggleCategory('all')"
+          :class="['px-3 py-1 rounded-full text-[10px] font-black transition-all border shrink-0 h-7 flex items-center justify-center min-w-[50px]', 
+                            selectedCategories.length === 0 ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-white border-slate-200 text-slate-400']">
+          全部
+        </button>
+        <button v-for="(list, cat) in allCategories" :key="cat" @click="toggleCategory(cat)"
+          :class="['cat-btn-' + cat, selectedCategories.includes(cat) ? 'bg-rose-100 border-rose-400 shadow-sm' : 'bg-white border-slate-200 opacity-70']"
+          class="px-3 py-1 rounded-full border transition-all flex-shrink-0 flex items-center justify-center h-7 active:scale-95">
+          <span class="text-sm">{{ getCatIcon(cat) }}</span>
+          <span class="text-[9px] font-bold text-slate-600 ml-1" v-if="selectedCategories.includes(cat)">{{
+            cat.substring(0,2) }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 播放器主視覺區域 -->
+    <div class="flex-1 flex flex-col items-center justify-center p-2 min-h-0" @touchstart="handleTouchStart"
+      @touchend="handleTouchEnd">
+      <div
+        class="player-card flex-grow flex flex-col bg-white rounded-[2.5rem] shadow-xl border border-slate-100 p-3 text-center relative w-full mb-2 overflow-hidden"
+        :class="{
+            'playing-glow border-rose-50': isPlaying,
+            'card-transitioning': isTransitioning
+          }">
+        <div v-if="currentWord" class="w-full shrink-0 mb-4 z-20">
+          <div class="flex justify-between items-center mb-1.5 px-1">
+            <span class="text-[10px] font-black text-rose-500 tracking-tighter">
+              {{ getCatIcon(currentWordCategory) }} {{ currentWordCategory }}
+            </span>
+            <span class="text-[10px] font-bold text-slate-400">
+              {{ currentIndex + 1 }} / {{ playlist.length }}
+            </span>
+          </div>
+          <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-rose-500 progress-bar-inner transition-all duration-300"
+              :style="{ width: playlist.length ? `${((currentIndex + 1) / playlist.length) * 100}%` : '0%' }"></div>
+          </div>
+        </div>
+
+        <div v-if="currentWord"
+          class="flex-1 flex flex-col items-center justify-center w-full min-h-0 perspective-1000 z-10"
+          @click="handleContentClick">
+          <div
+            class="relative flex-1 w-full flex flex-col items-center justify-center transform-style-3d transition-transform duration-500 cursor-pointer"
+            :class="{ 'rotate-y-180': isFlashcardMode && isFlipped }">
+
+            <div
+              class="absolute inset-0 flex flex-col items-center justify-center w-full h-full transition-opacity duration-300"
+              :class="isFlashcardMode && isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'"
+              style="transform: rotateY(0deg);">
+              <div
+                class="jp-text font-black text-slate-800 mb-2 leading-tight active:opacity-50 w-full px-4 text-center whitespace-pre-wrap"
+                :class="[
+                            currentWord?.ja.length >= 14 ? 'text-xl md:text-2xl' : 
+                            currentWord?.ja.length >= 9  ? 'text-2xl md:text-3xl' : 
+                            currentWord?.ja.length >= 6  ? 'text-3xl md:text-4xl' : 'text-5xl md:text-6xl'
+                        ]" :style="isKnownWord(currentWord) ? 'opacity: 0.3;' : ''">
+                <ruby>
+                  {{ currentWord?.ja }}
+                  <rt v-show="showKana && !isFlashcardMode && currentWord?.ja !== currentWord?.kana"
+                    class="text-indigo-500 font-bold tracking-widest text-[0.5em] opacity-90">{{ currentWord?.kana }}
+                  </rt>
+                </ruby>
+              </div>
+
+              <div v-show="showChinese && !isFlashcardMode" class="text-xl text-slate-400 font-medium shrink-0 pt-2">
+                {{ currentWord?.zh }}
+              </div>
+
+              <div v-show="isFlashcardMode && !isFlipped"
+                class="absolute bottom-1 text-xs text-purple-500 font-bold animate-pulse">
+                👆 點擊翻牌看答案
+              </div>
+            </div>
+
+            <div
+              class="absolute inset-0 flex flex-col items-center justify-center rotate-y-180 w-full h-full rounded-3xl border-2 border-dashed border-purple-300 transition-opacity duration-300"
+              style="background-color: rgba(168, 85, 247, 0.08);"
+              :class="isFlashcardMode && isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'">
+
+              <div class="jp-text font-black text-slate-400 mb-2 w-full px-4 text-center whitespace-pre-wrap" :class="[
+                            currentWord?.ja.length >= 14 ? 'text-lg md:text-xl' : 
+                            currentWord?.ja.length >= 9 ? 'text-xl md:text-2xl' : 
+                            currentWord?.ja.length >= 6  ? 'text-2xl md:text-3xl' : 'text-4xl md:text-5xl'
+                        ]" :style="isKnownWord(currentWord) ? 'opacity: 0.3;' : ''">
+                <ruby>
+                  {{ currentWord?.ja }}
+                  <rt v-show="showKana && currentWord?.ja !== currentWord?.kana"
+                    class="text-indigo-400 font-bold tracking-widest text-[0.5em] opacity-90">{{ currentWord?.kana }}
+                  </rt>
+                </ruby>
+              </div>
+              <div class="text-lg text-purple-500 font-bold shrink-0 pt-2">
+                {{ currentWord?.zh }}
+              </div>
+              <div class="absolute bottom-1 text-[10px] text-slate-400 font-bold">
+                👆 點擊重聽
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div v-else
+          class="flex-1 flex flex-col items-center justify-center text-slate-400 font-bold h-24 gap-2 text-sm">
+          <template v-if="selectedCategories.length > 0 && hideKnownWords">
+            <span class="text-2xl mb-1">🎉</span>
+            <span>太棒了！這個分類的單字你已經全都會了</span>
+            <button @click="hideKnownWords = false"
+              class="mt-2 px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs active:scale-95">取消隱藏</button>
+          </template>
+          <span v-else>請選擇分類並播放</span>
+        </div>
+
+        <div class="absolute bottom-4 right-4 flex items-center gap-1 z-20">
+          <button v-if="currentWord" @click.stop="toggleKnownWord(currentWord)"
+            class="p-2 active:scale-75 transition-transform" title="標記為已學會">
+            <svg v-if="isKnownWord(currentWord)" class="text-emerald-500 drop-shadow-sm"
+              xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <svg v-else class="text-slate-200 hover:text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="22"
+              height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+          </button>
+
+          <button v-if="currentWord" @click.stop="toggleCustomWord(currentWord)"
+            class="p-2 active:scale-75 transition-transform" title="加入自訂單字">
+            <svg v-if="isCustomWord(currentWord)" class="text-yellow-400 drop-shadow-sm"
+              xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+              </polygon>
+            </svg>
+            <svg v-else class="text-slate-300 hover:text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="18"
+              height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+              </polygon>
+            </svg>
+          </button>
+        </div>
+        <div class="absolute bottom-4 left-4 flex items-center gap-1 z-20">
+          <button v-if="currentWord" @click.stop="reportBadAudio"
+            class="p-2 text-slate-300 hover:text-red-500 active:scale-75 transition-all" title="標記音質不佳">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
+          </button>
+
+          <button v-if="currentWord && isFlashcardMode" @click.stop="replayCurrent()"
+            class="p-2 text-slate-300 hover:text-blue-500 active:scale-75 transition-all" title="聆聽發音">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 播放控制區 -->
+    <div
+      class="bg-slate-50 border-t shrink-0 p-5 sm:p-6 pt-3 rounded-t-[2rem] shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] z-10">
+      <div class="flex justify-between items-center mb-5 px-4 gap-1">
+        <button @click="isShuffle = !isShuffle" :class="isShuffle ? 'text-rose-600' : 'text-slate-300'"
+          class="transition-all p-1 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22" />
+            <path d="m18 2 4 4-4 4" />
+            <path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2" />
+            <path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8" />
+            <path d="m18 14 4 4-4 4" />
+          </svg>
+        </button>
+
+        <div class="flex-1 flex items-center justify-center gap-2">
+          <div class="flex items-center bg-white border border-slate-200 rounded-full px-2 h-7 shadow-sm">
+            <select v-model="playbackRate"
+              class="text-[9px] font-black bg-transparent outline-none text-slate-500 cursor-pointer">
+              <option :value="0.7">0.7x 慢速</option>
+              <option :value="1.0">1.0x 正常</option>
+              <option :value="1.2">1.2x 快速</option>
+            </select>
+          </div>
+
+          <div v-if="voices.length > 1"
+            class="flex items-center bg-white border border-slate-200 rounded-full px-2 h-7 shadow-sm gap-1 overflow-hidden">
+            <span class="text-[8px] font-bold text-slate-400 shrink-0">老師:</span>
+            <select v-model="selectedVoice"
+              class="text-[9px] bg-transparent border-none text-rose-600 font-bold outline-none cursor-pointer max-w-[100px] truncate">
+              <option v-for="v in voices" :key="v.name" :value="v.name">
+                {{ v.name.replace('Microsoft', '').replace('Google', '').replace('Japanese', '').replace('(',
+                '').replace(')', '').trim() || v.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <button @click="repeatMode = (repeatMode + 1) % 3" :class="repeatMode > 0 ? 'text-rose-600' : 'text-slate-300'"
+          class="transition-all p-1 shrink-0">
+          <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m17 2 4 4-4 4" />
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <path d="m7 22-4-4 4-4" />
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+            <span v-if="repeatMode === 2"
+              class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[7px] font-bold rounded-full w-3 h-3 flex items-center justify-center">1</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-center gap-8 mb-4">
+        <button @click="prev" class="text-slate-400 active:scale-90 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z" />
+          </svg>
+        </button>
+
+        <button @click="togglePlay"
+          class="w-14 h-14 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-lg active:scale-95 transition-all">
+          <svg v-if="!isPlaying" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+            fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+          </svg>
+        </button>
+
+        <button @click="next" class="text-slate-400 active:scale-90 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5 18l8.5-6L5 6v12zM13 6v12l8.5-6L13 6z" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 px-2">
+        <button @click="speakChineseOrder = !speakChineseOrder"
+          :class="['flex-1 py-1.5 rounded-lg text-[10px] font-black border transition-all', 
+                    speakChineseOrder ? 'bg-rose-600 border-rose-600 text-white' : 'bg-emerald-600 border-emerald-600 text-white']">
+          {{ speakChineseOrder ? '中 → 日 朗讀' : '日 → 中 朗讀' }}
+        </button>
+        <button @click="toggleFlashcardMode"
+          :class="['flex-1 py-1.5 rounded-lg text-[10px] font-black border transition-all', 
+                    isFlashcardMode ? 'bg-purple-600 border-purple-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-400']">
+          🃏 單字卡模式
+        </button>
+        <button @click="showChinese = !showChinese"
+          :class="['flex-1 py-1.5 rounded-lg text-[10px] font-black border transition-all', 
+                             showChinese ? 'bg-rose-600 border-rose-600 text-white' : 'bg-white border-slate-200 text-slate-400']">
+          {{ showChinese ? '顯示中文' : '隱藏中文' }}
+        </button>
+        <button @click="showKana = !showKana"
+          :class="['flex-1 py-1.5 rounded-lg text-[10px] font-black border transition-all', 
+                             showKana ? 'bg-indigo-500 border-indigo-500 text-white' : 'bg-white border-slate-200 text-slate-400']">
+          {{ showKana ? '顯示假名' : '隱藏假名' }}
+        </button>
+      </div>
+      <div class="flex justify-center items-center gap-8 mt-5 pt-4 border-t border-slate-200/60">
+        <button @click="hideKnownWords = !hideKnownWords"
+          class="flex items-center gap-2 active:scale-95 transition-transform">
+          <span class="text-xs font-bold transition-colors"
+            :class="hideKnownWords ? 'text-emerald-500' : 'text-slate-400'">隱藏已學會 ✅</span>
+          <div class="w-7 h-4 rounded-full relative transition-colors duration-200"
+            :class="hideKnownWords ? 'bg-emerald-500' : 'bg-slate-300'">
+            <div class="absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm"
+              :class="hideKnownWords ? 'left-3.5' : 'left-0.5'"></div>
+          </div>
+        </button>
+
+        <button @click="isMultiSelect = !isMultiSelect"
+          class="flex items-center gap-2 active:scale-95 transition-transform">
+          <span class="text-xs font-bold transition-colors"
+            :class="isMultiSelect ? 'text-blue-500' : 'text-slate-400'">分類複選模式</span>
+          <div class="w-7 h-4 rounded-full relative transition-colors duration-200"
+            :class="isMultiSelect ? 'bg-blue-500' : 'bg-slate-300'">
+            <div class="absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm"
+              :class="isMultiSelect ? 'left-3.5' : 'left-0.5'"></div>
+          </div>
+        </button>
+      </div>
+    </div>
+    <div v-if="isModalOpen" class="fixed inset-0 z-[100] bg-white flex flex-col">
+      <div class="p-4 border-b flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-3">
+          <h2 class="font-black text-slate-700">單字清單</h2>
+          <button @click="resetAllProgress"
+            class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded-md font-bold active:scale-95 transition-all">
+            🗑️ 重置進度
+          </button>
+        </div>
+
+        <button @click="isModalOpen = false; searchQuery = ''"
+          class="p-2 bg-slate-100 rounded-full text-slate-500 active:scale-90 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="px-4 py-2 bg-white shrink-0">
+        <div class="relative flex items-center">
+          <input v-model="searchQuery" type="text" placeholder="搜尋日文或中文..."
+            class="w-full bg-slate-100 border-none rounded-xl px-10 py-2.5 text-sm focus:ring-2 focus:ring-rose-500 outline-none transition-all">
+          <svg class="absolute left-3 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <button v-if="searchQuery" @click="searchQuery = ''"
+            class="absolute right-3 text-slate-400 font-bold text-lg">×</button>
+        </div>
+      </div>
+      <div class="p-2 bg-slate-50 border-b flex gap-2 overflow-x-auto no-scrollbar">
+        <button v-for="(list, cat) in allCategories" :key="cat" @click="modalCategory = cat"
+          :class="['px-3 py-1.5 rounded-full text-[10px] font-bold shrink-0 transition-all border flex items-center gap-1', 
+                              modalCategory === cat ? 'bg-rose-600 text-white border-rose-600 shadow-md' : 'bg-white border-slate-200 text-slate-500']">
+          <span>{{ getCatIcon(cat) }}</span>
+          <span>{{ cat }}</span>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4 space-y-2">
+        <div v-for="item in filteredModalWords" :key="item.ja"
+          class="p-4 border-b flex justify-between items-center transition-colors">
+
+          <div class="flex-1 cursor-pointer active:bg-rose-50" @click="replayCurrent(item)"
+            :class="{'opacity-40': isKnownWord(item)}">
+            <div class="text-xl font-black text-slate-800 tracking-tight">{{item.ja}}</div>
+            <div class="text-[10px] text-indigo-400 font-bold mt-0.5">{{item.kana}}</div>
+            <div class="text-xs text-slate-400 font-bold mt-1">{{item.zh}}</div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button @click="replayCurrent(item)"
+              class="p-2 text-rose-400 opacity-30 active:scale-90 transition-transform">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              </svg>
+            </button>
+
+            <button @click="toggleKnownWord(item)" class="p-2 active:scale-75 transition-transform">
+              <svg v-if="isKnownWord(item)" class="text-emerald-500" xmlns="http://www.w3.org/2000/svg" width="20"
+                height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <svg v-else class="text-slate-200 hover:text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="20"
+                height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+              </svg>
+            </button>
+            <button @click="toggleCustomWord(item)" class="p-2 active:scale-75 transition-transform" title="加入自訂單字">
+              <svg v-if="isCustomWord(item)" class="text-yellow-400 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"
+                width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                </polygon>
+              </svg>
+              <svg v-else class="text-slate-200 hover:text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="20"
+                height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                </polygon>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div v-if="filteredModalWords.length === 0" class="text-center py-10 text-slate-300 font-bold">
+          找不到相關單字...
+        </div>
+      </div>
+      <div v-if="downloadModal.show" class="fixed inset-0 z-[120] flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" @click="closeDownloadModal"></div>
+
+        <div
+          class="relative bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-4 transform transition-all flex flex-col items-center text-center">
+
+          <template v-if="downloadModal.type === 'confirm'">
+            <div class="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-4 relative">
+              <svg class="w-8 h-8 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight">準備下載離線音檔？</h3>
+            <p class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">這將會把發音快取至手機中，<br>可能需要一點時間與網路流量。</p>
+            <div class="flex gap-3 w-full">
+              <button @click="closeDownloadModal"
+                class="flex-1 py-2.5 px-4 bg-slate-100 text-slate-600 rounded-xl font-bold active:scale-95 transition-all">取消</button>
+              <button @click="executeDownload"
+                class="flex-1 py-2.5 px-4 bg-rose-600 text-white rounded-xl font-bold shadow-lg shadow-rose-500/30 active:scale-95 transition-all">開始下載</button>
+            </div>
+          </template>
+
+          <template v-else-if="downloadModal.type === 'success'">
+            <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
+              <span class="text-3xl">✈️</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight">下載完成！</h3>
+            <p class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">
+              成功快取 <strong class="text-emerald-500 text-lg">{{ downloadModal.successCount }}</strong>
+              個音檔。<br>現在可以安心開啟飛航模式了！
+            </p>
+            <button @click="closeDownloadModal"
+              class="w-full py-2.5 px-4 bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/30 active:scale-95 transition-all">太棒了</button>
+          </template>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { VOCAB_CATEGORIES, downloadOfflineAudio } from './data/jpTyping.js'
+
+    const { createApp, ref, computed, watch, onMounted } = Vue
+    const VOCAB_DATA = VOCAB_CATEGORIES
+
+    createApp({
+      setup() {
+        const isLoading = ref(true);
+        const isDownloading = ref(false);
+        const downloadModal = ref({ show: false, type: 'confirm', successCount: 0 });
+        const closeDownloadModal = () => { downloadModal.value.show = false; };
+        const downloadProgress = ref(0);
+        const downloadTotal = ref(0);
+
+        const startDownload = () => {
+          if (isDownloading.value) return;
+          downloadModal.value = { show: true, type: 'confirm', successCount: 0 };
+        };
+
+        const executeDownload = async () => {
+          downloadModal.value.show = false;
+          isDownloading.value = true;
+          downloadProgress.value = 0;
+          downloadTotal.value = 0;
+
+          try {
+            const successCount = await downloadOfflineAudio((current, total) => {
+              downloadProgress.value = current;
+              downloadTotal.value = total;
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+            downloadModal.value = { show: true, type: 'success', successCount: successCount };
+
+          } catch (error) {
+            console.error('下載過程出錯:', error);
+            alert('下載失敗，請檢查網路連線。');
+          } finally {
+            isDownloading.value = false;
+          }
+        };
+
+        const customList = ref(JSON.parse(localStorage.getItem('jp-custom-list') || '[]'));
+        const knownWords = ref(JSON.parse(localStorage.getItem('jp-known-words') || '[]'));
+
+        // --- 本機資料 UUID 無痛遷移邏輯 ---
+        const migrateLocalList = (arr) => {
+          const allW = Object.values(VOCAB_DATA).flat();
+          let mutated = false;
+          const newArr = arr.map(old => {
+            if (old.id) return old;
+            mutated = true;
+            return allW.find(w => w.ja === old.ja) || null;
+          }).filter(Boolean);
+          return { mutated, newArr };
+        };
+
+        const kl = migrateLocalList(knownWords.value);
+        if (kl.mutated) knownWords.value = kl.newArr;
+        
+        const cl = migrateLocalList(customList.value);
+        if (cl.mutated) customList.value = cl.newArr;
+        // ---------------------------------
+
+        watch(knownWords, (newVal) => {
+          localStorage.setItem('jp-known-words', JSON.stringify(newVal));
+          if (!isSyncingFromCloud.value) {
+            syncToCloud();
+          }
+        }, { deep: true });
+
+        const isKnownWord = (item) => {
+          if (!item || !item.id) return false;
+          return knownWords.value.some(w => w.id === item.id);
+        };
+
+        const toggleKnownWord = (item) => {
+          if (!item.id) return;
+          const index = knownWords.value.findIndex(w => w.id === item.id);
+          if (index > -1) {
+            knownWords.value.splice(index, 1);
+          } else {
+            knownWords.value.push(item);
+          }
+
+          if (hideKnownWords.value && !selectedCategories.value.includes('已學會')) {
+            if (isPlaying.value && item.ja === currentWord.value?.ja) {
+              return;
+            }
+
+            setTimeout(() => {
+              const idxInPlaylist = playlist.value.findIndex(w => w.id === item.id);
+              if (idxInPlaylist > -1) {
+                playlist.value.splice(idxInPlaylist, 1);
+                if (idxInPlaylist < currentIndex.value) {
+                  currentIndex.value--;
+                } else if (idxInPlaylist === currentIndex.value) {
+                  if (currentIndex.value >= playlist.value.length) {
+                    currentIndex.value = Math.max(0, playlist.value.length - 1);
+                  }
+                }
+              }
+            }, 400);
+          }
+        };
+
+        const allCategories = computed(() => {
+          const result = { ...VOCAB_DATA };
+          if (customList.value.length > 0) {
+            result['自訂單字'] = customList.value;
+          }
+          if (knownWords.value.length > 0) {
+            result['已學會'] = knownWords.value;
+          }
+          return result;
+        });
+        const selectedCategories = ref(JSON.parse(localStorage.getItem('jp-selected-cats') || '[]'));
+
+        watch(selectedCategories, (newCats) => {
+          localStorage.setItem('jp-selected-cats', JSON.stringify(newCats));
+          syncToCloud();
+        }, { deep: true });
+
+        const playlist = ref([])
+        const currentIndex = ref(0)
+        const isPlaying = ref(false)
+
+        const isShuffle = ref(localStorage.getItem('jp-shuffle') === 'true');
+        const repeatMode = ref(parseInt(localStorage.getItem('jp-repeat')) || 0);
+        const playbackRate = ref(parseFloat(localStorage.getItem('jp-rate')) || 1.0)
+        const speakChineseOrder = ref(localStorage.getItem('jp-speak-order') !== 'false');
+        const showChinese = ref(true);
+        const showKana = ref(localStorage.getItem('jp-show-kana') !== 'false');
+
+        const currentUtterance = ref(null)
+        const wakeLock = ref(null)
+
+        const isTransitioning = ref(false);
+        const isModalOpen = ref(false);
+        const modalCategory = ref('基礎與代名詞');
+        const searchQuery = ref('');
+
+        const isMultiSelect = ref(localStorage.getItem('jp-multi') === 'true')
+        const hideKnownWords = ref(localStorage.getItem('jp-hide-known') === 'true');
+
+        watch(hideKnownWords, (val) => {
+          localStorage.setItem('jp-hide-known', val);
+          updatePlaylist();
+          currentIndex.value = 0;
+          if (isPlaying.value) stop();
+        });
+        let autoPlayTimer = null;
+        let stepTimer = null;
+        let mainAudioObj = null;
+        const syncStatus = ref('synced');
+        const downloadedHistory = ref([]);
+        const isSyncingFromCloud = ref(false);
+
+        const isDarkMode = ref(localStorage.getItem('jp-dark') === 'true')
+        const voices = ref([]);
+        const selectedVoice = ref(localStorage.getItem('jp-voice') || '');
+        const isFlashcardMode = ref(localStorage.getItem('jp-flashcard') === 'true');
+        const isFlipped = ref(false);
+        const currentWord = computed(
+          () => playlist.value[currentIndex.value] || null,
+        )
+        const currentWordCategory = computed(() => {
+          if (!currentWord.value) return ''
+          for (const [cat, words] of Object.entries(allCategories.value)) {
+            if (words.some((w) => w.ja === currentWord.value.ja)) return cat
+          }
+          return '未分類'
+        })
+
+        const getCatIcon = (cat) => {
+          const icons = {
+            基礎與代名詞: '👥',
+            疑問句工具: '❓',
+            常用動詞: '🏃',
+            形容詞與感覺: '🌈',
+            數字與時間: '🕒',
+            餐廳與交通: '🚗',
+            自訂單字: '⭐',
+            已學會: '✅',
+          }
+          return icons[cat] || '📁'
+        }
+
+        watch(isDarkMode, (val) => {
+          localStorage.setItem('jp-dark', val);
+          if (val) document.body.classList.add('dark-mode');
+          else document.body.classList.remove('dark-mode');
+        }, { immediate: true });
+        watch(isMultiSelect, (v) => localStorage.setItem('jp-multi', v));
+        watch(playbackRate, (v) => {
+          localStorage.setItem('jp-rate', v);
+          if (mainAudioObj) {
+            mainAudioObj.playbackRate = parseFloat(v);
+          }
+        });
+        watch(selectedVoice, (v) => localStorage.setItem('jp-voice', v));
+        watch(isShuffle, (v) => localStorage.setItem('jp-shuffle', v));
+        watch(repeatMode, (v) => localStorage.setItem('jp-repeat', v));
+        watch(speakChineseOrder, (v) => localStorage.setItem('jp-speak-order', v));
+        watch(showKana, (v) => localStorage.setItem('jp-show-kana', v));
+
+        watch(customList, (newVal) => {
+          localStorage.setItem('jp-custom-list', JSON.stringify(newVal));
+
+          if (!isSyncingFromCloud.value) {
+            syncToCloud();
+          }
+
+          if (newVal.length === 0) {
+            if (selectedCategories.value.includes('自訂單字')) {
+              selectedCategories.value = selectedCategories.value.filter(cat => cat !== '自訂單字');
+              updatePlaylist();
+              currentIndex.value = 0;
+              if (isPlaying.value) stop();
+            }
+            if (modalCategory.value === '自訂單字') {
+              modalCategory.value = Object.keys(VOCAB_DATA)[0];
+            }
+          } else if (selectedCategories.value.includes('自訂單字')) {
+            updatePlaylist();
+          }
+        }, { deep: true });
+
+        watch(isFlashcardMode, (val) => {
+          localStorage.setItem('jp-flashcard', val);
+          isFlipped.value = false;
+        });
+
+        watch(currentIndex, (newIdx) => {
+          isFlipped.value = false;
+          if (playlist.value[newIdx]) {
+            localStorage.setItem('jp-last-word-ja', playlist.value[newIdx].ja);
+          }
+        });
+
+        const isCustomWord = (item) => {
+          if (!item || !item.id) return false;
+          return customList.value.some(w => w.id === item.id);
+        };
+        const toggleCustomWord = (item) => {
+          if (!item.id) return;
+          const index = customList.value.findIndex(w => w.id === item.id);
+          if (index > -1) {
+            customList.value.splice(index, 1);
+          } else {
+            customList.value.push(item);
+          }
+        };
+
+        const reportBadAudio = () => {
+          if (!currentWord.value) return;
+
+          if (!downloadedHistory.value.includes(currentWord.value.ja)) {
+            downloadedHistory.value.push(currentWord.value.ja);
+          }
+
+          localStorage.setItem('jp-mp3-history', JSON.stringify(downloadedHistory.value));
+          syncToCloud();
+
+          stopAllAudio();
+          speakFallbackTTS('บันทึกแล้ว', 'ja-JP');
+          console.log(`已標記壞音檔並加入排除名單：${currentWord.value.ja}`);
+        };
+
+        const requestWakeLock = async () => {
+          try {
+            if ('wakeLock' in navigator) {
+              wakeLock.value = await navigator.wakeLock.request('screen')
+              console.log('螢幕常亮啟動')
+
+              wakeLock.value.addEventListener('release', () => {
+                console.log('螢幕常亮已釋放')
+              })
+            }
+          } catch (err) {
+            console.error(`${err.name}, ${err.message}`)
+          }
+        }
+
+        const releaseWakeLock = () => {
+          if (wakeLock.value) {
+            wakeLock.value.release()
+            wakeLock.value = null
+          }
+        }
+
+        watch(isPlaying, (val) => {
+          if (val) {
+            requestWakeLock()
+          } else {
+            releaseWakeLock()
+          }
+        })
+
+        const touchStartX = ref(0);
+
+        const handleTouchStart = (e) => {
+          touchStartX.value = e.touches[0].clientX;
+        };
+
+        const handleTouchEnd = (e) => {
+          const touchEndX = e.changedTouches[0].clientX;
+          const diffX = touchStartX.value - touchEndX;
+
+          if (Math.abs(diffX) > 50) {
+            if (diffX < 0) {
+              prev();
+            } else {
+              next();
+            }
+          }
+        };
+
+        const updatePlaylist = () => {
+          let list = []
+          if (selectedCategories.value.length === 0) {
+            list = Object.values(allCategories.value).flat()
+          } else {
+            selectedCategories.value.forEach((cat) => {
+              list = [...list, ...allCategories.value[cat]]
+            })
+          }
+
+          if (hideKnownWords.value && !selectedCategories.value.includes('已學會')) {
+            list = list.filter(word => !isKnownWord(word));
+          }
+
+          const seen = new Set();
+          list = list.filter(word => {
+            if (seen.has(word.ja)) return false;
+            seen.add(word.ja);
+            return true;
+          });
+          playlist.value = list
+
+          if (isShuffle.value) {
+            shuffleArray(playlist.value)
+          }
+        }
+
+        const shuffleArray = (array) => {
+          for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+              ;[array[i], array[j]] = [array[j], array[i]]
+          }
+        }
+
+        const toggleCategory = (cat) => {
+          if (cat === 'all') {
+            selectedCategories.value = [];
+          } else {
+            if (!isMultiSelect.value) {
+              selectedCategories.value = [cat];
+            } else {
+              const idx = selectedCategories.value.indexOf(cat);
+              if (idx > -1) {
+                selectedCategories.value.splice(idx, 1);
+              } else {
+                selectedCategories.value.push(cat);
+              }
+            }
+          }
+
+          updatePlaylist();
+          currentIndex.value = 0;
+          if (isPlaying.value) stop();
+
+          setTimeout(() => {
+            const targetCat = cat === 'all' ? 'all' : cat;
+            const activeBtn = document.querySelector(`.cat-btn-${targetCat}`);
+            if (activeBtn) {
+              activeBtn.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center'
+              });
+            }
+          }, 100);
+        };
+
+        const stopAllAudio = () => {
+          clearTimeout(stepTimer); // 清除播放間格的計時器，阻斷前一個單字的殘留邏輯
+
+          if (currentUtterance.value) {
+            currentUtterance.value.onend = null;
+            currentUtterance.value.onerror = null;
+          }
+          window.speechSynthesis.cancel();
+
+          if (mainAudioObj) {
+            mainAudioObj.onended = null;
+            mainAudioObj.onerror = null;
+            mainAudioObj.pause();
+          }
+        };
+
+        const speakFallbackTTS = (text, lang, onEnd) => {
+          // 修正 Web TTS 發音問題與斜線唸出的問題
+          const ttsFixMap = { '暇': 'ひま', '何': 'なに' };
+          let queryText = text;
+          if (lang.startsWith('ja')) {
+             queryText = (ttsFixMap[text] || text).replace(/\s*\/\s*/g, '。');
+          } else if (lang === 'zh-TW') {
+             queryText = text.replace(/\s*\/\s*/g, '，');
+          }
+          
+          const ut = new SpeechSynthesisUtterance(queryText);
+          currentUtterance.value = ut; // 儲存實體以便 stopAllAudio 攔截
+
+          ut.lang = lang;
+          ut.rate = playbackRate.value || 1.0;
+          const currentVoices = window.speechSynthesis.getVoices();
+          if (lang.startsWith('ja')) {
+            ut.volume = 0.6; // 降低日文 TTS 預設音量
+            let targetVoice = currentVoices.find(v => v.name === selectedVoice.value) || currentVoices.find(v => v.lang.includes('ja'));
+            if (targetVoice) ut.voice = targetVoice;
+          } else if (lang === 'zh-TW') {
+            ut.volume = 1.0;
+            let chineseVoice = currentVoices.find(v => v.lang.includes('zh-TW'));
+            if (chineseVoice) ut.voice = chineseVoice;
+          }
+
+          ut.onend = () => { if (onEnd) onEnd(); };
+          ut.onerror = (e) => {
+            // 排除 cancel 造成的錯誤回呼，只處理真正的異常
+            if (e.error !== 'canceled' && onEnd) onEnd();
+          };
+          window.speechSynthesis.speak(ut);
+        };
+
+        const playMediaWithFallback = async (text, type, onEnd) => {
+          stopAllAudio();
+          if (!mainAudioObj) return;
+
+          if (type === 'ja' && downloadedHistory.value.includes(text)) {
+            speakFallbackTTS(text, 'ja-JP', onEnd);
+            return;
+          }
+
+          const langCode = type === 'ja' ? 'ja' : 'zh';
+          const safeText = text.replace(/[\/（）\s〜]/g, '_');
+          const audioUrl = `./audio/JP/${langCode}_${safeText}.mp3`;
+
+          mainAudioObj.pause();
+          mainAudioObj.src = audioUrl;
+          mainAudioObj.load();
+          mainAudioObj.playbackRate = parseFloat(playbackRate.value);
+          // 動態調整音量：降低日文實體音檔基準音量來平衡微弱的中文
+          if (type === 'ja') {
+            mainAudioObj.volume = 0.6;
+          } else {
+            mainAudioObj.volume = 1.0;
+          }
+
+          let isResolved = false; // 狀態鎖：防止 catch 與 onerror 雙重觸發
+
+          const triggerFallback = () => {
+            if (isResolved) return;
+            isResolved = true;
+            speakFallbackTTS(text, type === 'ja' ? 'ja-JP' : 'zh-TW', onEnd);
+          };
+
+          mainAudioObj.onended = () => {
+            if (isResolved) return;
+            isResolved = true;
+            if (onEnd) onEnd();
+          };
+
+          mainAudioObj.onerror = () => {
+            triggerFallback();
+          };
+
+          try {
+            await mainAudioObj.play();
+          } catch (e) {
+            if (e.name === 'AbortError' || e.message.includes('interrupted')) {
+              return; // 排除因為被 pause() 截斷的錯誤，避免觸發前一個字的 TTS
+            }
+            triggerFallback();
+          }
+        };
+
+        const replayCurrent = (word) => {
+          const target = word || currentWord.value;
+          if (target) {
+            stopAllAudio();
+            playMediaWithFallback(target.ja, 'ja');
+          }
+        };
+
+        const playCurrent = () => {
+          if (!currentWord.value || !isPlaying.value) return;
+          stopAllAudio();
+
+          if (speakChineseOrder.value) {
+            playMediaWithFallback(currentWord.value.zh, 'zh', () => {
+              if (!isPlaying.value) return;
+              stepTimer = setTimeout(() => {
+                if (!isPlaying.value) return;
+                playMediaWithFallback(currentWord.value.ja, 'ja', () => {
+                  if (isPlaying.value) {
+                    stepTimer = setTimeout(() => { if (isPlaying.value) handleNextAuto(); }, 200);
+                  }
+                });
+              }, 300);
+            });
+          } else {
+            playMediaWithFallback(currentWord.value.ja, 'ja', () => {
+              if (!isPlaying.value) return;
+              stepTimer = setTimeout(() => {
+                if (!isPlaying.value) return;
+                playMediaWithFallback(currentWord.value.zh, 'zh', () => {
+                  if (isPlaying.value) {
+                    stepTimer = setTimeout(() => { if (isPlaying.value) handleNextAuto(); }, 200);
+                  }
+                });
+              }, 300);
+            });
+          }
+
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: currentWord.value.ja,
+              artist: currentWord.value.zh,
+              album: `進度: ${currentIndex.value + 1}/${playlist.value.length}`
+            });
+          }
+        };
+
+        const handleContentClick = () => {
+          if (isPlaying.value) {
+            if (isFlashcardMode.value) isFlipped.value = !isFlipped.value;
+            return;
+          }
+          if (isFlashcardMode.value) {
+            isFlipped.value = !isFlipped.value;
+            if (currentWord.value) playMediaWithFallback(currentWord.value.ja, 'ja');
+          } else {
+            replayCurrent();
+          }
+        };
+
+        const toggleFlashcardMode = () => {
+          isFlashcardMode.value = !isFlashcardMode.value;
+          if (isFlashcardMode.value && isPlaying.value) {
+            stop();
+          }
+        };
+        const handleNextAuto = () => {
+          if (!isPlaying.value) return
+          clearTimeout(autoPlayTimer);
+          autoPlayTimer = setTimeout(() => {
+            if (!isPlaying.value) return
+
+            if (hideKnownWords.value && currentWord.value && isKnownWord(currentWord.value) && !selectedCategories.value.includes('已學會')) {
+              playlist.value.splice(currentIndex.value, 1);
+
+              if (playlist.value.length === 0) {
+                stop();
+                return;
+              }
+              if (currentIndex.value >= playlist.value.length) {
+                currentIndex.value = 0;
+                if (repeatMode.value === 1) {
+                  stop();
+                  return;
+                }
+              }
+              playCurrent();
+              return;
+            }
+            if (repeatMode.value === 2) {
+              playCurrent()
+            } else {
+              if (currentIndex.value < playlist.value.length - 1) {
+                currentIndex.value++
+                playCurrent()
+              } else {
+                if (repeatMode.value === 0) {
+                  currentIndex.value = 0
+                  playCurrent()
+                } else {
+                  isPlaying.value = false
+                }
+              }
+            }
+          }, 500)
+        }
+
+        const togglePlay = () => {
+          clearTimeout(autoPlayTimer);
+          if (isPlaying.value) {
+            isPlaying.value = false;
+            stopAllAudio();
+            const silentAudio = document.getElementById('silent-audio');
+            if (silentAudio) silentAudio.pause();
+          } else {
+            isPlaying.value = true;
+            isFlashcardMode.value = false;
+            isFlipped.value = false;
+
+            const silentAudio = document.getElementById('silent-audio');
+            if (silentAudio) silentAudio.play().catch(() => { });
+
+            if (mainAudioObj) {
+              mainAudioObj.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
+              mainAudioObj.play().catch(() => { });
+            }
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+
+            setTimeout(() => {
+              playCurrent();
+            }, 50);
+          }
+        };
+
+        const stop = () => {
+          isPlaying.value = false
+          stopAllAudio()
+          syncToCloud()
+        }
+
+        const next = () => {
+          if (playlist.value.length === 0) return;
+          clearTimeout(autoPlayTimer);
+          stopAllAudio()
+          isTransitioning.value = true;
+          setTimeout(() => {
+            if (hideKnownWords.value && currentWord.value && isKnownWord(currentWord.value) && !selectedCategories.value.includes('已學會')) {
+              playlist.value.splice(currentIndex.value, 1);
+              if (currentIndex.value >= playlist.value.length) currentIndex.value = 0;
+            } else {
+              if (currentIndex.value < playlist.value.length - 1) {
+                currentIndex.value++
+              } else {
+                currentIndex.value = 0
+              }
+            }
+
+            if (isPlaying.value) playCurrent()
+            setTimeout(() => { isTransitioning.value = false; }, 50);
+          }, 150);
+        }
+
+        const prev = () => {
+          if (playlist.value.length === 0) return;
+          clearTimeout(autoPlayTimer);
+          stopAllAudio()
+          isTransitioning.value = true;
+          setTimeout(() => {
+            if (hideKnownWords.value && currentWord.value && isKnownWord(currentWord.value) && !selectedCategories.value.includes('已學會')) {
+              playlist.value.splice(currentIndex.value, 1);
+              if (currentIndex.value >= playlist.value.length) currentIndex.value = Math.max(0, playlist.value.length - 1);
+            } else {
+              if (currentIndex.value > 0) {
+                currentIndex.value--
+              } else {
+                currentIndex.value = playlist.value.length - 1
+              }
+            }
+
+            if (isPlaying.value) playCurrent()
+            setTimeout(() => { isTransitioning.value = false; }, 50);
+          }, 150);
+        }
+
+        watch(isShuffle, (newVal) => {
+          stopAllAudio()
+
+          if (newVal) {
+            updatePlaylist()
+            shuffleArray(playlist.value)
+          } else {
+            updatePlaylist()
+          }
+
+          currentIndex.value = 0
+
+          if (isPlaying.value) {
+            playCurrent()
+          }
+        })
+
+        const filteredModalWords = computed(() => {
+          if (!searchQuery.value.trim()) {
+            return allCategories.value[modalCategory.value] || [];
+          }
+
+          const q = searchQuery.value.toLowerCase();
+          const allWordsFlattened = Object.values(allCategories.value).flat();
+
+          const uniqueWords = Array.from(
+            new Map(allWordsFlattened.map(item => [item.ja, item])).values()
+          );
+
+          return uniqueWords.filter(item =>
+            item.ja.toLowerCase().includes(q) ||
+            item.zh.toLowerCase().includes(q) ||
+            (item.kana && item.kana.toLowerCase().includes(q))
+          );
+        });
+
+        watch(isDarkMode, (val) => {
+          if (val) document.body.classList.add('dark-mode');
+          else document.body.classList.remove('dark-mode');
+        });
+
+        const updateVoices = () => {
+          const allVoices = window.speechSynthesis.getVoices();
+          voices.value = allVoices.filter(v => v.lang.includes('ja'));
+
+          if (!selectedVoice.value && voices.value.length > 0) {
+            selectedVoice.value = voices.value[0].name;
+          }
+        };
+
+        const resetAllProgress = () => {
+          if (confirm('確定要清除所有播放進度，並從頭開始嗎？')) {
+            localStorage.removeItem('jp-selected-cats');
+            localStorage.removeItem('jp-last-word-ja');
+            selectedCategories.value = [];
+            currentIndex.value = 0;
+            updatePlaylist();
+            if (isPlaying.value) stop();
+            syncToCloud();
+            alert('進度已重置');
+          }
+        };
+
+        let cachedCloudJpData = {};
+        let initAuthListener = null;
+        let loadProgressFromCloud = null;
+        let saveProgressToCloud = null;
+
+        const syncToCloud = async () => {
+          if (typeof saveProgressToCloud !== 'function') return;
+          syncStatus.value = 'syncing';
+          try {
+            const payload = {
+              ...cachedCloudJpData,
+              customList: JSON.parse(JSON.stringify(customList.value)),
+              mp3History: JSON.parse(JSON.stringify(downloadedHistory.value)),
+              knownWords: JSON.parse(JSON.stringify(knownWords.value)),
+              lastSelectedCategories: selectedCategories.value,
+              lastPlayedWord: localStorage.getItem('jp-last-word-ja'),
+              playerLastUpdated: Date.now()
+            };
+            await saveProgressToCloud('jp', payload);
+            setTimeout(() => { syncStatus.value = 'synced'; }, 600);
+          } catch (error) {
+            syncStatus.value = 'error';
+          }
+        };
+
+        const initializeCloudSync = async () => {
+          try {
+            const [authModule, dbModule] = await Promise.all([
+              import('./js/auth.js'),
+              import('./js/dbService.js'),
+            ]);
+
+            initAuthListener = authModule.initAuthListener;
+            loadProgressFromCloud = dbModule.loadProgressFromCloud;
+            saveProgressToCloud = dbModule.saveProgressToCloud;
+
+            if (typeof initAuthListener !== 'function') {
+              isLoading.value = false;
+              return;
+            }
+
+            initAuthListener(
+              async (user) => {
+                console.log('Verified User:', user.email);
+
+                if (typeof loadProgressFromCloud !== 'function') {
+                  isLoading.value = false;
+                  return;
+                }
+
+                const cloudData = await loadProgressFromCloud();
+
+                if (cloudData && cloudData.jp) {
+                  cachedCloudJpData = cloudData.jp;
+                  isSyncingFromCloud.value = true;
+
+                  if (cloudData.jp.lastSelectedCategories) {
+                    selectedCategories.value = cloudData.jp.lastSelectedCategories;
+                  }
+                  if (cloudData.jp.mp3History) {
+                    downloadedHistory.value = cloudData.jp.mp3History;
+                  }
+                  if (cloudData.jp.customList) {
+                    customList.value = cloudData.jp.customList;
+                  }
+                  if (cloudData.jp.lastPlayedWord) {
+                    localStorage.setItem('jp-last-word-ja', cloudData.jp.lastPlayedWord);
+                  }
+                  if (cloudData.jp.knownWords) {
+                    knownWords.value = cloudData.jp.knownWords;
+                  }
+
+                  // --- Firebase 資料 UUID 無痛遷移邏輯 ---
+                  const allW = Object.values(VOCAB_DATA).flat();
+                  let migrated = false;
+                  const migrateCloudList = (arr) => arr.map(old => {
+                    if (old.id) return old;
+                    migrated = true;
+                    return allW.find(w => w.ja === old.ja) || null;
+                  }).filter(Boolean);
+
+                  knownWords.value = migrateCloudList(knownWords.value);
+                  customList.value = migrateCloudList(customList.value);
+                  if (migrated) syncToCloud(); // 覆寫舊格式回雲端
+                  // --------------------------------------
+
+                  updatePlaylist();
+                  restoreLastPosition();
+
+                  setTimeout(() => {
+                    isSyncingFromCloud.value = false;
+                    isLoading.value = false;
+                  }, 200);
+
+                } else {
+                  isLoading.value = false;
+                }
+              },
+              (errorMsg) => {
+                if (errorMsg) console.warn('登入狀態異常:', errorMsg);
+                console.log('⚠️ 尚未登入，導回大廳');
+                window.location.href = 'index.html';
+              }
+            );
+          } catch (error) {
+            console.warn('雲端模組載入失敗，將繼續使用本地模式', error);
+            isLoading.value = false;
+          }
+        };
+
+        const restoreLastPosition = () => {
+          const lastWordJa = localStorage.getItem('jp-last-word-ja');
+          if (lastWordJa && playlist.value.length > 0) {
+            const savedIndex = playlist.value.findIndex(w => w.ja === lastWordJa);
+            if (savedIndex > -1) {
+              currentIndex.value = savedIndex;
+            }
+          }
+        };
+
+        onMounted(() => {
+          mainAudioObj = document.getElementById('main-player');
+
+          window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+
+            if (e.code === 'Space') {
+              e.preventDefault();
+              togglePlay();
+            } else if (e.code === 'ArrowRight') {
+              next();
+            } else if (e.code === 'ArrowLeft') {
+              prev();
+            }
+          });
+          updatePlaylist();
+          restoreLastPosition();
+          window.speechSynthesis.onvoiceschanged = updateVoices;
+          updateVoices();
+
+          document.addEventListener('visibilitychange', () => {
+            if (wakeLock.value !== null && document.visibilityState === 'visible' && isPlaying.value) {
+              requestWakeLock();
+            }
+          });
+
+          initializeCloudSync();
+
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.setActionHandler('play', togglePlay);
+            navigator.mediaSession.setActionHandler('pause', togglePlay);
+            navigator.mediaSession.setActionHandler('previoustrack', prev);
+            navigator.mediaSession.setActionHandler('nexttrack', next);
+          }
+        });
+
+        return {
+          allCategories,
+          selectedCategories,
+          playlist,
+          currentIndex,
+          isPlaying,
+          currentWord,
+          currentWordCategory,
+          isShuffle,
+          repeatMode,
+          playbackRate,
+          speakChineseOrder,
+          showChinese,
+          showKana,
+          getCatIcon,
+          toggleCategory,
+          togglePlay,
+          next,
+          prev,
+          updatePlaylist,
+          replayCurrent,
+          isModalOpen,
+          modalCategory,
+          handleTouchStart,
+          handleTouchEnd,
+          isTransitioning,
+          isMultiSelect,
+          searchQuery,
+          filteredModalWords,
+          isDarkMode,
+          voices,
+          selectedVoice,
+          isCustomWord,
+          toggleCustomWord,
+          syncStatus,
+          downloadedHistory,
+          reportBadAudio,
+          isFlashcardMode,
+          isFlipped,
+          hideKnownWords,
+          isLoading,
+          isDownloading,
+          downloadModal,
+          closeDownloadModal,
+          startDownload,
+          executeDownload,
+          downloadProgress,
+          downloadTotal,
+          resetAllProgress,
+          isKnownWord,
+          toggleKnownWord,
+          handleContentClick,
+          toggleFlashcardMode
+        }
+      }
+    }).mount('#app')
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            console.log('ServiceWorker 註冊成功:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('ServiceWorker 註冊失敗:', error);
+          });
+      });
+    }
+  </script>
+</body>
+
+</html>

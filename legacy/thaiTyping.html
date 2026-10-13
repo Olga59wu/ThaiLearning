@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>泰文單字大師</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <style>
+        [v-cloak] { 
+            display: none !important; 
+        }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #f8fafc;
+            overflow: hidden;
+            height: 100dvh;
+            position: fixed;
+            width: 100%;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 1. 泰文字體優化 */
+        .thai-text {
+            line-height: 1.8;
+            letter-spacing: 0.02em; 
+            word-break: break-word;
+            padding: 10px 0;
+        }
+
+        /* 2. 🌟 優化泰文字群組在單個 span 裡的疊加 🌟 */
+        .Thai-typography-fix {
+            display: inline-block;
+        }
+
+        /* 🌟 下一個字閃爍與底線動畫 🌟 */
+        @keyframes guide-pulse {
+            0%, 100% {
+                color: #3b82f6; /* 藍色 */
+                text-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+                text-decoration-color: #3b82f6; /* 藍色底線 */
+            }
+            50% {
+                color: #cbd5e1; /* slate-300 灰色 (與底層一致) */
+                text-shadow: none;
+                text-decoration-color: transparent; /* 底線消失 */
+            }
+        }
+
+        .next-char-guide > span:last-child {
+            /* 只讓最後一個字 (也就是 nextCharToType) 閃爍和有底線 */
+            animation: guide-pulse 1.5s infinite;
+            text-decoration: underline; /* 使用原生 text-decoration 最安全，不會破壞疊加 */
+            text-decoration-thickness: 3px;
+            text-underline-offset: 8px; /* 距離字體底部遠一點 */
+        }
+        /* 3. 完美的藍色底線指引 */
+        /* .next-char-guide::after {
+            content: '';
+            position: absolute;
+            bottom: -6px; 
+            left: 0; 
+            width: 100%;
+            height: 3px;
+            background-color: #3b82f6;
+            border-radius: 99px;
+            animation: guide-pulse 1.5s infinite;
+        } */
+
+
+        #app { height: 100%; display: flex; flex-direction: column; }
+
+        /* 答錯時的抖動樣式 */
+        @keyframes shake {
+          0%, 100% { transform: translateX(0) scale(1.02); }
+          25% { transform: translateX(-6px) scale(1.02); }
+          75% { transform: translateX(6px) scale(1.02); }
+        }
+        /* .active-wrong {
+          animation: shake 0.3s ease-in-out 0s 1;
+          background-color: #fef2f2 !important; 
+          border-color: #ef4444 !important;    
+          box-shadow: 0 0 0 2px #ef4444 inset, 0 10px 25px -5px rgba(239, 68, 68, 0.3);  
+        } */
+
+        /* 確保打錯時字卡不要抖動，移除原本樣式中 class 綁定的 shake */
+        .active-wrong {
+            /* 這裡可以留空，或者只改背景色但不加動畫 */
+            background-color: #fffafa !important; 
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+  
+ /* 🌟 大字卡抽換動畫 (真實物理上滑效果) */
+.card-enter-active {
+    /* 加上 !important 強制覆蓋所有其他設定 */
+    transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    position: relative;
+    z-index: 1 !important; /* 確保新卡在底層 */
+}
+
+.card-leave-active {
+    transition: all 0.35s ease-in !important;
+    position: relative;
+    z-index: 50 !important; /* 確保舊卡在最上層飛走 */
+}
+
+.card-enter-from {
+    opacity: 0;
+    /* 從下方縮小狀態浮現 */
+    transform: scale(0.85) translateY(40px);
+}
+
+.card-leave-to {
+    opacity: 0;
+    /* 狠狠往上飛走並傾斜 */
+    transform: translateY(-120%) rotate(5deg);
+}
+
+        .bg-slate-50\/70 {
+            background-color: rgba(248, 250, 252, 0.7);
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+    <!-- 加入音訊播放器 -->
+    <audio id="main-player" playsinline preload="auto"></audio>
+
+    <div id="app" class="w-full max-w-md mx-auto relative" v-cloak>
+      <div v-if="isLoading" class="fixed inset-0 flex items-center justify-center bg-white z-[100]">
+        <div class="text-blue-500 font-bold animate-pulse">LOADING...</div>
+      </div>
+      <template v-else>
+        <!-- 頂部統計區 -->
+        <div class="p-3 shrink-0">
+          <div class="bg-white rounded-[1.5rem] p-4 shadow-sm border border-slate-100">
+              <div class="flex items-center justify-between mb-3"> <a href="index.html" class="flex items-center gap-1 px-2.5 py-1.5 -ml-1 text-[11px] font-bold text-slate-500 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-all w-fit">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+      </svg>
+      回大廳
+    </a>
+
+    <div class="flex items-center gap-1.5">
+      <a href="thaiPlayer.html" class="flex items-center gap-1 px-2.5 py-1.5 bg-white text-blue-500 border border-blue-100 rounded-lg hover:bg-blue-50 transition-colors text-[11px] font-bold shadow-sm" title="泰文隨身聽">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        隨身聽
+      </a>
+
+      <button 
+        @click="startDownload"
+        :disabled="isDownloading"
+        :class="['flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-colors text-[11px] font-bold shadow-sm',
+                isDownloading ? 'bg-indigo-50 text-indigo-400 cursor-wait' : 'bg-white text-indigo-500 border border-indigo-100 hover:bg-indigo-50']"
+      >
+        <svg v-if="isDownloading" class="animate-spin h-3.5 w-3.5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        
+        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        
+        {{ isDownloading ? `下載中 ${downloadProgress}/${downloadTotal}` : '離線語音' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="flex justify-between items-center mb-3"> <h1 class="text-base font-black text-blue-600 flex items-center gap-2">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      THAI MASTER
+    </h1>
+    <button @click="initGame(false)" class="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg active:rotate-180 transition-all duration-300 shadow-sm" title="重置遊戲">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+    </button>
+  </div>
+                
+              <div class="flex gap-2 overflow-x-auto no-scrollbar pt-2 pb-4 mb-1 flex-nowrap w-full items-center pl-1.5 pr-4 origin-top scale-95">
+                <!-- 全部按鈕 -->
+                <button 
+                    @click="resetCategories"
+                    :class="['h-9 px-4 rounded-full border text-[10px] font-black transition-all duration-300 flex-shrink-0 flex items-center justify-center shadow-sm', 
+                            selectedCategories.length === 0 
+                            ? 'bg-blue-50 text-blue-600 border-blue-400 shadow-blue-100/50' 
+                            : 'bg-white text-slate-400 border-slate-100']"
+                >
+                    全部
+                </button>
+
+                <!-- 分類圓形按鈕 -->
+                <button 
+                    v-for="(list, cat) in allCategories" 
+                    :key="cat"
+                    @click="toggleCategory(cat)"
+                    :class="['w-10 h-10 rounded-full border transition-all duration-300 flex-shrink-0 flex items-center justify-center text-lg relative shadow-sm', 
+                            selectedCategories.includes(cat) 
+                            ? 'bg-blue-50 border-blue-500 ring-4 ring-blue-50/50 scale-105 z-10' 
+                            : 'bg-white border-slate-50 text-slate-600 hover:border-slate-200']"
+                >
+                    <!-- 已移除底部的指示線 -->
+
+                    <span v-if="cat === '基礎與代名詞'">👥</span>
+                    <span v-else-if="cat === '疑問句工具'">❓</span>
+                    <span v-else-if="cat === '常用動詞'">🏃</span>
+                    <span v-else-if="cat === '形容詞與感覺'">🌈</span>
+                    <span v-else-if="cat === '數字與時間'">🕒</span>
+                    <span v-else-if="cat === '餐廳與交通'">🚗</span>
+                    <span v-else-if="cat === '自訂單字'">⭐</span>
+                    <span v-else-if="cat === '已學會'">✅</span>
+                    <span v-else class="text-[10px] font-bold text-slate-400">{{ cat.substring(0,1) }}</span>
+                </button>
+            </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="text-center p-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="text-[8px] text-slate-400 font-bold uppercase tracking-widest">正確率</div>
+                        <div class="text-sm font-black">{{ accuracy }}%</div>
+                    </div>
+                    <div class="text-center p-1.5 bg-green-50 rounded-xl border border-green-100">
+                        <div class="text-[8px] text-green-600 font-bold uppercase tracking-widest">正確</div>
+                        <div class="text-sm font-black">{{ stats.correct }}</div>
+                    </div>
+                    <div class="text-center p-1.5 bg-blue-50 rounded-xl border border-blue-100">
+                        <div class="text-[8px] text-blue-500 font-bold uppercase tracking-widest">剩餘</div>
+                        <div class="text-sm font-black">{{ Math.max(0, words.length - currentIndex) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 單一單字展示區 (大字卡模式) -->
+        <div class="flex-initial flex flex-col items-center justify-start px-6 pt-2 pb-4 mt-2 relative overflow-visible"
+          @touchstart="handleTouchStart" 
+          @touchend="handleTouchEnd">
+          <div class="w-full grid">
+          <Transition name="card">
+                <!-- 完成狀態 -->
+                <div v-if="isFinished" class="col-start-1 row-start-1 w-full text-center flex flex-col items-center">
+                    <div class="text-6xl mb-4">🎉</div>
+                    <h2 class="text-2xl font-black text-emerald-500">練習完成！</h2>
+                    <p class="text-slate-400 mt-2">正確率: {{ accuracy }}%</p>
+                    <button @click="initGame(true)" class="mt-6 px-6 py-3 bg-blue-500 text-white rounded-full font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-600 active:scale-95 transition-all">
+                        再來一次
+                    </button>
+                </div>
+                
+                <!-- 學習狀態 (單張大字卡) -->
+                <div v-else-if="currentWord" :key="currentWord.th" 
+                  class="col-start-1 row-start-1 w-full bg-white rounded-[2rem] shadow-xl border border-slate-100 p-8 flex flex-col items-center justify-center relative">
+                  
+                  <!-- 手動發音按鈕 -->
+                  <button @click="playCurrentWord" class="absolute top-4 right-4 p-2 text-slate-300 hover:text-blue-500 active:scale-90 transition-all">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-80"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                  </button>
+
+                  <!-- 當前進度提示 -->
+                  <div class="absolute top-5 left-5 text-xs font-bold text-slate-300">
+                      {{ currentIndex + 1 }} / {{ words.length }}
+                  </div>
+
+                  <div class="absolute bottom-4 right-4 flex items-center gap-1 z-20">
+                    <button
+                        @click.stop="toggleKnownWord(currentWord)"
+                        class="p-2 active:scale-75 transition-transform"
+                        title="標記為已學會"
+                    >
+                        <svg v-if="isKnownWord(currentWord)" class="text-emerald-500 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        <svg v-else class="text-slate-200 hover:text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>
+                    </button>
+
+                    <button
+                        @click.stop="toggleCustomWord(currentWord)"
+                        class="p-2 active:scale-75 transition-transform"
+                        title="加入自訂單字"
+                    >
+                        <svg v-if="isCustomWord(currentWord)" class="text-yellow-400 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <svg v-else class="text-slate-300 hover:text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </button>
+                </div>
+                  <!-- 精細控制每個字母的顏色與指引 -->
+                  <div :class="[
+                      'font-bold thai-text mb-6 w-full mt-4 cursor-pointer active:scale-95 transition-transform duration-300 flex justify-center items-start relative',
+                      currentWord.th.length > 10 ? 'text-3xl' : 'text-5xl'
+                  ]" @click="playCurrentWord">
+                      
+                      <div class="relative inline-block Thai-typography-fix">
+                          <span class="text-slate-200 Thai-typography-fix">{{ currentWord.th }}</span>
+
+                          <span v-if="!isWrong && nextCharToType"
+                                class="absolute top-0 left-0 whitespace-pre pointer-events-none Thai-typography-fix next-char-guide">
+                              <span class="opacity-0 Thai-typography-fix">{{ matchedText }}</span><span class="Thai-typography-fix">{{ nextCharToType }}</span>
+                          </span>
+
+                          <span class="absolute top-0 left-0 whitespace-pre pointer-events-none Thai-typography-fix"
+                                :class="isWrong ? 'text-red-500' : 'text-emerald-500'">
+                              {{ isWrong ? inputValue : matchedText }}
+                          </span>
+                      </div>
+                      
+                  </div>
+                  
+                  <div :class="[
+                      'text-lg font-bold px-4 py-1.5 rounded-full transition-all duration-300',
+                      isTransitioning ? 'bg-blue-50 text-blue-600 opacity-100 scale-110 shadow-sm' : 'bg-slate-50 text-slate-400 opacity-0 scale-95'
+                  ]">
+                      {{ currentWord.zh }}
+                  </div>
+              </div>
+            </Transition>
+            </div>  
+        </div>
+
+        <!-- 輸入區 -->
+        <div class="p-2 bg-slate-50/70 backdrop-blur-md border-t border-slate-200 shrink-0 z-50">
+            <div :class="[
+                'p-3 rounded-2xl shadow-lg border-2 flex items-center gap-3 transition-all duration-200',
+                isWrong ? 'border-red-500 bg-red-50 shadow-red-200' : 'border-blue-500 bg-white shadow-blue-100'
+            ]">
+                <div :class="['transition-colors', isWrong ? 'text-red-600' : 'text-blue-600 opacity-50']">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><path d="M6 8h.01"></path><path d="M10 8h.01"></path><path d="M14 8h.01"></path><path d="M18 8h.01"></path><path d="M8 12h.01"></path><path d="M12 12h.01"></path><path d="M16 12h.01"></path><path d="M7 16h10"></path></svg>
+                </div>
+                <input
+                    ref="inputRef"
+                    type="text"
+                    inputmode="search"
+                    v-model="inputValue"
+                    @input="handleInput"
+                    @blur="keepFocus"
+                    @focus="initAudioEngine"
+                    name="thai_search_final_v9" 
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    :placeholder="isFinished ? '已完成！' : '按空白驗證跳轉...'"
+                    :disabled="isFinished"
+                    class="flex-1 bg-transparent text-lg font-bold outline-none h-10 placeholder:text-slate-300 disabled:opacity-50"
+                />
+            </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-100 pb-4">
+          <div class="grid grid-cols-4 gap-y-2 text-[10px] text-slate-400">
+              <div class="flex items-center justify-center gap-1"><span>👥</span> 基礎</div>
+              <div class="flex items-center justify-center gap-1"><span>❓</span> 疑問</div>
+              <div class="flex items-center justify-center gap-1"><span>🏃</span> 動詞</div>
+              <div class="flex items-center justify-center gap-1"><span>🌈</span> 形容</div>
+              <div class="flex items-center justify-center gap-1"><span>🕒</span> 時間</div>
+              <div class="flex items-center justify-center gap-1"><span>🚗</span> 交通</div>
+              <div class="flex items-center justify-center gap-1"><span>⭐</span> 自訂</div>
+              <div class="flex items-center justify-center gap-1"><span>✅</span> 學會</div>
+          </div>
+      </div>
+      <div v-if="downloadModal.show" class="fixed inset-0 z-[120] flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" @click="closeDownloadModal"></div>
+        
+        <div class="relative bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-4 transform transition-all flex flex-col items-center text-center">
+          
+          <template v-if="downloadModal.type === 'confirm'">
+            <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4 relative">
+              <svg class="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight">準備下載離線音檔？</h3>
+            <p class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">這將會把發音快取至手機中，<br>可能需要一點時間與網路流量。</p>
+            <div class="flex gap-3 w-full">
+              <button @click="closeDownloadModal" class="flex-1 py-2.5 px-4 bg-slate-100 text-slate-600 rounded-xl font-bold active:scale-95 transition-all">取消</button>
+              <button @click="executeDownload" class="flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition-all">開始下載</button>
+            </div>
+          </template>
+
+          <template v-else-if="downloadModal.type === 'success'">
+            <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
+              <span class="text-3xl">✈️</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight">下載完成！</h3>
+            <p class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">
+              成功快取 <strong class="text-emerald-500 text-lg">{{ downloadModal.successCount }}</strong> 個音檔。<br>現在打字練習時，發音會更加流暢無延遲！
+            </p>
+            <button @click="closeDownloadModal" class="w-full py-2.5 px-4 bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/30 active:scale-95 transition-all">太棒了</button>
+          </template>
+
+        </div>
+      </div>
+      </template>
+    </div>
+
+    <script type="module">
+        import { VOCAB_CATEGORIES, FULL_VOCAB, downloadOfflineAudio } from './data/thaiTyping.js'
+        const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+              const isDownloading = ref(false);
+              // 彈窗狀態管理
+              const downloadModal = ref({ show: false, type: 'confirm', successCount: 0 });
+              const closeDownloadModal = () => { downloadModal.value.show = false; };
+              const downloadProgress = ref(0);
+              const downloadTotal = ref(0);
+
+              // 1. 點擊導覽列按鈕時，不再用 confirm()，而是彈出我們自己的詢問視窗
+const startDownload = () => {
+  if (isDownloading.value) return;
+  downloadModal.value = { show: true, type: 'confirm', successCount: 0 };
+};
+
+                // 2. 在自訂視窗點擊「開始下載」後，才會執行這段
+                const executeDownload = async () => {
+                  // 關閉詢問視窗，並讓導覽列按鈕開始轉圈圈
+                  downloadModal.value.show = false;
+                  isDownloading.value = true;
+                  downloadProgress.value = 0;
+                  downloadTotal.value = 0;
+
+                  try {
+                    const successCount = await downloadOfflineAudio((current, total) => {
+                      downloadProgress.value = current;
+                      downloadTotal.value = total;
+                    });
+
+                    // 給畫面 0.3 秒緩衝，然後跳出「下載完成」的美美彈窗
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    downloadModal.value = { show: true, type: 'success', successCount: successCount };
+
+                  } catch (error) {
+                    console.error('下載過程出錯:', error);
+                    alert('下載失敗，請檢查網路連線。');
+                  } finally {
+                    isDownloading.value = false;
+                  }
+                };
+                const isLoading = ref(true); 
+                const allCategories = computed(() => {
+                    const result = { ...VOCAB_CATEGORIES };
+                    if (customList.value.length > 0) {
+                        result['自訂單字'] = customList.value;
+                    }
+                    if (knownWords.value.length > 0) {
+                        result['已學會'] = knownWords.value;
+                    }
+                    return result;
+                });
+                const selectedCategories = ref([]);
+                const words = ref([]);
+                const currentIndex = ref(0);
+                const inputValue = ref("");
+                const stats = ref({ correct: 0, incorrect: 0 });
+                const isFinished = ref(false);
+                const isWrong = ref(false); // 專門控制大字卡的抖動狀態
+                const isTransitioning = ref(false); 
+                const customList = ref([]);
+                const knownWords = ref([]);
+
+                const inputRef = ref(null);
+                let mainAudioObj = null;
+
+                const currentWord = computed(() => {
+                    return words.value.length > 0 ? words.value[currentIndex.value] : null;
+                });
+
+                const matchedText = computed(() => {
+                  if (!currentWord.value) return '';
+                  const target = currentWord.value.th;
+                  const input = inputValue.value;
+                  let i = 0;
+                  // 找出輸入與目標從開頭起算，完全相符的長度
+                  while (i < target.length && i < input.length && target[i] === input[i]) {
+                      i++;
+                  }
+                  return target.slice(0, i);
+              });
+              // 🌟 計算下一個該打的字母提示 ( Layer 1.5 ) 🌟
+              const nextCharToType = computed(() => {
+                  if (!currentWord.value) return '';
+                  // 如果目前打錯了，就不顯示下一個字提示
+                  if (isWrong.value) return '';
+                  const target = currentWord.value.th;
+                  // 只有在還有下一個字時提示
+                  if (matchedText.value.length >= target.length) return ''; // 打完了
+                  // 抓取 matchedText 長度位置的那一個字元
+                  return target.charAt(matchedText.value.length);
+              });
+                const wrongText = computed(() => {
+                    if (!currentWord.value) return '';
+                    const target = currentWord.value.th;
+                    const input = inputValue.value;
+                    let i = 0;
+                    while (i < target.length && i < input.length && target[i] === input[i]) i++;
+                    const wrongLen = Math.min(input.length - i, target.length - i);
+                    return target.slice(i, i + wrongLen);
+                });
+
+                const remainingText = computed(() => {
+                    if (!currentWord.value) return '';
+                    const target = currentWord.value.th;
+                    const input = inputValue.value;
+                    let i = 0;
+                    while (i < target.length && i < input.length && target[i] === input[i]) i++;
+                    const wrongLen = Math.min(input.length - i, target.length - i);
+                    return target.slice(i + wrongLen);
+                });
+                // --- 🌟 核心排版黑科技：將泰文完美分群，不破壞上下疊加 ---
+                // const wordClusters = computed(() => {
+                //     if (!currentWord.value) return [];
+                //     const segmenter = new Intl.Segmenter('th-TH', { granularity: 'grapheme' });
+                //     let currentOffset = 0;
+                    
+                //     return Array.from(segmenter.segment(currentWord.value.th)).map((s, index) => {
+                //         const start = currentOffset;
+                //         const end = currentOffset + s.segment.length;
+                //         currentOffset = end;
+                //         return {
+                //             text: s.segment,
+                //             start: start,
+                //             end: end,
+                //             index: index
+                //         };
+                //     });
+                // });
+                const toggleCategory = (cat) => {
+                  const index = selectedCategories.value.indexOf(cat);
+                  if (index === -1) {
+                      selectedCategories.value.push(cat);
+                  } else {
+                      if (selectedCategories.value.length > 1) {
+                          selectedCategories.value.splice(index, 1);
+                      }
+                  }
+                  initGame(false); 
+                };
+
+                const resetCategories = () => {
+                    selectedCategories.value = [];
+                    initGame(false);
+                };
+                
+                const initAudioEngine = () => {
+                    if (!window.audioCtx) {
+                        window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (window.audioCtx.state === 'suspended') {
+                        window.audioCtx.resume();
+                    }
+                };
+
+                const playTypeSound = () => {
+                    try {
+                        if (!window.audioCtx) {
+                            window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        }
+                        const ctx = window.audioCtx;
+                        if (ctx.state === 'suspended') ctx.resume();
+
+                        const osc = ctx.createOscillator();
+                        const gainNode = ctx.createGain();
+                        const filter = ctx.createBiquadFilter();
+
+                        osc.connect(filter);
+                        filter.connect(gainNode);
+                        gainNode.connect(ctx.destination);
+
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.015);
+
+                        filter.type = 'highpass';
+                        filter.frequency.value = 800;
+
+                        gainNode.gain.setValueAtTime(0, ctx.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.001);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.015);
+
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 0.02);
+                    } catch (e) {
+                        console.error("無法播放打字音效", e);
+                    }
+                };
+
+                const speakFallbackTTS = (text) => {
+                    if (!window.speechSynthesis) return;
+                    window.speechSynthesis.cancel();
+                    const ut = new SpeechSynthesisUtterance(text);
+                    ut.lang = 'th-TH';
+                    ut.rate = 0.9; 
+                    ut.volume = 1.0;
+                    setTimeout(() => {
+                        window.speechSynthesis.speak(ut);
+                    }, 70);
+                };
+
+                const playMediaWithFallback = async (text) => {
+                    if (!mainAudioObj) {
+                        speakFallbackTTS(text);
+                        return;
+                    }
+                    window.speechSynthesis.cancel();
+                    mainAudioObj.pause();
+
+                    const safeText = text.replace(/\//g, '_'); 
+                    const audioUrl = `./audio/TH/th_${safeText}.mp3`;
+
+                    mainAudioObj.src = audioUrl;
+                    mainAudioObj.load();
+                    mainAudioObj.playbackRate = 1.0;
+
+                    mainAudioObj.onerror = () => {
+                        mainAudioObj.onerror = null;
+                        speakFallbackTTS(text);
+                    };
+
+                    try {
+                        await mainAudioObj.play();
+                    } catch (e) {
+                        speakFallbackTTS(text);
+                    }
+                };
+
+                const playCurrentWord = () => {
+                    if (currentWord.value) {
+                        playMediaWithFallback(currentWord.value.th);
+                    }
+                    nextTick(() => {
+                        keepFocus();
+                    });
+                };
+                
+                const shuffleArray = (array) => {
+                    for (let i = array.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [array[i], array[j]] = [array[j], array[i]];
+                    }
+                    return array;
+                };
+                
+                const initGame = (showLoading = true) => {
+                  if (showLoading) {
+                    isLoading.value = true;
+                  }
+                  isTransitioning.value = false;
+
+                  let combinedWords = [];
+                  
+                  // 1. 根據選中的分類獲取原始單字列表
+                  if (selectedCategories.value.length === 0) {
+                    Object.values(allCategories.value).forEach(list => {
+                      if (Array.isArray(list)) {
+                        combinedWords = [...combinedWords, ...list];
+                      }
+                    });
+                  } else {
+                    selectedCategories.value.forEach(cat => {
+                      const list = allCategories.value[cat];
+                      if (list && Array.isArray(list)) {
+                        combinedWords = [...combinedWords, ...list];
+                      }
+                    });
+                  }
+
+                  // 2. 【新增：過濾邏輯】
+                  // 如果目前選中的分類「不包含」已學會，我們就自動把已學會的字從練習中去掉
+                  if (combinedWords.length > 0 && !selectedCategories.value.includes('已學會')) {
+                    combinedWords = combinedWords.filter(word => {
+                      // 檢查這個單字是否已經在 knownWords 清單中
+                      return !knownWords.value.some(k => k.th === word.th);
+                    });
+                  }
+                  
+                  // 3. 排除重複（選多個分類時可能會有重複單字）
+                  const uniqueMap = new Map();
+                  combinedWords.forEach(w => uniqueMap.set(w.th, w));
+                  combinedWords = Array.from(uniqueMap.values());
+
+                  // 4. 洗牌並存入 words.value
+                  if (combinedWords.length > 0) {
+                    words.value = shuffleArray([...combinedWords]);
+                  } else {
+                    words.value = [];
+                  }
+
+                  // 5. 重置狀態
+                  currentIndex.value = 0;
+                  inputValue.value = '';
+                  stats.value = { correct: 0, incorrect: 0 };
+                  isFinished.value = false;
+                  isWrong.value = false;
+                  
+                  // 6. 載入動畫處理
+                  if (showLoading) {
+                    setTimeout(() => {
+                      isLoading.value = false;
+                      nextTick(() => {
+                        keepFocus();
+                        playCurrentWord();
+                      });
+                    }, 300); 
+                  } else {
+                    isLoading.value = false; 
+                    nextTick(() => {
+                      keepFocus();
+                      playCurrentWord(); 
+                    });
+                  }
+                };
+
+                const keepFocus = () => {
+                    if (!isFinished.value) {
+                        setTimeout(() => inputRef.value?.focus(), 50);
+                    }
+                };
+
+                const handleInput = (e) => {
+                    if (isTransitioning.value) {
+                        if (currentWord.value) {
+                            inputValue.value = currentWord.value.th;
+                            if (inputRef.value) inputRef.value.value = currentWord.value.th;
+                        }
+                        return;
+                    }
+
+                    playTypeSound(); 
+                    const val = e.target.value;
+                    // --- 【新增：即時比對防呆邏輯】 ---
+                    if (currentWord.value) {
+                      const correctStr = currentWord.value.th;
+                      
+                      // 比對目前輸入的長度與正確答案的前幾碼
+                      if (val === correctStr.substring(0, val.length)) {
+                          // 目前為止都打對
+                          isWrong.value = false;
+                      } else {
+                          // 出現錯誤 (例如：預期是 'ู' 但打成 '่')
+                          isWrong.value = true;
+                          // 選擇性：播放一個輕微的錯誤音效，或維持現狀不干擾
+                          // playFeedbackSound(false); 
+                      }
+                    }
+                    // 1. 完全打對該單字時，自動驗證進下一題
+                    if (currentWord.value && val === currentWord.value.th) {
+                        const success = validate(val);
+                        if (!success) {
+                            inputValue.value = "";
+                            nextTick(() => { if (inputRef.value) inputRef.value.value = ""; });
+                        }
+                        return;
+                    }
+
+                    // 2. 有按空白鍵的檢查邏輯
+                    if (val.includes(' ')) {
+                      const typed = val.trim(); // 直接用 trim 處理所有空白
+                      if (typed.length > 0) {
+                          const success = validate(typed);
+                          if (!success) {
+                              inputValue.value = "";
+                              nextTick(() => {
+                                  if (inputRef.value) {
+                                      inputRef.value.value = "";
+                                      inputRef.value.focus();
+                                  }
+                              });
+                          }
+                      } else {
+                          // 如果只有空白，直接清空
+                          inputValue.value = "";
+                      }
+                  }
+                };
+                const playFeedbackSound = (isCorrect) => {
+                try {
+                    const ctx = window.audioCtx;
+                    if (!ctx) return;
+                    if (ctx.state === 'suspended') ctx.resume();
+
+                    const osc = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+
+                    osc.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+
+                    if (isCorrect) {
+                        // 正確音：高頻清脆
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+                        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+                        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.2);
+                    } else {
+                        // 錯誤音：低頻沉悶
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(150, ctx.currentTime);
+                        osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.2);
+                        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.2);
+                    }
+                } catch (e) { console.error(e); }
+            };
+                const validate = (typed) => {
+                    if (isFinished.value || !currentWord.value || isTransitioning.value) return false;
+
+                    const isOk = typed === currentWord.value.th;
+                    
+                    if (isOk) {
+                      playFeedbackSound(true); // 播放正確音
+                        stats.value.correct++;
+                        isWrong.value = false;
+                        isTransitioning.value = true; 
+                        // 打對的瞬間，再念一次泰文發音
+                        playCurrentWord();
+                        // 動態計算停留時間 
+                        // 基礎停留 1200ms，單字每多一個字母，就多加 150ms 的緩衝時間。
+                        // 這樣長單字保證能唸完，而且眼睛也有足夠時間看中文！
+                        const delayTime = Math.max(1200, currentWord.value.th.length * 150 + 500);
+                        setTimeout(() => {
+                            inputValue.value = "";
+                            if (inputRef.value) inputRef.value.value = "";
+
+                            if (currentIndex.value < words.value.length - 1) {
+                                currentIndex.value++;
+                            } else {
+                                isFinished.value = true;
+                            }
+                            isTransitioning.value = false;
+                            nextTick(() => keepFocus());
+                        }, delayTime);
+
+                        return true;
+                    } else {
+                      playFeedbackSound(false); // 播放錯誤音
+                        stats.value.incorrect++;
+                        isWrong.value = true;
+                        
+                        setTimeout(() => { 
+                            isWrong.value = false; 
+                        }, 300);
+                        return false;
+                    }
+                };
+
+                watch(currentIndex, (newIdx, oldIdx) => {
+                    if (newIdx !== oldIdx && !isFinished.value) {
+                        playCurrentWord();
+                    }
+                });
+
+                const accuracy = computed(() => {
+                    const total = stats.value.correct + stats.value.incorrect;
+                    return total === 0 ? 0 : Math.round((stats.value.correct / total) * 100);
+                });
+
+                // --- 新增：捕捉首次互動，解決瀏覽器阻擋第一聲發音的問題 ---
+                let hasStartedInteraction = false;
+                const handleFirstInteraction = () => {
+                    if (hasStartedInteraction) return;
+                    hasStartedInteraction = true;
+                    
+                    initAudioEngine(); // 暖機打字音效引擎
+
+                    // 若剛進來還在第一個單字且尚未完成，補發音一次
+                    if (!isFinished.value && currentWord.value && currentIndex.value === 0) {
+                        playCurrentWord();
+                    }
+
+                    // 移除監聽，避免後續重複觸發
+                    window.removeEventListener('click', handleFirstInteraction);
+                    window.removeEventListener('touchstart', handleFirstInteraction);
+                    window.removeEventListener('keydown', handleFirstInteraction);
+                };
+                // 🌟 1. 定義同步需要的變數
+                let cachedCloudThaiData = {}; // 備份雲端資料，防止覆蓋掉隨身聽的播放進度
+                let saveProgressToCloud = null;
+
+                // 🌟 2. 雲端同步函數
+                const syncToCloud = async () => {
+                    if (typeof saveProgressToCloud !== 'function') return;
+                    try {
+                        const payload = {
+                            ...cachedCloudThaiData,
+                            customList: JSON.parse(JSON.stringify(customList.value)),
+                            knownWords: JSON.parse(JSON.stringify(knownWords.value)),
+                        };
+                        await saveProgressToCloud('thai', payload);
+                    } catch (error) {
+                        console.warn('雲端同步失敗', error);
+                    }
+                };
+
+                // 🌟 3. 判斷與點擊星星的函數
+                const isCustomWord = (item) => {
+                    if (!item) return false;
+                    return customList.value.some(w => w.th === item.th);
+                };
+
+                const toggleCustomWord = (item) => {
+                  if (!item) return;
+                  const index = customList.value.findIndex(w => w.th === item.th);
+                  const isRemoving = index > -1;
+
+                  // 處理星星資料的增刪
+                  if (isRemoving) {
+                      customList.value.splice(index, 1); // 取消收藏
+                  } else {
+                      customList.value.push(item);      // 加入收藏
+                  }
+
+                  // 同步到本地與雲端
+                  localStorage.setItem('thai-custom-list', JSON.stringify(customList.value));
+                  syncToCloud();
+
+                  // 🌟 核心修復：動態從當前遊戲清單中移除 🌟
+                  if (isRemoving) {
+                      let shouldRemoveFromGame = false;
+                      
+                      // 判斷當前是否需要從畫面上抽掉這張卡片
+                      if (selectedCategories.value.length === 1 && selectedCategories.value[0] === '自訂單字') {
+                          shouldRemoveFromGame = true; // 只選了自訂單字，拔掉星星當然要移除
+                      } else if (selectedCategories.value.includes('自訂單字')) {
+                          // 如果有多選分類，確保這個字也不在其他「被選中」的分類裡
+                          const inOtherCats = selectedCategories.value.some(cat => {
+                              if (cat === '自訂單字') return false;
+                              return allCategories.value[cat]?.some(w => w.th === item.th);
+                          });
+                          if (!inOtherCats) shouldRemoveFromGame = true;
+                      }
+
+                      if (shouldRemoveFromGame) {
+                          const idxInWords = words.value.findIndex(w => w.th === item.th);
+                          if (idxInWords > -1) {
+                              if (idxInWords === currentIndex.value) {
+                                  // 移除的是「當前正在打」的字：延遲 0.25 秒後自動換下一題 (讓畫面順暢)
+                                  setTimeout(() => {
+                                      words.value.splice(idxInWords, 1);
+                                      
+                                      inputValue.value = "";
+                                      if (inputRef.value) inputRef.value.value = "";
+                                      isWrong.value = false;
+
+                                      // 檢查抽掉這張卡後，是不是全破了
+                                      if (words.value.length === 0) {
+                                          isFinished.value = true;
+                                      } else {
+                                          if (currentIndex.value >= words.value.length) {
+                                              currentIndex.value = Math.max(0, words.value.length - 1);
+                                          }
+                                          playCurrentWord(); // 自動發出下一張卡的音
+                                          nextTick(() => keepFocus());
+                                      }
+                                  }, 250);
+                              } else {
+                                  // 移除的是清單中「其他」的字
+                                  words.value.splice(idxInWords, 1);
+                                  if (idxInWords < currentIndex.value) {
+                                      currentIndex.value--; // 確保進度與畫面不會亂跳
+                                  }
+                              }
+                          }
+                      }
+                  }
+              };
+                
+                // 🌟 4. 新增：判斷與點擊「已學會」的函數 🌟
+                const isKnownWord = (item) => {
+                    if (!item) return false;
+                    return knownWords.value.some(w => w.th === item.th);
+                };
+
+                const toggleKnownWord = (item) => {
+                    if (!item) return;
+                    const index = knownWords.value.findIndex(w => w.th === item.th);
+                    const isCurrentlyKnown = index > -1;
+
+                    // 處理打勾資料的增刪
+                    if (isCurrentlyKnown) {
+                        knownWords.value.splice(index, 1); // 取消已學會
+                    } else {
+                        knownWords.value.push(item);      // 標記為已學會
+                    }
+
+                    // 同步到本地與雲端
+                    localStorage.setItem('thai-known-words', JSON.stringify(knownWords.value));
+                    syncToCloud();
+
+                    // 動態抽換卡片的邏輯
+                    let shouldRemoveFromGame = false;
+
+                    if (isCurrentlyKnown) {
+                        // 情況 A：取消打勾
+                        if (selectedCategories.value.length === 1 && selectedCategories.value[0] === '已學會') {
+                            shouldRemoveFromGame = true;
+                        } else if (selectedCategories.value.includes('已學會')) {
+                            const inOtherCats = selectedCategories.value.some(cat => {
+                                if (cat === '已學會') return false;
+                                return allCategories.value[cat]?.some(w => w.th === item.th);
+                            });
+                            if (!inOtherCats) shouldRemoveFromGame = true;
+                        }
+                    } else {
+                        // 情況 B：標記打勾 (變成已學會)
+                        // 一般練習中，學會的字就不該繼續出現，直接抽走！
+                        if (!selectedCategories.value.includes('已學會')) {
+                            shouldRemoveFromGame = true;
+                        }
+                    }
+
+                    // 執行卡片抽除與畫面過渡
+                    if (shouldRemoveFromGame) {
+                        const idxInWords = words.value.findIndex(w => w.th === item.th);
+                        if (idxInWords > -1) {
+                            if (idxInWords === currentIndex.value) {
+                                setTimeout(() => {
+                                    words.value.splice(idxInWords, 1);
+                                    
+                                    inputValue.value = "";
+                                    if (inputRef.value) inputRef.value.value = "";
+                                    isWrong.value = false;
+
+                                    if (words.value.length === 0) {
+                                        isFinished.value = true;
+                                    } else {
+                                        if (currentIndex.value >= words.value.length) {
+                                            currentIndex.value = Math.max(0, words.value.length - 1);
+                                        }
+                                        playCurrentWord();
+                                        nextTick(() => keepFocus());
+                                    }
+                                }, 250);
+                            } else {
+                                words.value.splice(idxInWords, 1);
+                                if (idxInWords < currentIndex.value) {
+                                    currentIndex.value--; 
+                                }
+                            }
+                        }
+                    }
+                };
+
+                // 新增 Firebase 同步初始化邏輯
+
+                // 🌟 4. 加強版的雲端初始化 (綁定上傳功能)
+                const initializeCloudSync = async () => {
+                    try {
+                        const [authModule, dbModule] = await Promise.all([
+                            import('./js/auth.js'),
+                            import('./js/dbService.js'),
+                        ]);
+                        
+                        saveProgressToCloud = dbModule.saveProgressToCloud; // 綁定上傳功能
+
+                        authModule.initAuthListener(async (user) => {
+                            const cloudData = await dbModule.loadProgressFromCloud();
+                            if (cloudData && cloudData.thai) {
+                                cachedCloudThaiData = cloudData.thai; // 快取全部資料以保護
+                                
+                                if (cloudData.thai.customList) customList.value = cloudData.thai.customList;
+                                if (cloudData.thai.knownWords) knownWords.value = cloudData.thai.knownWords;
+                                
+                                initGame(false);
+                            }
+                        }, () => {
+                            console.log('尚未登入，僅使用本地預設資料');
+                        });
+                    } catch (error) {
+                        console.warn('雲端同步模組載入失敗', error);
+                    }
+                };
+                // ==========================================
+                // 🌟 新增：手勢滑動與跳題邏輯 🌟
+                // ==========================================
+                const touchStartX = ref(0);
+
+                const handleTouchStart = (e) => {
+                    touchStartX.value = e.touches[0].clientX;
+                };
+
+                const handleTouchEnd = (e) => {
+                    // 如果正在動畫過渡中，或遊戲已結束，就不處理滑動
+                    if (isTransitioning.value || isFinished.value) return; 
+
+                    const touchEndX = e.changedTouches[0].clientX;
+                    const diffX = touchStartX.value - touchEndX;
+
+                    if (Math.abs(diffX) > 50) { // 滑動距離超過 50px 才觸發
+                        if (diffX < 0) {
+                            // 向右滑 (手指往右) -> 回上一題
+                            skipToPrev();
+                        } else {
+                            // 向左滑 (手指往左) -> 跳下一題
+                            skipToNext();
+                        }
+                    }
+                };
+
+                const skipToNext = () => {
+                    if (currentIndex.value < words.value.length - 1) {
+                        currentIndex.value++;
+                        resetForSkip();
+                    }
+                };
+
+                const skipToPrev = () => {
+                    if (currentIndex.value > 0) {
+                        currentIndex.value--;
+                        resetForSkip();
+                    }
+                };
+
+                const resetForSkip = () => {
+                    // 清空輸入框
+                    inputValue.value = "";
+                    if (inputRef.value) inputRef.value.value = "";
+                    isWrong.value = false;
+                    
+                    // 焦點重新回到輸入框
+                    nextTick(() => keepFocus());
+                    // (註：音檔的部分不用特別寫，因為你原本的 watch(currentIndex) 已經會自動幫忙念出新單字了！)
+                };
+                onMounted(() => {
+                    mainAudioObj = document.getElementById('main-player');
+                    initializeCloudSync()
+                    // 監聽首次互動 (點擊、觸控或任何鍵盤按鍵)
+                    window.addEventListener('click', handleFirstInteraction);
+                    window.addEventListener('touchstart', handleFirstInteraction);
+                    window.addEventListener('keydown', handleFirstInteraction);
+                });
+
+                return {
+                    words, currentIndex, inputValue, stats, isFinished, isWrong, currentWord,
+                    matchedText, wrongText, remainingText,
+                    inputRef, allCategories, selectedCategories, toggleCategory, resetCategories,
+                    accuracy, handleInput, initGame, playCurrentWord, keepFocus, isLoading, initAudioEngine, downloadOfflineAudio,
+                    isDownloading,
+                    downloadProgress,
+                    downloadTotal,
+                    startDownload,
+                    // wordClusters,
+                    downloadModal,
+                    closeDownloadModal,
+                    executeDownload,
+                    nextCharToType,
+                    isTransitioning,
+                    isCustomWord,
+                    toggleCustomWord,
+                    handleTouchStart,
+                    handleTouchEnd,
+                    isKnownWord,
+                    toggleKnownWord
+                };
+            }
+        }).mount('#app');
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+              console.log('ServiceWorker 註冊成功:', registration.scope);
+            })
+            .catch((error) => {
+              console.log('ServiceWorker 註冊失敗:', error);
+            });
+        });
+      }
+    </script>
+</body>
+</html>

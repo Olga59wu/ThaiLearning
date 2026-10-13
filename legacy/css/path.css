@@ -1,0 +1,11 @@
+/* css/path.css */
+.thai-font { font-family: 'Sarabun', sans-serif; }
+canvas { cursor: crosshair; }
+canvas.hovering-point { cursor: move; }
+.no-select { user-select: none; }
+
+#guide-text {
+    /* 透過稍微向上平移，補償泰文下標佔用的空間 */
+    transform: translateY(-8%); 
+    overflow: visible;
+}

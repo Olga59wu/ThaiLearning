@@ -1,0 +1,1753 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>泰文隨身聽 - 單字自動播放</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="apple-touch-icon" href="icon-192x192.png">
+  <style>
+    [v-cloak] {
+      display: none !important;
+    }
+
+    body {
+      font-family: 'Sarabun', 'Microsoft JhengHei', sans-serif;
+      background-color: #f8fafc;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.dark-mode {
+      background-color: #0f172a !important;
+      /* 深藍底 */
+    }
+
+    /* 泰文字體優化 */
+    .thai-text {
+      line-height: 1.8;
+      padding-top: 0.5rem;
+      letter-spacing: 0.02em;
+      display: block;
+      word-break: keep-all;
+      /* 保持泰文單字完整性 */
+      overflow-wrap: break-word;
+      /* 溢出時換行 */
+      width: 100%;
+      transition: all 0.3s ease;
+      /* 縮放時平滑過渡 */
+    }
+
+    .player-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+      max-width: 90%;
+      /* 讓它更寬一點 */
+      /* 移除 max-height 限制，讓它隨內容撐大 */
+    }
+
+    /* 新增：切換時的透明狀態 */
+    .card-transitioning {
+      opacity: 0;
+      transform: scale(0.95);
+      /* 稍微縮小一點 */
+    }
+
+    .playing-glow {
+      box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.15);
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .progress-bar-inner {
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 3D 單字卡翻轉所需的 CSS */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+
+    .dark-mode .bg-white {
+      background-color: #1e293b !important;
+      /* 內容背景變深 */
+    }
+
+    .dark-mode .text-slate-800,
+    .dark-mode .text-slate-700 {
+      color: #f1f5f9 !important;
+      /* 主文字變白 */
+    }
+
+    .dark-mode .border-b,
+    .dark-mode .border {
+      border-color: #334155 !important;
+      /* 邊框變深 */
+    }
+
+    .dark-mode .bg-slate-50,
+    .dark-mode .bg-slate-100 {
+      background-color: #0f172a !important;
+      /* 次要背景 */
+    }
+
+    .dark-mode .player-card {
+      background-color: #1e293b !important;
+      border-color: #334155 !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .dark-mode .player-card.playing-glow {
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .dark-mode input {
+      background-color: #334155 !important;
+      color: white !important;
+    }
+  </style>
+</head>
+
+<body class="text-slate-800">
+  <!-- CarPlay / 藍牙音訊路由優化：啟動無聲音軌 -->
+  <audio id="silent-audio" loop preload="auto">
+    <source src="data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=="
+      type="audio/wav">
+  </audio>
+  <audio id="main-player" playsinline preload="auto"></audio>
+  <div id="app" class="w-full max-w-md mx-auto h-full flex flex-col bg-white shadow-2xl relative" v-cloak>
+    <div v-if="isLoading" class="fixed inset-0 flex items-center justify-center bg-white z-[100]">
+      <div class="text-blue-500 font-bold animate-pulse">LOADING...</div>
+    </div>
+    <!-- 頂部導覽 (固定高度) -->
+    <div class="px-2 py-3 flex items-center justify-between border-b shrink-0 bg-white z-10">
+
+      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <a href="index.html" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </a>
+        <h1 class="text-[13px] sm:text-sm font-black text-blue-600 tracking-tight flex items-center gap-1.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          THAI PLAYER
+        </h1>
+      </div>
+
+      <div class="flex items-center gap-0.5 sm:gap-2 shrink-0">
+
+        <a href="thaiTyping.html"
+          class="p-1.5 sm:p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-full active:scale-90 transition-all"
+          title="泰文打字練習">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+        </a>
+
+        <div class="flex items-center justify-center text-slate-400 transition-all p-1"
+          :title="syncStatus === 'syncing' ? '同步中...' : (syncStatus === 'synced' ? '已同步' : '同步失敗')">
+          <svg v-if="syncStatus === 'synced'" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="text-emerald-500">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+            <polyline points="9 15 11 17 15 12"></polyline>
+          </svg>
+          <svg v-if="syncStatus === 'syncing'" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="animate-spin text-blue-500">
+            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+            <path d="M21 3v5h-5"></path>
+          </svg>
+          <svg v-if="syncStatus === 'error'" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="text-red-500">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+            <line x1="12" y1="12" x2="12" y2="16"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </div>
+
+        <button @click="isDarkMode = !isDarkMode" class="p-1.5 sm:p-2 text-slate-400 active:scale-90 transition-all">
+          <svg v-if="!isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="yellow" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <button @click="startDownload" :disabled="isDownloading"
+          :class="['flex items-center gap-1 px-1.5 py-1.5 rounded-lg transition-colors text-[10px] sm:text-[11px] font-bold shadow-sm whitespace-nowrap',
+               isDownloading ? 'bg-indigo-50 text-indigo-400 cursor-wait' : 'bg-white text-indigo-500 border border-indigo-100 hover:bg-indigo-50']">
+          <svg v-if="isDownloading" class="animate-spin h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-500"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-3.5 sm:w-3.5" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          {{ isDownloading ? `下載中 ${downloadProgress}/${downloadTotal}` : '離線語音' }}
+        </button>
+
+        <button @click="isModalOpen = true"
+          class="p-1.5 sm:p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- 分類選擇器 (固定高度) -->
+    <div class="px-4 py-2 bg-slate-50 border-b shrink-0 z-10">
+      <div class="flex gap-2 overflow-x-auto no-scrollbar py-1 items-center">
+        <button @click="toggleCategory('all')"
+          :class="['px-3 py-1 rounded-full text-[10px] font-black transition-all border shrink-0 h-7 flex items-center justify-center min-w-[50px]', 
+                            selectedCategories.length === 0 ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white border-slate-200 text-slate-400']">
+          全部
+        </button>
+        <button v-for="(list, cat) in allCategories" :key="cat" @click="toggleCategory(cat)"
+          :class="['cat-btn-' + cat, selectedCategories.includes(cat) ? 'bg-blue-100 border-blue-400 shadow-sm' : 'bg-white border-slate-200 opacity-70']"
+          class="px-3 py-1 rounded-full border transition-all flex-shrink-0 flex items-center justify-center h-7 active:scale-95">
+          <span class="text-sm">{{ getCatIcon(cat) }}</span>
+          <span class="text-[9px] font-bold text-slate-600 ml-1" v-if="selectedCategories.includes(cat)">{{
+            cat.substring(0,2) }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 播放器主視覺區域 (彈性縮放區) -->
+    <div class="flex-1 flex flex-col items-center justify-center p-2 min-h-0" @touchstart="handleTouchStart"
+      @touchend="handleTouchEnd">
+      <div
+        class="player-card flex-grow flex flex-col bg-white rounded-[2.5rem] shadow-xl border border-slate-100 p-3 text-center relative w-full mb-2 overflow-hidden"
+        :class="{
+            'playing-glow border-blue-50': isPlaying,
+            'card-transitioning': isTransitioning
+          }">
+        <div v-if="currentWord" class="w-full shrink-0 mb-4 z-20">
+          <div class="flex justify-between items-center mb-1.5 px-1">
+            <span class="text-[10px] font-black text-blue-500 tracking-tighter">
+              {{ getCatIcon(currentWordCategory) }} {{ currentWordCategory }}
+            </span>
+            <span class="text-[10px] font-bold text-slate-400">
+              {{ currentIndex + 1 }} / {{ playlist.length }}
+            </span>
+          </div>
+          <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-blue-500 progress-bar-inner transition-all duration-300"
+              :style="{ width: playlist.length ? `${((currentIndex + 1) / playlist.length) * 100}%` : '0%' }"></div>
+          </div>
+        </div>
+
+        <div v-if="currentWord"
+          class="flex-1 flex flex-col items-center justify-center w-full min-h-0 perspective-1000 z-10"
+          @click="handleContentClick">
+          <div
+            class="relative flex-1 w-full flex flex-col items-center justify-center transform-style-3d transition-transform duration-500 cursor-pointer"
+            :class="{ 'rotate-y-180': isFlashcardMode && isFlipped }">
+
+            <div
+              class="absolute inset-0 flex flex-col items-center justify-center w-full h-full transition-opacity duration-300"
+              :class="isFlashcardMode && isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'"
+              style="transform: rotateY(0deg);">
+              <div class="thai-text font-black text-slate-800 mb-2 leading-tight active:opacity-50" :class="[
+                            currentWord?.th.length > 15 ? 'text-3xl' : 
+                            currentWord?.th.length > 10 ? 'text-4xl' : 
+                            currentWord?.th.length > 6  ? 'text-5xl' : 'text-7xl'
+                        ]" :style="isKnownWord(currentWord) ? 'opacity: 0.3;' : ''">
+                {{ currentWord?.th }}
+              </div>
+
+              <div v-show="showChinese && !isFlashcardMode" class="text-xl text-slate-400 font-medium shrink-0 pt-2">
+                {{ currentWord?.zh }}
+              </div>
+
+              <div v-show="isFlashcardMode && !isFlipped"
+                class="absolute bottom-1 text-xs text-purple-500 font-bold animate-pulse">
+                👆 點擊翻牌看答案
+              </div>
+            </div>
+
+            <div
+              class="absolute inset-0 flex flex-col items-center justify-center rotate-y-180 w-full h-full rounded-3xl border-2 border-dashed border-purple-300 transition-opacity duration-300"
+              style="background-color: rgba(168, 85, 247, 0.08);"
+              :class="isFlashcardMode && isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'">
+              <div class="thai-text font-black text-slate-400 mb-2" :class="[
+                            currentWord?.th.length > 15 ? 'text-2xl' : 
+                            currentWord?.th.length > 10 ? 'text-3xl' : 
+                            currentWord?.th.length > 6  ? 'text-4xl' : 'text-5xl'
+                        ]" :style="isKnownWord(currentWord) ? 'opacity: 0.3;' : ''">
+                {{ currentWord?.th }}
+              </div>
+              <div class="text-lg text-purple-500 font-bold shrink-0 pt-2">
+                {{ currentWord?.zh }}
+              </div>
+              <div class="absolute bottom-1 text-[10px] text-slate-400 font-bold">
+                👆 點擊重聽
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div v-else
+          class="flex-1 flex flex-col items-center justify-center text-slate-400 font-bold h-24 gap-2 text-sm">
+          <template v-if="selectedCategories.length > 0 && hideKnownWords">
+            <span class="text-2xl mb-1">🎉</span>
+            <span>太棒了！這個分類的單字你已經全都會了</span>
+            <button @click="hideKnownWords = false"
+              class="mt-2 px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs active:scale-95">取消隱藏</button>
+          </template>
+          <span v-else>請選擇分類並播放</span>
+        </div>
+
+        <!-- 右下角功能區塊：已學會打勾 & 收藏星星 -->
+        <div class="absolute bottom-4 right-4 flex items-center gap-1 z-20">
+          <!-- 已學會打勾按鈕 -->
+          <button v-if="currentWord" @click.stop="toggleKnownWord(currentWord)"
+            class="p-2 active:scale-75 transition-transform" title="標記為已學會">
+            <svg v-if="isKnownWord(currentWord)" class="text-emerald-500 drop-shadow-sm"
+              xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <svg v-else class="text-slate-200 hover:text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="22"
+              height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+          </button>
+
+          <!-- 收藏星星按鈕 -->
+          <button v-if="currentWord" @click.stop="toggleCustomWord(currentWord)"
+            class="p-2 active:scale-75 transition-transform" title="加入自訂單字">
+            <svg v-if="isCustomWord(currentWord)" class="text-yellow-400 drop-shadow-sm"
+              xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+              </polygon>
+            </svg>
+            <svg v-else class="text-slate-300 hover:text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="18"
+              height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+              </polygon>
+            </svg>
+          </button>
+        </div>
+        <div class="absolute bottom-4 left-4 flex items-center gap-1 z-20">
+          <!-- 壞音檔回報按鈕 -->
+          <button v-if="currentWord" @click.stop="reportBadAudio"
+            class="p-2 text-slate-300 hover:text-red-500 active:scale-75 transition-all" title="標記音質不佳">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
+          </button>
+
+          <button v-if="currentWord && isFlashcardMode" @click.stop="replayCurrent()"
+            class="p-2 text-slate-300 hover:text-blue-500 active:scale-75 transition-all" title="聆聽泰文發音">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 播放控制區 (固定高度) -->
+    <div
+      class="bg-slate-50 border-t shrink-0 p-5 sm:p-6 pt-3 rounded-t-[2rem] shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] z-10">
+      <!-- 模式與速度 -->
+      <!-- 模式與速度 (修正對齊版) -->
+      <div class="flex justify-between items-center mb-5 px-4 gap-1">
+        <!-- 隨機播放 -->
+        <button @click="isShuffle = !isShuffle" :class="isShuffle ? 'text-blue-600' : 'text-slate-300'"
+          class="transition-all p-1 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22" />
+            <path d="m18 2 4 4-4 4" />
+            <path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2" />
+            <path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8" />
+            <path d="m18 14 4 4-4 4" />
+          </svg>
+        </button>
+
+        <!-- 中間群組：將速度與老師放在同一個容器中並置中對齊 -->
+        <div class="flex-1 flex items-center justify-center gap-2">
+          <!-- 播放速度 -->
+          <div class="flex items-center bg-white border border-slate-200 rounded-full px-2 h-7 shadow-sm">
+            <select v-model="playbackRate"
+              class="text-[9px] font-black bg-transparent outline-none text-slate-500 cursor-pointer">
+              <option :value="0.7">0.7x 慢速</option>
+              <option :value="1.0">1.0x 正常</option>
+              <option :value="1.2">1.2x 快速</option>
+              <option :value="1.5">1.5x 極速</option>
+            </select>
+          </div>
+
+          <!-- 發音老師 (移除 mt-2，確保水平對齊) -->
+          <div v-if="voices.length > 1"
+            class="flex items-center bg-white border border-slate-200 rounded-full px-2 h-7 shadow-sm gap-1 overflow-hidden">
+            <span class="text-[8px] font-bold text-slate-400 shrink-0">老師:</span>
+            <select v-model="selectedVoice"
+              class="text-[9px] bg-transparent border-none text-blue-600 font-bold outline-none cursor-pointer max-w-[100px] truncate">
+              <option v-for="v in voices" :key="v.name" :value="v.name">
+                {{ v.name.replace('Microsoft', '').replace('Google', '').replace('Thai', '').replace('(',
+                '').replace(')', '').trim() || v.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 循環模式 -->
+        <button @click="repeatMode = (repeatMode + 1) % 3" :class="repeatMode > 0 ? 'text-blue-600' : 'text-slate-300'"
+          class="transition-all p-1 shrink-0">
+          <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m17 2 4 4-4 4" />
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <path d="m7 22-4-4 4-4" />
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+            <span v-if="repeatMode === 2"
+              class="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[7px] font-bold rounded-full w-3 h-3 flex items-center justify-center">1</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- 主控制鈕 -->
+      <div class="flex items-center justify-center gap-8 mb-4">
+        <button @click="prev" class="text-slate-400 active:scale-90 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z" />
+          </svg>
+        </button>
+
+        <button @click="togglePlay"
+          class="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg active:scale-95 transition-all">
+          <svg v-if="!isPlaying" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+            fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+          </svg>
+        </button>
+
+        <button @click="next" class="text-slate-400 active:scale-90 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5 18l8.5-6L5 6v12zM13 6v12l8.5-6L13 6z" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- 功能開關 -->
+      <div class="flex justify-between gap-3">
+        <button @click="speakChineseOrder = !speakChineseOrder"
+          :class="['flex-1 py-1.5 rounded-lg text-[10px] font-black border transition-all', 
+                    speakChineseOrder ? 'bg-blue-600 border-blue-600 text-white' : 'bg-emerald-600 border-emerald-600 text-white']">
+          {{ speakChineseOrder ? '中 → 泰 朗讀' : '泰 → 中 朗讀' }}
+        </button>
+        <button @click="showChinese = !showChinese"
+          :class="['flex-1 py-1.5 rounded-lg text-[10px] font-black border transition-all', 
+                             showChinese ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-400']">
+          顯示中文
+        </button>
+        <button @click="toggleFlashcardMode"
+          :class="['flex-1 py-1.5 rounded-lg text-[10px] font-black border transition-all', 
+                    isFlashcardMode ? 'bg-purple-600 border-purple-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-400']">
+          🃏 單字卡模式
+        </button>
+      </div>
+      <!-- ★ 新增：進階清單設定 (過濾與複選) ★ -->
+      <div class="flex justify-center items-center gap-8 mt-5 pt-4 border-t border-slate-200/60">
+        <!-- 過濾已學會開關 -->
+        <button @click="hideKnownWords = !hideKnownWords"
+          class="flex items-center gap-2 active:scale-95 transition-transform">
+          <span class="text-xs font-bold transition-colors"
+            :class="hideKnownWords ? 'text-emerald-500' : 'text-slate-400'">隱藏已學會 ✅</span>
+          <div class="w-7 h-4 rounded-full relative transition-colors duration-200"
+            :class="hideKnownWords ? 'bg-emerald-500' : 'bg-slate-300'">
+            <div class="absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm"
+              :class="hideKnownWords ? 'left-3.5' : 'left-0.5'"></div>
+          </div>
+        </button>
+
+        <!-- 分類複選開關 -->
+        <button @click="isMultiSelect = !isMultiSelect"
+          class="flex items-center gap-2 active:scale-95 transition-transform">
+          <span class="text-xs font-bold transition-colors"
+            :class="isMultiSelect ? 'text-blue-500' : 'text-slate-400'">分類複選模式</span>
+          <div class="w-7 h-4 rounded-full relative transition-colors duration-200"
+            :class="isMultiSelect ? 'bg-blue-500' : 'bg-slate-300'">
+            <div class="absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm"
+              :class="isMultiSelect ? 'left-3.5' : 'left-0.5'"></div>
+          </div>
+        </button>
+      </div>
+    </div>
+    <div v-if="isModalOpen" class="fixed inset-0 z-[100] bg-white flex flex-col">
+      <div class="p-4 border-b flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-3">
+          <h2 class="font-black text-slate-700">單字清單</h2>
+          <!-- 重置按鈕 -->
+          <button @click="resetAllProgress"
+            class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded-md font-bold active:scale-95 transition-all">
+            🗑️ 重置進度
+          </button>
+        </div>
+
+        <button @click="isModalOpen = false; searchQuery = ''"
+          class="p-2 bg-slate-100 rounded-full text-slate-500 active:scale-90 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <!-- 搜尋框區塊 -->
+      <div class="px-4 py-2 bg-white shrink-0">
+        <div class="relative flex items-center">
+          <input v-model="searchQuery" type="text" placeholder="搜尋泰文或中文..."
+            class="w-full bg-slate-100 border-none rounded-xl px-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+          <svg class="absolute left-3 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <button v-if="searchQuery" @click="searchQuery = ''"
+            class="absolute right-3 text-slate-400 font-bold text-lg">×</button>
+        </div>
+      </div>
+      <!-- 分類切換 -->
+      <div class="p-2 bg-slate-50 border-b flex gap-2 overflow-x-auto no-scrollbar">
+        <button v-for="(list, cat) in allCategories" :key="cat" @click="modalCategory = cat"
+          :class="['px-3 py-1.5 rounded-full text-[10px] font-bold shrink-0 transition-all border flex items-center gap-1', 
+                              modalCategory === cat ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white border-slate-200 text-slate-500']">
+          <span>{{ getCatIcon(cat) }}</span>
+          <span>{{ cat }}</span>
+        </button>
+      </div>
+      <!-- 單字列表 -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-2">
+        <div v-for="item in filteredModalWords" :key="item.th"
+          class="p-4 border-b flex justify-between items-center transition-colors">
+
+          <div class="flex-1 cursor-pointer active:bg-blue-50" @click="replayCurrent(item)"
+            :class="{'opacity-40': isKnownWord(item)}">
+            <div class="text-xl font-black text-slate-800 tracking-tight">{{item.th}}</div>
+            <div class="text-xs text-slate-400 font-bold mt-1">{{item.zh}}</div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button @click="replayCurrent(item)"
+              class="p-2 text-blue-400 opacity-30 active:scale-90 transition-transform">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              </svg>
+            </button>
+
+            <button @click="toggleKnownWord(item)" class="p-2 active:scale-75 transition-transform">
+              <svg v-if="isKnownWord(item)" class="text-emerald-500" xmlns="http://www.w3.org/2000/svg" width="20"
+                height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <svg v-else class="text-slate-200 hover:text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="20"
+                height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+              </svg>
+            </button>
+            <button @click="toggleCustomWord(item)" class="p-2 active:scale-75 transition-transform" title="加入自訂單字">
+              <svg v-if="isCustomWord(item)" class="text-yellow-400 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"
+                width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                </polygon>
+              </svg>
+              <svg v-else class="text-slate-200 hover:text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="20"
+                height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                </polygon>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div v-if="filteredModalWords.length === 0" class="text-center py-10 text-slate-300 font-bold">
+          找不到相關單字...
+        </div>
+      </div>
+      <div v-if="downloadModal.show" class="fixed inset-0 z-[120] flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" @click="closeDownloadModal"></div>
+
+        <div
+          class="relative bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-4 transform transition-all flex flex-col items-center text-center">
+
+          <template v-if="downloadModal.type === 'confirm'">
+            <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4 relative">
+              <svg class="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight">準備下載離線音檔？</h3>
+            <p class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">這將會把發音快取至手機中，<br>可能需要一點時間與網路流量。</p>
+            <div class="flex gap-3 w-full">
+              <button @click="closeDownloadModal"
+                class="flex-1 py-2.5 px-4 bg-slate-100 text-slate-600 rounded-xl font-bold active:scale-95 transition-all">取消</button>
+              <button @click="executeDownload"
+                class="flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition-all">開始下載</button>
+            </div>
+          </template>
+
+          <template v-else-if="downloadModal.type === 'success'">
+            <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
+              <span class="text-3xl">✈️</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight">下載完成！</h3>
+            <p class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">
+              成功快取 <strong class="text-emerald-500 text-lg">{{ downloadModal.successCount }}</strong>
+              個音檔。<br>現在可以安心開啟飛航模式了！
+            </p>
+            <button @click="closeDownloadModal"
+              class="w-full py-2.5 px-4 bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/30 active:scale-95 transition-all">太棒了</button>
+          </template>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { VOCAB_CATEGORIES, downloadOfflineAudio } from './data/thaiTyping.js'
+    // const VOCAB_DATA = {
+    //     基礎與代名詞: [
+    //         { th: 'สวัสดี', zh: '你好' }, { th: 'ขอบคุณ', zh: '謝謝' }, { th: 'ขอโทษ', zh: '對不起/請問' },
+    //         { th: 'ใช่', zh: '是' }, { th: 'ไม่ใช่', zh: '不是' }, { th: 'เข้าใจ', zh: '明白/理解' },
+    //     ],
+    //     疑問句工具: [
+    //         { th: 'อะไร', zh: '什麼' }, { th: 'ที่ไหน', zh: '在哪裡' }, { th: 'เมื่อไหร่', zh: '什麼時候' },
+    //         { th: '誰', zh: '誰' }, { th: 'ทำไม', zh: '為什麼' }, { th: 'อย่างไร', zh: '如何/怎樣' },
+    //         { th: 'เท่าไหร่', zh: '多少錢' }, { th: 'ไหม', zh: '嗎 (問句尾)' }, { th: 'หรือ', zh: '還是/或者' },
+    //     ],
+    //     常用動詞: [
+    //         { th: 'ไป', zh: '去' }, { th: 'มา', zh: '來' }, { th: 'กิน', zh: '吃' }, { th: 'ดู', zh: '看' },
+    //         { th: 'ทำ', zh: '做' }, { th: 'ชอบ', zh: '喜歡' }, { th: 'อยาก', zh: '想要' }, { th: 'เอา', zh: '拿/要' },
+    //         { th: 'มี', zh: '有' }, { th: 'นอน', zh: '睡覺' }, { th: 'เรียน', zh: '學習' }, { th: 'พูด', zh: '說' },
+    //     ],
+    //     形容詞與感覺: [
+    //         { th: 'ดี', zh: '好' }, { th: 'มาก', zh: '很/非常' }, { th: 'สวย', zh: '漂亮' }, { th: 'หล่อ', zh: '帥' },
+    //         { th: 'ร้อน', zh: '熱' }, { th: 'หนาว', zh: '冷' }, { th: 'หิว', zh: '餓' }, { th: 'เผ็ด', zh: '辣' },
+    //         { th: 'อร่อย', zh: '好吃' }, { th: 'แพง', zh: '貴' }, { th: 'ถูก', zh: '便宜' }, { th: 'สะอาด', zh: '乾淨' },
+    //         { th: 'ยาก', zh: '難' }, { th: 'ง่าย', zh: '簡單' }, { th: 'เหนื่อย', zh: '累' }, { th: 'สนุก', zh: '有趣/快樂' },
+    //     ],
+    //     數字與時間: [
+    //         { th: 'ศูนย์', zh: '0' }, { th: 'หนึ่ง', zh: '1' }, { th: 'สอง', zh: '2' }, { th: 'สาม', zh: '3' },
+    //         { th: 'สี่', zh: '4' }, { th: 'ห้า', zh: '5' }, { th: 'หก', zh: '6' }, { th: 'เจ็ด', zh: '7' },
+    //         { th: 'แปด', zh: '8' }, { th: 'เก้า', zh: '9' }, { th: 'สิบ', zh: '10' }, { th: 'ร้อย', zh: '百' },
+    //     ],
+    //     餐廳與交通: [
+    //         { th: 'ข้าว', zh: '飯' }, { th: 'น้ำ', zh: '水' }, { th: 'น้ำแข็ง', zh: '冰塊' }, { th: 'กาแฟ', zh: '咖啡' },
+    //         { th: 'ชาเย็น', zh: '泰奶' }, { th: 'ตะเกียบ', zh: '筷子' }, { th: 'ช้อน', zh: '湯匙' }, { th: 'โรงแรม', zh: '飯店' },
+    //         { th: 'สนามบิน', zh: '機場' }, { th: 'รถเมล์', zh: '公車' }, { th: 'รถไฟฟ้า', zh: '捷運' }, { th: 'แท็กซี่', zh: '計程車' },
+    //     ]
+    // };
+
+    const { createApp, ref, computed, watch, onMounted } = Vue
+    const VOCAB_DATA = VOCAB_CATEGORIES
+
+    createApp({
+      setup() {
+        const isLoading = ref(true);
+        const isDownloading = ref(false);
+        // 彈窗狀態管理
+        const downloadModal = ref({ show: false, type: 'confirm', successCount: 0 });
+        const closeDownloadModal = () => { downloadModal.value.show = false; };
+        const downloadProgress = ref(0);
+        const downloadTotal = ref(0);
+
+        // 2. 新增這個用來綁定按鈕的函數
+        // 1. 點擊導覽列按鈕時，不再用 confirm()，而是彈出我們自己的詢問視窗
+        const startDownload = () => {
+          if (isDownloading.value) return;
+          downloadModal.value = { show: true, type: 'confirm', successCount: 0 };
+        };
+
+        // 2. 在自訂視窗點擊「開始下載」後，才會執行這段
+        const executeDownload = async () => {
+          // 關閉詢問視窗，並讓導覽列按鈕開始轉圈圈
+          downloadModal.value.show = false;
+          isDownloading.value = true;
+          downloadProgress.value = 0;
+          downloadTotal.value = 0;
+
+          try {
+            const successCount = await downloadOfflineAudio((current, total) => {
+              downloadProgress.value = current;
+              downloadTotal.value = total;
+            });
+
+            // 給畫面 0.3 秒緩衝，然後跳出「下載完成」的美美彈窗
+            await new Promise(resolve => setTimeout(resolve, 300));
+            downloadModal.value = { show: true, type: 'success', successCount: successCount };
+
+          } catch (error) {
+            console.error('下載過程出錯:', error);
+            alert('下載失敗，請檢查網路連線。');
+          } finally {
+            isDownloading.value = false;
+          }
+        };
+        // 自訂清單狀態，並從 localStorage 初始化
+        const customList = ref(JSON.parse(localStorage.getItem('thai-custom-list') || '[]'));
+        // --- 新增：已學會單字清單 ---
+        const knownWords = ref(JSON.parse(localStorage.getItem('thai-known-words') || '[]'));
+
+        // --- 本機資料 UUID 無痛遷移邏輯 ---
+        const migrateLocalList = (arr) => {
+          const allW = Object.values(VOCAB_DATA).flat();
+          let mutated = false;
+          const newArr = arr.map(old => {
+            if (old.id) return old;
+            mutated = true;
+            return allW.find(w => w.th === old.th) || null;
+          }).filter(Boolean);
+          return { mutated, newArr };
+        };
+
+        const kl = migrateLocalList(knownWords.value);
+        if (kl.mutated) knownWords.value = kl.newArr;
+        
+        const cl = migrateLocalList(customList.value);
+        if (cl.mutated) customList.value = cl.newArr;
+        // ---------------------------------
+
+        watch(knownWords, (newVal) => {
+          localStorage.setItem('thai-known-words', JSON.stringify(newVal));
+          if (!isSyncingFromCloud.value) {
+            syncToCloud();
+          }
+        }, { deep: true });
+
+        const isKnownWord = (item) => {
+          if (!item || !item.id) return false;
+          return knownWords.value.some(w => w.id === item.id);
+        };
+
+        const toggleKnownWord = (item) => {
+          if (!item.id) return;
+          const index = knownWords.value.findIndex(w => w.id === item.id);
+          if (index > -1) {
+            knownWords.value.splice(index, 1); // 取消學會
+          } else {
+            knownWords.value.push(item); // 標記為學會
+          }
+
+          if (hideKnownWords.value && !selectedCategories.value.includes('已學會')) {
+            // 💡 關鍵：如果打勾的是「正在看」且「正在播放」的單字 -> 先不要抽掉，讓音檔念完
+            if (isPlaying.value && item.th === currentWord.value?.th) {
+              return;
+            }
+
+            // 只有在「暫停」或是「點擊底下清單的其他單字」時，才維持立刻抽掉的邏輯
+            setTimeout(() => {
+              const idxInPlaylist = playlist.value.findIndex(w => w.id === item.id);
+              if (idxInPlaylist > -1) {
+                playlist.value.splice(idxInPlaylist, 1);
+                if (idxInPlaylist < currentIndex.value) {
+                  currentIndex.value--;
+                } else if (idxInPlaylist === currentIndex.value) {
+                  if (currentIndex.value >= playlist.value.length) {
+                    currentIndex.value = Math.max(0, playlist.value.length - 1);
+                  }
+                }
+              }
+            }, 400);
+          }
+        };
+        // 自動把「自訂單字」合併到最前面
+        const allCategories = computed(() => {
+          const result = { ...VOCAB_DATA };
+          if (customList.value.length > 0) {
+            result['自訂單字'] = customList.value;
+          }
+          if (knownWords.value.length > 0) {
+            result['已學會'] = knownWords.value;
+          }
+          return result;
+        });
+        const selectedCategories = ref(JSON.parse(localStorage.getItem('thai-selected-cats') || '[]'));
+
+        // 儲存選中的分類
+        watch(selectedCategories, (newCats) => {
+          localStorage.setItem('thai-selected-cats', JSON.stringify(newCats));
+          syncToCloud(); // 觸發 Firebase 同步
+        }, { deep: true });
+
+        const playlist = ref([])
+        const currentIndex = ref(0)
+        const isPlaying = ref(false)
+
+        const isShuffle = ref(localStorage.getItem('thai-shuffle') === 'true');
+        const repeatMode = ref(parseInt(localStorage.getItem('thai-repeat')) || 0);
+        const playbackRate = ref(parseFloat(localStorage.getItem('thai-rate')) || 1.0)
+        const speakChineseOrder = ref(localStorage.getItem('thai-speak-order') !== 'false');
+        const showChinese = ref(true)
+
+        const currentUtterance = ref(null)
+        // --- 螢幕常亮鎖 (Wake Lock) 邏輯 ---
+        const wakeLock = ref(null)
+
+        const isTransitioning = ref(false);
+        const isModalOpen = ref(false);
+        const modalCategory = ref('基礎與代名詞'); // 預設一個分類
+        const searchQuery = ref(''); // 搜尋關鍵字狀態
+
+        // 複選模式開關 (預設 false 為單選)
+        const isMultiSelect = ref(localStorage.getItem('thai-multi') === 'true')
+        // --- 新增：過濾開關狀態 ---
+        const hideKnownWords = ref(localStorage.getItem('thai-hide-known') === 'true');
+
+        watch(hideKnownWords, (val) => {
+          localStorage.setItem('thai-hide-known', val);
+          updatePlaylist();    // 切換開關時，重新計算播放清單
+          currentIndex.value = 0; // 回到第一個字
+          if (isPlaying.value) stop(); // 暫停播放避免錯亂
+        });
+        let autoPlayTimer = null; // 用來儲存定時器，確保不會重複執行
+        let stepTimer = null; // 管理泰中切換的間格計時器
+        let mainAudioObj = null;
+        // 雲端同步狀態與防迴圈鎖
+        const syncStatus = ref('synced');
+        const downloadedHistory = ref([]); // 儲存從雲端同步回來的下載紀錄
+        const isSyncingFromCloud = ref(false); // 新增防護鎖
+
+        const isDarkMode = ref(localStorage.getItem('thai-dark') === 'true')
+        const voices = ref([]);
+        const selectedVoice = ref(localStorage.getItem('thai-voice') || ''); // 儲存選中的語音名稱
+        const isFlashcardMode = ref(localStorage.getItem('thai-flashcard') === 'true');
+        const isFlipped = ref(false);
+        const currentWord = computed(
+          () => playlist.value[currentIndex.value] || null,
+        )
+        const currentWordCategory = computed(() => {
+          if (!currentWord.value) return ''
+          for (const [cat, words] of Object.entries(allCategories.value)) {
+            if (words.some((w) => w.th === currentWord.value.th)) return cat
+          }
+          return '未分類'
+        })
+
+        const getCatIcon = (cat) => {
+          const icons = {
+            基礎與代名詞: '👥',
+            疑問句工具: '❓',
+            常用動詞: '🏃',
+            形容詞與感覺: '🌈',
+            數字與時間: '🕒',
+            餐廳與交通: '🚗',
+            自訂單字: '⭐',
+            已學會: '✅',
+          }
+          return icons[cat] || '📁'
+        }
+
+        // 新增監聽器，一旦改變就存檔
+        watch(isDarkMode, (val) => {
+          localStorage.setItem('thai-dark', val);
+          if (val) document.body.classList.add('dark-mode');
+          else document.body.classList.remove('dark-mode');
+        }, { immediate: true });
+        watch(isMultiSelect, (v) => localStorage.setItem('thai-multi', v));
+        watch(playbackRate, (v) => {
+          localStorage.setItem('thai-rate', v);
+          // 如果正在播放中切換速度，讓它馬上生效
+          if (mainAudioObj) {
+            mainAudioObj.playbackRate = parseFloat(v);
+          }
+        });
+        watch(selectedVoice, (v) => localStorage.setItem('thai-voice', v));
+        watch(isShuffle, (v) => localStorage.setItem('thai-shuffle', v));
+        watch(repeatMode, (v) => localStorage.setItem('thai-repeat', v));
+        watch(speakChineseOrder, (v) => localStorage.setItem('thai-speak-order', v));
+        // 3. 監聽自訂清單變化，自動存入 localStorage
+        watch(customList, (newVal) => {
+          localStorage.setItem('thai-custom-list', JSON.stringify(newVal));
+
+          // 如果是因為下載雲端資料而改變的，就不觸發上傳
+          if (!isSyncingFromCloud.value) {
+            syncToCloud();
+          }
+
+          if (newVal.length === 0) {
+            if (selectedCategories.value.includes('自訂單字')) {
+              selectedCategories.value = selectedCategories.value.filter(cat => cat !== '自訂單字');
+              updatePlaylist();
+              currentIndex.value = 0;
+              if (isPlaying.value) stop();
+            }
+            if (modalCategory.value === '自訂單字') {
+              modalCategory.value = Object.keys(VOCAB_DATA)[0];
+            }
+          } else if (selectedCategories.value.includes('自訂單字')) {
+            updatePlaylist();
+          }
+        }, { deep: true });
+
+        watch(isFlashcardMode, (val) => {
+          localStorage.setItem('thai-flashcard', val);
+          isFlipped.value = false;
+        });
+
+        watch(currentIndex, (newIdx) => {
+          // 1. 保留原本的邏輯：切換單字時，確保單字卡是正面（未翻轉）
+          isFlipped.value = false;
+
+          // 2. 新增的邏輯：儲存當前單字到本地，以便下次恢復
+          if (playlist.value[newIdx]) {
+            localStorage.setItem('thai-last-word-th', playlist.value[newIdx].th);
+
+            // 如果你想讓雲端也同步這個「最後讀到的單字」
+            // 可以在這裡呼叫 syncToCloud()，但為了節省流量，
+            // 建議在「暫停播放」或「切換分類」時同步即可。
+          }
+        });
+        // 4. 新增判斷與切換收藏狀態的方法
+        const isCustomWord = (item) => {
+          if (!item || !item.id) return false;
+          return customList.value.some(w => w.id === item.id);
+        };
+        const toggleCustomWord = (item) => {
+          if (!item.id) return;
+          const index = customList.value.findIndex(w => w.id === item.id);
+          if (index > -1) {
+            customList.value.splice(index, 1); // 移除
+          } else {
+            customList.value.push(item); // 加入
+          }
+        };
+
+        const reportBadAudio = () => {
+          if (!currentWord.value) return;
+
+          // 1. 檢查是否已經在排除名單中，不在的話就加進去
+          // 我們借用 downloadedHistory 這個變數來儲存「不要播放 MP3」的清單
+          if (!downloadedHistory.value.includes(currentWord.value.th)) {
+            downloadedHistory.value.push(currentWord.value.th);
+          }
+
+          // 2. 同步更新本機 localStorage
+          localStorage.setItem('thai-mp3-history', JSON.stringify(downloadedHistory.value));
+
+          // 3. 同步回 Firebase
+          syncToCloud();
+
+          // 4. 即時回饋：停掉目前的聲音，並改用 TTS 唸一次「已記錄」
+          stopAllAudio();
+          speakFallbackTTS('บันทึกแล้ว', 'th-TH');
+
+          console.log(`已標記壞音檔並加入排除名單：${currentWord.value.th}`);
+        };
+
+        const requestWakeLock = async () => {
+          try {
+            if ('wakeLock' in navigator) {
+              wakeLock.value = await navigator.wakeLock.request('screen')
+              console.log('螢幕常亮啟動')
+
+              // 處理鎖被系統意外釋放的情況（例如切換分頁）
+              wakeLock.value.addEventListener('release', () => {
+                console.log('螢幕常亮已釋放')
+              })
+            }
+          } catch (err) {
+            console.error(`${err.name}, ${err.message}`)
+          }
+        }
+
+        const releaseWakeLock = () => {
+          if (wakeLock.value) {
+            wakeLock.value.release()
+            wakeLock.value = null
+          }
+        }
+
+        // 監聽播放狀態來切換常亮模式
+        watch(isPlaying, (val) => {
+          if (val) {
+            requestWakeLock()
+          } else {
+            releaseWakeLock()
+          }
+        })
+
+        // 滑動
+        const touchStartX = ref(0);
+
+        const handleTouchStart = (e) => {
+          touchStartX.value = e.touches[0].clientX;
+        };
+
+        const handleTouchEnd = (e) => {
+          const touchEndX = e.changedTouches[0].clientX;
+          const diffX = touchStartX.value - touchEndX;
+
+          if (Math.abs(diffX) > 50) {
+            if (diffX < 0) {
+              // 向右滑 (Finger to Right)
+              prev(); // 改成上一題
+            } else {
+              // 向左滑 (Finger to Left)
+              next(); // 改成下一題
+            }
+          }
+        };
+        // 1. 修改 updatePlaylist：只負責建立基礎清單，不再強制歸零 currentIndex
+        const updatePlaylist = () => {
+          let list = []
+          if (selectedCategories.value.length === 0) {
+            list = Object.values(allCategories.value).flat()
+          } else {
+            selectedCategories.value.forEach((cat) => {
+              list = [...list, ...allCategories.value[cat]]
+            })
+          }
+          // 1. 如果開啟過濾，且目前沒有選擇「已學會」分類，就隱藏這些單字
+          if (hideKnownWords.value && !selectedCategories.value.includes('已學會')) {
+            list = list.filter(word => !isKnownWord(word));
+          }
+
+          // 2. 避免跨分類選取時出現重複單字
+          const seen = new Set();
+          list = list.filter(word => {
+            if (seen.has(word.th)) return false;
+            seen.add(word.th);
+            return true;
+          });
+          playlist.value = list
+
+          // 如果是在隨機模式下建立清單（例如切換類別時），則進行洗牌
+          if (isShuffle.value) {
+            shuffleArray(playlist.value)
+          }
+        }
+        // 2. 新增洗牌輔助函數
+        const shuffleArray = (array) => {
+          for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+              ;[array[i], array[j]] = [array[j], array[i]]
+          }
+        }
+
+        const toggleCategory = (cat) => {
+          // 1. 原有的選取邏輯
+          if (cat === 'all') {
+            selectedCategories.value = [];
+          } else {
+            if (!isMultiSelect.value) {
+              selectedCategories.value = [cat];
+            } else {
+              const idx = selectedCategories.value.indexOf(cat);
+              if (idx > -1) {
+                selectedCategories.value.splice(idx, 1);
+              } else {
+                selectedCategories.value.push(cat);
+              }
+            }
+          }
+
+          // 2. 更新播放清單
+          updatePlaylist();
+          currentIndex.value = 0;
+          if (isPlaying.value) stop();
+
+          // 3. ★ 新增：自動捲動邏輯 ★
+          // 使用 setTimeout 確保 DOM 渲染完成後再抓取位置
+          setTimeout(() => {
+            const targetCat = cat === 'all' ? 'all' : cat; // 如果是點擊全部，也可以幫它標記一個 class
+            const activeBtn = document.querySelector(`.cat-btn-${targetCat}`);
+            if (activeBtn) {
+              activeBtn.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center'
+              });
+            }
+          }, 100);
+        };
+
+        const stopAllAudio = () => {
+          clearTimeout(stepTimer); // 清除播放間格的計時器
+
+          if (currentUtterance.value) {
+            currentUtterance.value.onend = null;
+            currentUtterance.value.onerror = null;
+          }
+          window.speechSynthesis.cancel();
+
+          if (mainAudioObj) {
+            mainAudioObj.onended = null;
+            mainAudioObj.onerror = null;
+            mainAudioObj.pause();
+          }
+        };
+
+        const speakFallbackTTS = (text, lang, onEnd) => {
+          const ut = new SpeechSynthesisUtterance(text);
+          currentUtterance.value = ut; // 儲存實體以便 stopAllAudio 攔截
+
+          ut.lang = lang;
+          ut.rate = playbackRate.value || 1.0;
+          const currentVoices = window.speechSynthesis.getVoices();
+          if (lang.startsWith('th')) {
+            let targetVoice = currentVoices.find(v => v.name === selectedVoice.value) || currentVoices.find(v => v.lang.includes('th'));
+            if (targetVoice) ut.voice = targetVoice;
+          } else if (lang === 'zh-TW') {
+            let chineseVoice = currentVoices.find(v => v.lang.includes('zh-TW'));
+            if (chineseVoice) ut.voice = chineseVoice;
+          }
+
+          ut.onend = () => { if (onEnd) onEnd(); };
+          ut.onerror = (e) => {
+            // 排除 cancel 造成的錯誤回呼
+            if (e.error !== 'canceled' && onEnd) onEnd();
+          };
+          window.speechSynthesis.speak(ut);
+        };
+
+        const playMediaWithFallback = async (text, type, onEnd) => {
+          stopAllAudio();
+          if (!mainAudioObj) return;
+
+          // 檢查是否為壞音檔紀錄
+          if (type === 'th' && downloadedHistory.value.includes(text)) {
+            console.log(`[播放器] 檢測到壞音檔紀錄，直接使用 TTS: ${text}`);
+            speakFallbackTTS(text, 'th-TH', onEnd);
+            return;
+          }
+
+          const langCode = type === 'th' ? 'th' : 'zh';
+          const safeText = text.replace(/\//g, '_');
+          const audioUrl = `./audio/TH/${langCode}_${safeText}.mp3`;
+
+          mainAudioObj.pause();
+          mainAudioObj.src = audioUrl;
+          mainAudioObj.load();
+          mainAudioObj.playbackRate = parseFloat(playbackRate.value);
+
+          let isResolved = false; // 狀態鎖：防止 catch 與 onerror 雙重觸發
+
+          const triggerFallback = () => {
+            if (isResolved) return;
+            isResolved = true;
+            console.log(`[播放器] 找不到實體 MP3，退回 TTS: ${text}`);
+            speakFallbackTTS(text, type === 'th' ? 'th-TH' : 'zh-TW', onEnd);
+          };
+
+          mainAudioObj.onended = () => {
+            if (isResolved) return;
+            isResolved = true;
+            if (onEnd) onEnd();
+          };
+
+          mainAudioObj.onerror = () => {
+            triggerFallback();
+          };
+
+          try {
+            await mainAudioObj.play();
+          } catch (e) {
+            if (e.name === 'AbortError' || e.message.includes('interrupted')) {
+              return; // 排除因為被 pause() 截斷的錯誤，避免觸發前一個字的 TTS
+            }
+            triggerFallback();
+          }
+        };
+
+        const replayCurrent = (word) => {
+          const target = word || currentWord.value;
+          if (target) {
+            stopAllAudio();
+            playMediaWithFallback(target.th, 'th');
+          }
+        };
+
+        const playCurrent = () => {
+          if (!currentWord.value || !isPlaying.value) return;
+          stopAllAudio();
+
+          if (speakChineseOrder.value) {
+            playMediaWithFallback(currentWord.value.zh, 'zh', () => {
+              if (!isPlaying.value) return;
+              stepTimer = setTimeout(() => { // 綁定計時器
+                if (!isPlaying.value) return;
+                playMediaWithFallback(currentWord.value.th, 'th', () => {
+                  if (isPlaying.value) {
+                    stepTimer = setTimeout(() => { if (isPlaying.value) handleNextAuto(); }, 200);
+                  }
+                });
+              }, 300);
+            });
+          } else {
+            playMediaWithFallback(currentWord.value.th, 'th', () => {
+              if (!isPlaying.value) return;
+              stepTimer = setTimeout(() => { // 綁定計時器
+                if (!isPlaying.value) return;
+                playMediaWithFallback(currentWord.value.zh, 'zh', () => {
+                  if (isPlaying.value) {
+                    stepTimer = setTimeout(() => { if (isPlaying.value) handleNextAuto(); }, 200);
+                  }
+                });
+              }, 300);
+            });
+          }
+
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: currentWord.value.th,
+              artist: currentWord.value.zh,
+              album: `進度: ${currentIndex.value + 1}/${playlist.value.length}`
+            });
+          }
+        };
+
+        const handleContentClick = () => {
+          if (isPlaying.value) {
+            if (isFlashcardMode.value) isFlipped.value = !isFlipped.value;
+            return;
+          }
+          if (isFlashcardMode.value) {
+            isFlipped.value = !isFlipped.value;
+            if (currentWord.value) playMediaWithFallback(currentWord.value.th, 'th');
+          } else {
+            replayCurrent();
+          }
+        };
+
+        const toggleFlashcardMode = () => {
+          isFlashcardMode.value = !isFlashcardMode.value;
+          if (isFlashcardMode.value && isPlaying.value) {
+            stop(); // 開啟單字卡時，自動暫停播放
+          }
+        };
+        const handleNextAuto = () => {
+          if (!isPlaying.value) return
+          clearTimeout(autoPlayTimer);
+          autoPlayTimer = setTimeout(() => {
+            if (!isPlaying.value) return
+            // --- ★ 新增：等音檔念完後，在這裡才把打勾的字抽掉 ---
+            if (hideKnownWords.value && currentWord.value && isKnownWord(currentWord.value) && !selectedCategories.value.includes('已學會')) {
+              playlist.value.splice(currentIndex.value, 1);
+
+              if (playlist.value.length === 0) {
+                stop(); // 沒字了就停止
+                return;
+              }
+              if (currentIndex.value >= playlist.value.length) {
+                currentIndex.value = 0; // 刪到最後一個，回到起點
+                if (repeatMode.value === 1) { // 如果設定不循環，就停止
+                  stop();
+                  return;
+                }
+              }
+              playCurrent(); // 繼續播遞補上來的新字
+              return;
+            }
+            if (repeatMode.value === 2) {
+              playCurrent()
+            } else {
+              if (currentIndex.value < playlist.value.length - 1) {
+                currentIndex.value++
+                playCurrent()
+              } else {
+                if (repeatMode.value === 0) {
+                  currentIndex.value = 0
+                  playCurrent()
+                } else {
+                  isPlaying.value = false
+                }
+              }
+            }
+          }, 500)
+        }
+
+        const togglePlay = () => {
+          clearTimeout(autoPlayTimer);
+          if (isPlaying.value) {
+            isPlaying.value = false;
+            stopAllAudio();
+            const silentAudio = document.getElementById('silent-audio');
+            if (silentAudio) silentAudio.pause();
+          } else {
+            isPlaying.value = true;
+            isFlashcardMode.value = false;
+            isFlipped.value = false;
+
+            const silentAudio = document.getElementById('silent-audio');
+            if (silentAudio) silentAudio.play().catch(() => { });
+
+            // 喚醒實體播放器給 CarPlay 抓取
+            if (mainAudioObj) {
+              mainAudioObj.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
+              mainAudioObj.play().catch(() => { });
+            }
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+
+            setTimeout(() => {
+              playCurrent();
+            }, 50);
+          }
+        };
+
+        const stop = () => {
+          isPlaying.value = false
+          stopAllAudio()
+          syncToCloud()
+        }
+
+        const next = () => {
+          if (playlist.value.length === 0) return; // 安全檢查
+          clearTimeout(autoPlayTimer); // 手動切換時立即清除自動計時
+          stopAllAudio()
+          isTransitioning.value = true; // 啟動動畫
+          setTimeout(() => {
+            if (hideKnownWords.value && currentWord.value && isKnownWord(currentWord.value) && !selectedCategories.value.includes('已學會')) {
+              playlist.value.splice(currentIndex.value, 1); // 順手清掉
+              if (currentIndex.value >= playlist.value.length) currentIndex.value = 0;
+            } else {
+              if (currentIndex.value < playlist.value.length - 1) {
+                currentIndex.value++
+              } else {
+                currentIndex.value = 0
+              }
+            }
+
+            if (isPlaying.value) playCurrent()
+            setTimeout(() => { isTransitioning.value = false; }, 50);
+          }, 150);
+        }
+
+        const prev = () => {
+          if (playlist.value.length === 0) return; // 安全檢查
+          clearTimeout(autoPlayTimer); // 手動切換時立即清除自動計時
+          stopAllAudio()
+          isTransitioning.value = true; // 啟動動畫
+          setTimeout(() => {
+            if (hideKnownWords.value && currentWord.value && isKnownWord(currentWord.value) && !selectedCategories.value.includes('已學會')) {
+              playlist.value.splice(currentIndex.value, 1); // 順手清掉
+              if (currentIndex.value >= playlist.value.length) currentIndex.value = Math.max(0, playlist.value.length - 1);
+            } else {
+              if (currentIndex.value > 0) {
+                currentIndex.value--
+              } else {
+                currentIndex.value = playlist.value.length - 1
+              }
+            }
+
+            if (isPlaying.value) playCurrent()
+            setTimeout(() => { isTransitioning.value = false; }, 50);
+          }, 150);
+        }
+
+        // 3. 核心修改：監聽 isShuffle
+        watch(isShuffle, (newVal) => {
+          stopAllAudio() // 切換時停止朗讀
+
+          if (newVal) {
+            // --- 開啟隨機模式 ---
+            // 先確保清單完整，再洗牌
+            updatePlaylist()
+            shuffleArray(playlist.value)
+          } else {
+            // --- 關閉隨機模式（恢復） ---
+            // 重新讀取原始順序清單
+            updatePlaylist()
+          }
+
+          // 關鍵：不論開啟或關閉，都回到第一個單字，進度條也會回歸起點
+          currentIndex.value = 0
+
+          // 如果切換前正在播放，則從新的第一個單字開始念
+          if (isPlaying.value) {
+            playCurrent()
+          }
+        })
+
+        // 根據搜尋文字過濾單字清單 (修改為：搜尋時跨分類全域搜尋)
+        const filteredModalWords = computed(() => {
+          // 1. 如果沒有輸入搜尋文字，維持原本「按分類顯示」的邏輯
+          if (!searchQuery.value.trim()) {
+            return allCategories.value[modalCategory.value] || [];
+          }
+
+          // 2. 如果有輸入搜尋文字，從「全部單字」中檢索
+          const q = searchQuery.value.toLowerCase();
+
+          // 將 Object 裡面的所有陣列攤平成一個一維陣列
+          const allWordsFlattened = Object.values(allCategories.value).flat();
+
+          // 💡 小技巧：使用 Map 以泰文 (th) 為 key 來去除重複項
+          // 因為同一個單字可能同時存在於「原始分類」和你的「自訂單字」中
+          const uniqueWords = Array.from(
+            new Map(allWordsFlattened.map(item => [item.th, item])).values()
+          );
+
+          // 3. 回傳過濾後的結果
+          return uniqueWords.filter(item =>
+            item.th.toLowerCase().includes(q) ||
+            item.zh.toLowerCase().includes(q)
+          );
+        });
+
+        // 監控深色模式變化，直接操作 body 的 class
+        watch(isDarkMode, (val) => {
+          if (val) document.body.classList.add('dark-mode');
+          else document.body.classList.remove('dark-mode');
+        });
+
+        // 取得系統可用的泰文語音清單
+        const updateVoices = () => {
+          const allVoices = window.speechSynthesis.getVoices();
+          // 過濾出泰文語音 (th-TH)
+          voices.value = allVoices.filter(v => v.lang.includes('th'));
+
+          // 如果沒選過，預設選第一個
+          if (!selectedVoice.value && voices.value.length > 0) {
+            selectedVoice.value = voices.value[0].name;
+          }
+        };
+
+        // --- 全部重新開始的重置功能 ---
+        const resetAllProgress = () => {
+          if (confirm('確定要清除所有播放進度，並從頭開始嗎？')) {
+            localStorage.removeItem('thai-selected-cats');
+            localStorage.removeItem('thai-last-word-th');
+            selectedCategories.value = [];
+            currentIndex.value = 0;
+            updatePlaylist();
+            if (isPlaying.value) stop();
+            syncToCloud();
+            alert('進度已重置');
+          }
+        };
+        // === Firebase 雲端同步邏輯 ===
+        let cachedCloudThaiData = {}; // 用來快取雲端上的原有資料
+        let initAuthListener = null;
+        let loadProgressFromCloud = null;
+        let saveProgressToCloud = null;
+
+        // 修改後的同步函式
+        const syncToCloud = async () => {
+          if (typeof saveProgressToCloud !== 'function') return;
+          syncStatus.value = 'syncing';
+          try {
+            const payload = {
+              ...cachedCloudThaiData,
+              customList: JSON.parse(JSON.stringify(customList.value)),
+              mp3History: JSON.parse(JSON.stringify(downloadedHistory.value)),
+              knownWords: JSON.parse(JSON.stringify(knownWords.value)),
+              // 新增：進度備份
+              lastSelectedCategories: selectedCategories.value,
+              lastPlayedWord: localStorage.getItem('thai-last-word-th'),
+              playerLastUpdated: Date.now()
+            };
+            await saveProgressToCloud('thai', payload);
+            setTimeout(() => { syncStatus.value = 'synced'; }, 600);
+          } catch (error) {
+            syncStatus.value = 'error';
+          }
+        };
+
+        const initializeCloudSync = async () => {
+          try {
+            // 動態引入你的 Firebase 模組
+            const [authModule, dbModule] = await Promise.all([
+              import('./js/auth.js'),
+              import('./js/dbService.js'),
+            ]);
+
+            initAuthListener = authModule.initAuthListener;
+            loadProgressFromCloud = dbModule.loadProgressFromCloud;
+            saveProgressToCloud = dbModule.saveProgressToCloud;
+
+            if (typeof initAuthListener !== 'function') {
+              isLoading.value = false; // ✅ 模組異常，關閉 Loading 避免卡死
+              return;
+            }
+
+            // 啟動驗證監聽
+            initAuthListener(
+              async (user) => {
+                // 1. 登入成功：顯示畫面
+                console.log('Verified User:', user.email);
+
+                if (typeof loadProgressFromCloud !== 'function') {
+                  isLoading.value = false; // ✅ 模組異常，關閉 Loading 避免卡死
+                  return;
+                }
+
+                // 2. 下載雲端資料
+                const cloudData = await loadProgressFromCloud();
+
+                if (cloudData && cloudData.thai) {
+                  // 將雲端原本的所有資料 (包含錯題本、分數) 存入快取，保護舊資料不被洗掉
+                  cachedCloudThaiData = cloudData.thai;
+                  isSyncingFromCloud.value = true; // 加鎖防止觸發 watch 同步回雲端
+
+                  // 1. 恢復分類
+                  if (cloudData.thai.lastSelectedCategories) {
+                    selectedCategories.value = cloudData.thai.lastSelectedCategories;
+                  }
+                  // 2. 恢復 MP3 歷史
+                  if (cloudData.thai.mp3History) {
+                    downloadedHistory.value = cloudData.thai.mp3History;
+                  }
+                  // 3. 恢復自訂單字
+                  if (cloudData.thai.customList) {
+                    customList.value = cloudData.thai.customList;
+                  }
+                  // 4. 恢復最後單字位置
+                  if (cloudData.thai.lastPlayedWord) {
+                    localStorage.setItem('thai-last-word-th', cloudData.thai.lastPlayedWord);
+                  }
+                  if (cloudData.thai.knownWords) {
+                    knownWords.value = cloudData.thai.knownWords;
+                  }
+
+                  // --- Firebase 資料 UUID 無痛遷移邏輯 ---
+                  const allW = Object.values(VOCAB_DATA).flat();
+                  let migrated = false;
+                  const migrateCloudList = (arr) => arr.map(old => {
+                    if (old.id) return old;
+                    migrated = true;
+                    return allW.find(w => w.th === old.th) || null;
+                  }).filter(Boolean);
+
+                  knownWords.value = migrateCloudList(knownWords.value);
+                  customList.value = migrateCloudList(customList.value);
+                  if (migrated) syncToCloud(); // 覆寫舊格式回雲端
+                  // --------------------------------------
+
+                  // 5. 關鍵：恢復完資料後立刻重新產生清單並跳轉位置
+                  updatePlaylist();
+                  restoreLastPosition();
+
+                  setTimeout(() => {
+                    isSyncingFromCloud.value = false;
+                    isLoading.value = false; // ✅ 資料載入並渲染完畢，關閉 Loading
+                  }, 200);
+
+                } else {
+                  // ✅ 雖然登入了，但雲端還沒有任何泰文資料 (可能是第一次玩)
+                  isLoading.value = false;
+                }
+              },
+              (errorMsg) => {
+                // 登入失敗或未登入：強制導回登入頁
+                if (errorMsg) console.warn('登入狀態異常:', errorMsg);
+                console.log('⚠️ 尚未登入，導回大廳');
+                window.location.href = 'index.html';
+              }
+            );
+          } catch (error) {
+            // 模組載入失敗 (例如本地開發環境無伺服器時)，確保畫面仍會顯示
+            console.warn('雲端模組載入失敗，將繼續使用本地模式', error);
+            isLoading.value = false; // ✅ 發生錯誤改用本地模式時，也要關閉 Loading
+          }
+        };
+
+        // 新增一個輔助函式
+        const restoreLastPosition = () => {
+          const lastWordTh = localStorage.getItem('thai-last-word-th');
+          if (lastWordTh && playlist.value.length > 0) {
+            const savedIndex = playlist.value.findIndex(w => w.th === lastWordTh);
+            if (savedIndex > -1) {
+              currentIndex.value = savedIndex;
+            }
+          }
+        };
+
+        onMounted(() => {
+          mainAudioObj = document.getElementById('main-player');
+          // 新增：鍵盤快捷鍵支援
+          window.addEventListener('keydown', (e) => {
+            // 如果正在搜尋框裡面打字，就不要觸發快捷鍵
+            if (e.target.tagName === 'INPUT') return;
+
+            if (e.code === 'Space') {
+              e.preventDefault(); // 防止空白鍵讓網頁往下滾
+              togglePlay();
+            } else if (e.code === 'ArrowRight') {
+              next();
+            } else if (e.code === 'ArrowLeft') {
+              prev();
+            }
+          });
+          updatePlaylist();
+          restoreLastPosition(); // 啟動時恢復
+          window.speechSynthesis.onvoiceschanged = updateVoices;
+          updateVoices();
+
+          document.addEventListener('visibilitychange', () => {
+            if (wakeLock.value !== null && document.visibilityState === 'visible' && isPlaying.value) {
+              requestWakeLock();
+            }
+          });
+
+          initializeCloudSync();
+
+          if ('mediaSession' in navigator) {
+            // 播放、暫停
+            navigator.mediaSession.setActionHandler('play', togglePlay);
+            navigator.mediaSession.setActionHandler('pause', togglePlay);
+            // 上一首、下一首 (建議也移到這裡統一管理)
+            navigator.mediaSession.setActionHandler('previoustrack', prev);
+            navigator.mediaSession.setActionHandler('nexttrack', next);
+          }
+        });
+
+        return {
+          allCategories,
+          selectedCategories,
+          playlist,
+          currentIndex,
+          isPlaying,
+          currentWord,
+          currentWordCategory,
+          isShuffle,
+          repeatMode,
+          playbackRate,
+          speakChineseOrder,
+          showChinese,
+          getCatIcon,
+          toggleCategory,
+          togglePlay,
+          next,
+          prev,
+          updatePlaylist,
+          replayCurrent,
+          isModalOpen,
+          modalCategory,
+          handleTouchStart,
+          handleTouchEnd,
+          isTransitioning,
+          isMultiSelect,
+          searchQuery,
+          filteredModalWords,
+          isDarkMode,
+          voices,
+          selectedVoice,
+          isCustomWord,
+          toggleCustomWord,
+          syncStatus,
+          downloadedHistory,
+          reportBadAudio,
+          isFlashcardMode,
+          isFlipped,
+          toggleFlashcardMode,
+          handleContentClick,
+          resetAllProgress,
+          knownWords,
+          isKnownWord,
+          toggleKnownWord,
+          hideKnownWords,
+          downloadOfflineAudio,
+          isDownloading,
+          downloadProgress,
+          downloadTotal,
+          startDownload,
+          isLoading,
+          downloadModal,
+          closeDownloadModal,
+          executeDownload
+        }
+      },
+    }).mount('#app')
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            console.log('ServiceWorker 註冊成功:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('ServiceWorker 註冊失敗:', error);
+          });
+      });
+    }
+  </script>
+</body>
+
+</html>

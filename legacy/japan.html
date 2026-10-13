@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🇯🇵 日語學習機</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/learning.css">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              indigo: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      [v-cloak] { display: none; }
+      /* 保留原本的 opacity transition */
+      body { opacity: 1 !important; }
+    </style>
+  </head>
+  <body class="theme-japan min-h-screen flex flex-col items-center p-4 pb-20 transition-colors duration-300 bg-gradient-to-b from-indigo-50 to-white dark:from-slate-900 dark:to-slate-800">
+    <div id="app" v-cloak class="w-full max-w-5xl flex flex-col items-center">
+      
+      <header class="relative w-full mb-6 text-center pt-8 md:pt-6">
+        <div class="absolute top-0 left-0 z-20 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <a href="index.html" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-600 no-underline transition-all bg-white/80 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-800/80 dark:text-gray-300 hover:text-indigo-600 glass-nav hover:shadow-md hover:pl-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+            大廳
+          </a>
+          <div class="flex items-center p-1 gap-1 bg-white/80 dark:bg-gray-800/80 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 glass-nav backdrop-blur-md">
+            <a href="korean.html" class="w-7 h-7 flex items-center justify-center rounded-full bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all text-sm font-bold shadow-sm">KR</a>
+            <a href="thai.html" class="w-7 h-7 flex items-center justify-center rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all text-sm font-bold shadow-sm">TH</a>
+          </div>
+        </div>
+        <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-3 mt-8 md:mt-0 relative">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-2xl shadow-md flex items-center justify-center text-2xl md:text-3xl border border-indigo-100 dark:border-slate-700">🇯🇵</div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-white tracking-tight">日語<span class="text-indigo-600 dark:text-indigo-400">學習機</span></h1>
+          </div>
+          <div class="flex items-center bg-white dark:bg-slate-800 rounded-full shadow-sm border border-gray-200 dark:border-slate-600 px-4 py-2 gap-4 select-none">
+            <button @click="toggleDarkMode" class="text-yellow-500 hover:text-yellow-600 transition-colors">
+              <svg v-if="isDark" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            </button>
+            <div class="w-px h-4 bg-gray-300 dark:bg-slate-600"></div>
+            <button @click="modals.table = true" class="text-indigo-500 hover:text-indigo-600 transition-colors"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7-8v8m14-8v8M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg></button>
+            <div class="w-px h-4 bg-gray-300 dark:bg-slate-600"></div>
+            <button @click="isRomajiHidden = !isRomajiHidden" :class="!isRomajiHidden ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500'" class="flex items-center gap-1.5 font-bold text-sm transition-colors">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+              <span>拼音</span>
+            </button>
+            <div class="w-px h-4 bg-gray-300 dark:bg-slate-600"></div>
+            <button @click="modals.confusing = true" class="text-gray-400 hover:text-pink-500 transition-colors"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></button>
+          </div>
+        </div>
+        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-3">從五十音到常用單字的完整練習工具</p>
+        <div class="flex flex-wrap items-center justify-center gap-3 px-4 py-2 mx-auto mt-4 text-xs text-gray-500 bg-white border border-gray-100 shadow-sm dark:text-gray-400 dark:bg-slate-800/80 rounded-2xl dark:border-slate-700 w-fit backdrop-blur-sm">
+          <div class="flex items-center gap-2">
+            <span>🐢</span>
+            <input type="range" min="0.5" max="1.5" step="0.1" v-model="speechRate" class="h-1.5 w-20 bg-gray-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+            <span>🐇</span>
+            <span class="ml-1 font-mono text-indigo-600 dark:text-indigo-400">{{ speechRate }}</span>
+          </div>
+          <div class="w-px h-4 bg-gray-200 dark:bg-slate-600"></div>
+          <select v-model="selectedVoiceIndex" class="p-0 text-xs text-gray-600 bg-transparent border-none cursor-pointer focus:ring-0 dark:text-gray-300 max-w-[100px] truncate">
+            <option v-for="(v, i) in voices" :key="i" :value="i">{{ v.name.replace(/Microsoft |Google /g, '') }}</option>
+          </select>
+        </div>
+      </header>
+
+      <div class="w-full max-w-4xl flex flex-wrap justify-center gap-3 mb-6">
+        <button v-for="mode in modeOptions" :key="mode.id" @click="switchMode(mode.id)"
+          :class="currentMode === mode.id ? 'active-tab shadow-md' : 'inactive-tab shadow-sm'"
+          class="px-5 py-2.5 rounded-full font-bold transition-all border flex items-center gap-2 transform active:scale-95">
+          {{ mode.icon }} {{ mode.label }}
+        </button>
+      </div>
+
+      <section v-if="currentMode === 'learn'" class="w-full max-w-5xl">
+        <div class="flex flex-col items-center bg-white dark:bg-slate-800/80 backdrop-blur p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 mb-6 transition-colors">
+          <div class="flex space-x-2 overflow-x-auto w-full md:justify-center p-2 no-scrollbar">
+            <button v-for="cat in categoryList" :key="cat.id" @click="setLearnCategory(cat.id)"
+              :class="currentLearnCategory === cat.id ? 'category-active' : 'category-inactive'"
+              class="px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5">
+              <span>{{ cat.icon }}</span> {{ cat.label }}
+            </button>
+          </div>
+          <div class="flex flex-wrap justify-center gap-2 w-full overflow-x-auto pb-2 mt-2 px-2">
+            <button v-for="row in currentRows" :key="row" @click="currentRowFilter = row"
+              :class="currentRowFilter === row ? 'row-btn-active' : 'row-btn-inactive'"
+              class="px-3 py-1 rounded-full text-xs font-bold transition-colors whitespace-nowrap border">
+              {{ getRowLabelText(row) }}
+            </button>
+          </div>
+          <div class="flex space-x-2 border-t border-gray-100 dark:border-slate-700 pt-3 w-full justify-center mt-1">
+            <button @click="currentType = 'hiragana'" :class="currentType === 'hiragana' ? 'sub-active' : 'sub-inactive'" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">あ 平假名</button>
+            <button @click="currentType = 'katakana'" :class="currentType === 'katakana' ? 'sub-active' : 'sub-inactive'" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">ア 片假名</button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-2 mb-4">
+          <span class="text-xs text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300">💡 提示</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">點擊卡片發音，點擊筆圖示可手寫練習</span>
+        </div>
+
+        <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-10">
+          <div v-for="item in filteredLearnData" :key="item.romaji" @click="speak(item)"
+            class="bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 card-hover cursor-pointer transition-all duration-200 flex flex-col relative group select-none h-full min-h-[180px] justify-between">
+            <button @click.stop="openHW(item)" class="absolute top-2 left-2 p-1.5 text-gray-300 hover:text-indigo-500 z-20">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            </button>
+            <button @click.stop="toggleStar(item.romaji)" class="absolute top-2 right-2 p-1.5 transition-all hover:scale-110 z-20" :class="isStarred(item.romaji) ? 'text-yellow-400 fill-current' : 'text-gray-300'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+            </button>
+
+            <div class="flex-1 flex flex-col items-center justify-center relative pt-2">
+              <template v-if="currentLearnCategory === 'color'">
+                <div class="w-16 h-16 rounded-full shadow-inner mb-3 border border-gray-200" :style="{ backgroundColor: colorMap[item.romaji] }"></div>
+                <div class="text-3xl font-bold jp-font text-gray-800 dark:text-white">{{ item.char }}</div>
+              </template>
+              <template v-else-if="currentLearnCategory === 'greeting'">
+                <div class="bg-indigo-50 dark:bg-slate-700/50 p-3 rounded-xl mb-2 relative w-full text-center">
+                  <div class="absolute -top-3 left-2 text-2xl">💬</div>
+                  <div class="text-xl font-bold text-indigo-700 dark:text-indigo-300 jp-font leading-tight">{{ item.char }}</div>
+                </div>
+              </template>
+              <template v-else-if="['week','family','body','adjective'].includes(currentLearnCategory)">
+                <div class="text-4xl mb-2 filter drop-shadow-sm">{{ jpIcons[item.romaji] || '📝' }}</div>
+                <div class="text-2xl font-bold jp-font text-center leading-tight" :class="item.romaji === 'nichiyoubi' ? 'text-red-500' : (item.romaji === 'doyoubi' ? 'text-blue-500' : 'text-gray-800 dark:text-white')">{{ item.char }}</div>
+              </template>
+              <template v-else>
+                <div class="font-bold jp-font text-gray-800 dark:text-white" :class="item.char.length > 1 ? 'text-4xl' : 'text-6xl'">{{ item.char }}</div>
+              </template>
+              <div class="text-sm font-bold text-gray-400 uppercase mt-1 tracking-wider transition-all" :class="{ 'romaji-hidden': isRomajiHidden }">{{ item.romaji }}</div>
+            </div>
+
+            <div class="w-full pt-2 mt-auto border-t border-gray-100 dark:border-slate-700">
+              <div class="text-sm font-medium text-center text-gray-600 dark:text-gray-300 mb-1">{{ item.vocab?.meaning || item.meaning }}</div>
+              <button v-if="item.sentence" @click.stop="openSentence(item)" class="w-full py-1 bg-indigo-50 dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 text-[10px] rounded hover:bg-indigo-100 font-bold flex items-center justify-center gap-1 transition-colors">
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                <span>例句</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="currentMode.startsWith('quiz')" class="w-full max-w-2xl flex flex-col items-center">
+        <div class="w-full bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm mb-6 border border-gray-100 dark:border-slate-700">
+
+          <!-- ✅ 新增：同一列左右排列（左 Mode、右 Score） -->
+          <div class="flex justify-between items-end mb-3">
+            <!-- 左：原本 Mode 區塊原封不動放進來 -->
+            <div class="flex items-center gap-2">
+              <div class="p-1.5 bg-indigo-100 text-indigo-500 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
+                  Mode
+                </div>
+                <div class="text-gray-700 dark:text-gray-200 font-bold text-sm" id="quiz-mode-label">
+                  {{ quizModeLabel }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 右：分數（保留你原本 class） -->
+            <div class="text-indigo-600 dark:text-indigo-400 font-black text-xl" id="quiz-score">
+              {{ quiz.score }} / {{ quiz.total }}
+            </div>
+          </div>
+
+          <!-- ✅ 以下全部原樣不動 -->
+          <div class="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+            <div class="bg-indigo-500 h-3 transition-all duration-500" :style="{ width: (quiz.score/quiz.total * 100) + '%' }"></div>
+          </div>
+
+          <div class="flex justify-between mt-3 px-1 text-xs text-gray-400">
+            <div class="flex items-center gap-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3 w-3"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>錯題將自動重新出現</span>
+            </div>
+
+            <div class="flex gap-2">
+              <button v-if="mistakes.size > 0" @click="startMistakeQuiz"
+                class="bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-300 px-3 py-1 rounded-full font-bold">
+                複習錯題 ({{ mistakes.size }})
+              </button>
+              <button @click="startQuiz" class="text-blue-500 font-bold px-2 py-1 transition-colors">
+                ↺ 重新開始
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <div v-if="!quiz.finished" id="quiz-card" class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl w-full text-center border-b-[6px] border-indigo-500 relative pb-20">
+          <div v-if="currentMode === 'quiz_hear'" class="mb-8">
+            <button @click="speak(quiz.currentItem)" class="w-32 h-32 rounded-full bg-indigo-500 text-white shadow-lg flex items-center justify-center mx-auto transform hover:scale-105 active:scale-95 transition-all">
+              <svg class="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+            </button>
+          </div>
+          <div v-else class="mb-8 text-9xl font-black jp-font text-gray-800 dark:text-white drop-shadow-sm">{{ quiz.currentItem?.char }}</div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <button v-for="opt in quiz.options" :key="opt.romaji" @click="handleAnswer(opt)"
+                    :class="getQuizBtnStyle(opt)"
+                    class="h-24 bg-white dark:bg-slate-700 border-2 rounded-2xl flex overflow-hidden transition-all shadow-sm relative group">
+              <div v-if="currentMode === 'quiz_read'" @click.stop="speak(opt)" class="z-10 flex items-center justify-center w-1/3 border-r bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 hover:bg-indigo-100">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+              </div>
+              <div class="flex flex-col items-center justify-center flex-1 p-1">
+                <div class="text-3xl font-bold jp-font text-gray-800 dark:text-white">{{ currentMode === 'quiz_hear' ? opt.char : '' }}</div>
+                <div v-if="quiz.answered" class="mt-1 flex flex-col items-center">
+                  <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase">{{ opt.romaji }}</span>
+                  <span class="text-[10px] text-gray-400">({{ opt.vocab?.meaning || opt.meaning }})</span>
+                </div>
+                <span v-else-if="currentMode === 'quiz_read'" class="text-xs text-gray-400 font-bold uppercase">選擇發音</span>
+              </div>
+            </button>
+          </div>
+          <div v-if="quiz.feedback" class="mt-8 h-12 flex items-center justify-center font-bold text-lg rounded-xl transition-all" :class="quiz.isCorrect ? 'text-indigo-600 bg-indigo-50' : 'text-red-500 bg-red-50'">{{ quiz.feedback }}</div>
+          <div class="mt-4 flex justify-center absolute bottom-6 left-0 w-full">
+            <button v-if="quiz.answered" @click="nextQuizQuestion" class="px-8 py-3 bg-gray-800 hover:bg-black text-white rounded-full font-bold shadow-xl transition-all hover:scale-105 active:scale-95">下一題 ➔</button>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="currentMode === 'game_memory'" class="w-full max-w-2xl flex flex-col items-center">
+        <div class="w-full bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700">
+          <div class="flex justify-center gap-2 mb-6 overflow-x-auto pb-2">
+            <button v-for="m in memoryModes" :key="m.id" @click="setMemoryMode(m.id)" 
+              :class="currentMemoryMode === m.id ? 'bg-indigo-100 text-indigo-700 border-indigo-500' : 'bg-white text-gray-500 border-gray-200'"
+              class="px-3 py-1.5 text-xs font-bold rounded-lg border transition-all whitespace-nowrap">{{ m.label }}</button>
+          </div>
+          <div class="flex justify-between mb-4 px-2 text-xs font-bold">
+            <div class="text-gray-500 bg-gray-100 dark:bg-slate-700 px-3 py-1 rounded-full shadow-inner">步數: {{ memory.moves }}</div>
+            <div class="text-orange-600 bg-orange-50 px-3 py-1 rounded-full">最佳: {{ memoryBestRecord || '--' }}</div>
+            <button @click="initMemoryGame" class="text-indigo-500 hover:scale-105 transition-transform">↺ 重新開始</button>
+          </div>
+          <div class="grid grid-cols-3 md:grid-cols-4 gap-3 relative">
+            <div v-for="(card, index) in memory.cards" :key="index" @click="flipCard(card)" 
+              class="aspect-square bg-white dark:bg-slate-700 rounded-2xl cursor-pointer shadow-sm relative border transition-transform duration-300"
+              :class="{'scale-105': card.flipped, 'pointer-events-none': card.matched || memory.lock}">
+              <div v-if="!card.flipped && !card.matched" class="absolute inset-0 flex items-center justify-center bg-indigo-50 dark:bg-slate-600 rounded-2xl text-3xl">🇯🇵</div>
+              <div v-else class="absolute inset-0 flex items-center justify-center bg-white dark:bg-slate-800 rounded-2xl border-2 border-indigo-500 font-bold shadow-md p-1"
+                :class="{'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30': card.matched}" v-html="card.content"></div>
+            </div>
+            <div v-if="memory.matched === 6" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-xl transition-all">
+               <div class="text-6xl mb-2 animate-bounce">🏆</div>
+               <button @click="initMemoryGame" class="px-6 py-2 bg-indigo-500 text-white rounded-full font-bold shadow-lg transition-all">再玩一次</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div v-if="modals.sentence" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center text-center relative shake-anim">
+          <button @click="modals.sentence = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-2 text-2xl">&times;</button>
+          <div @click="speak({soundText: activeSentence.text})" class="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-6 cursor-pointer hover:scale-110 transition-transform shadow-md border-4 border-white dark:border-slate-700">
+            <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+          </div>
+          <h3 class="text-3xl font-bold text-gray-800 dark:text-white mb-2 jp-font leading-relaxed" v-html="activeSentence.html || activeSentence.text"></h3>
+          <p class="text-sm text-gray-500 mb-6 font-mono">{{ activeSentence.romaji }}</p>
+          <div class="bg-indigo-50 dark:bg-slate-700/50 px-6 py-4 rounded-xl w-full"><p class="text-lg font-bold text-indigo-700 dark:text-indigo-300">{{ activeSentence.trans }}</p></div>
+          <p class="text-xs text-gray-400 mt-4">點擊喇叭圖示再次播放</p>
+        </div>
+      </div>
+
+      <div v-if="modals.table" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden transition-colors">
+          <div class="bg-indigo-600 p-4 flex justify-between items-center text-white shrink-0"><h3 class="font-bold text-lg">五十音總表 (點擊發音)</h3><button @click="modals.table = false" class="text-2xl">&times;</button></div>
+          <div class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-slate-900">
+            <div class="grid grid-cols-5 gap-2 sm:gap-4 max-w-3xl mx-auto">
+              <div v-for="item in jpData.filter(d => d.type === 'hiragana')" :key="item.romaji" @click="speak(item, false)" 
+                class="flex flex-col items-center p-3 bg-white dark:bg-slate-700 border rounded-xl cursor-pointer hover:bg-indigo-50 transition-all shadow-sm">
+                <div class="text-2xl font-bold jp-font text-gray-800 dark:text-white">{{ item.char }}</div><div class="text-xs text-gray-400 font-bold">{{ item.romaji }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="modals.confusing" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transition-colors">
+          <div class="bg-pink-600 p-4 flex justify-between items-center text-white shrink-0"><h3 class="font-bold text-lg">易混淆字對照表</h3><button @click="modals.confusing = false" class="text-2xl">&times;</button></div>
+          <div class="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-slate-900">
+            <div class="grid gap-8 max-w-2xl mx-auto">
+              <div v-for="group in confusingPairs" :key="group.title">
+                <h4 class="font-bold text-gray-700 dark:text-gray-200 mb-3 pb-2 border-b border-gray-200 dark:border-slate-700">{{ group.title }}</h4>
+                <div class="grid grid-cols-2 gap-4">
+                  <div v-for="pair in group.pairs" class="bg-white dark:bg-slate-700 p-3 rounded-xl border border-gray-100 dark:border-slate-600 flex justify-center items-center gap-4 shadow-sm text-lg font-medium text-gray-800 dark:text-white">
+                    <span class="jp-font text-3xl text-indigo-600 dark:text-indigo-400 font-bold">{{ pair[0].split(' ')[0] }}</span><span class="text-gray-300 text-sm">vs</span><span class="jp-font text-3xl text-pink-600 dark:text-pink-400 font-bold">{{ pair[1].split(' ')[0] }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="modals.writing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+          <div class="flex items-center justify-between px-4 py-3 border-b bg-gray-50 dark:bg-slate-700 dark:border-slate-600">
+            <h3 class="font-bold text-gray-700 dark:text-gray-200">✍️ 手寫練習: <span class="text-indigo-600 jp-font">{{ hwItem?.romaji }}</span></h3>
+            <button @click="modals.writing = false" class="text-2xl text-gray-400 hover:text-red-500 transition-colors">&times;</button>
+          </div>
+          <div class="relative h-80 bg-white cursor-crosshair touch-none" id="canvas-container" ref="canvasContainerRef">
+            <svg v-if="hwItem?.strokes" class="absolute inset-0 w-full h-full" viewBox="10 -5 80 95" preserveAspectRatio="xMidYMid meet">
+              <path v-for="(d, i) in hwItem.strokes" :key="'g'+i" :d="d" class="stroke-guide-path" />
+              <path v-for="(d, i) in hwItem.strokes" :key="'a'+i" :id="'anim-stroke-'+i" :d="d" class="stroke-anim-path" />
+            </svg>
+            <div v-else class="absolute inset-0 flex items-center justify-center text-[18rem] text-gray-100 font-bold jp-font select-none pointer-events-none pb-4 z-0">{{ hwItem?.char }}</div>
+            <canvas id="hw-canvas" ref="hwCanvasRef" class="absolute inset-0 w-full h-full touch-none z-10"></canvas>
+          </div>
+          <div class="flex flex-wrap items-center justify-between px-4 py-3 border-t bg-gray-50 dark:bg-slate-700 gap-2">
+            <div class="flex gap-2">
+              <button v-for="c in ['#059669', '#2563eb', '#1f2937']" :key="c" @click="setInkColor(c)" :style="{backgroundColor: c}" class="w-6 h-6 rounded-full shadow-sm" :class="inkColor === c ? 'ring-2 ring-offset-1' : ''"></button>
+            </div>
+            <div v-if="hwItem?.strokes" class="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-full px-2 py-1 shadow-sm border border-gray-100">
+              <button @click="playHWAnim" class="flex items-center gap-1 px-2 py-1 text-xs font-bold text-white bg-orange-400 rounded-full hover:bg-orange-500">筆順範例</button>
+            </div>
+            <button @click="clearHW" class="text-red-500 font-bold px-3 py-1.5 text-xs rounded-full hover:bg-red-50">清除</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <script type="module">
+      import { jpData, colorMap, jpIcons, confusingPairs, jpRowLabels, modeOptions, categoryList } from './data/japanese.js'
+      import { initAuthListener } from './js/auth.js'
+      import { safeStorage, shuffleArray } from './js/utils.js'
+      import { saveProgressToCloud, loadProgressFromCloud } from './js/dbService.js'
+
+      const { createApp, ref, computed, onMounted, onBeforeUnmount, nextTick, watch } = Vue;
+
+      createApp({
+        setup() {
+          // --- 響應式屬性 ---
+          const currentMode = ref('learn');
+          const currentLearnCategory = ref('seion');
+          const currentType = ref('hiragana');
+          const currentRowFilter = ref('all');
+          const speechRate = ref(0.8);
+          const isDark = ref(safeStorage.get('darkMode', false));
+          const isRomajiHidden = ref(false);
+          const favorites = ref(safeStorage.get('jp_favorites', []));
+          const voices = ref([]);
+          const selectedVoiceIndex = ref(0);
+
+          const modals = ref({ table: false, confusing: false, sentence: false, writing: false });
+          const quiz = ref({ score: 0, total: 20, currentItem: null, options: [], answered: false, feedback: '', isCorrect: false, finished: false, deck: [] });
+          const mistakes = ref(new Set());
+          
+          const memory = ref({ cards: [], flipped: [], moves: 0, matched: 0, lock: false });
+          const currentMemoryMode = ref('hira_kata');
+          const memoryModes = [{ id: 'hira_kata', label: '平假名 ↔ 片假名' }, { id: 'kana_romaji', label: '假名 ↔ 拼音' }, { id: 'vocab_mean', label: '單字 ↔ 中文' }];
+          const memoryBestRecord = ref(safeStorage.get('memory_best_hira_kata', null));
+
+          const hwItem = ref(null);
+          const inkColor = ref('#2563eb');
+          const activeSentence = ref(null);
+          const canvasContainerRef = ref(null);
+          const hwCanvasRef = ref(null);
+          const redirectToIndex = () => { window.location.href = 'index.html'; };
+
+          // --- 輔助函式 ---
+          const getRowLabelText = (row) => jpRowLabels[row] || row;
+          const isStarred = (romaji) => favorites.value.includes(romaji);
+          const currentRows = computed(() => {
+            const map = { seion: ['all','a','ka','sa','ta','na','ha','ma','ya','ra','wa'], dakuon: ['all','ga','za','da','ba','pa'], yoon: ['all','kya','sha','cha','nya','hya','mya','rya','gya','ja','bya','pya'], number: ['all','basic','counter','date'] };
+            return map[currentLearnCategory.value] || ['all'];
+          });
+          const filteredLearnData = computed(() => jpData.filter(d => d.type === currentType.value && d.category === currentLearnCategory.value && (currentRowFilter.value === 'all' || d.row === currentRowFilter.value)));
+
+          // --- 方法區 ---
+          const speak = (item) => {
+            if (!item) return; window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(item.soundText || item.char || item);
+            utter.lang = 'ja-JP'; utter.rate = speechRate.value;
+            if (voices.value[selectedVoiceIndex.value]) utter.voice = voices.value[selectedVoiceIndex.value];
+            window.speechSynthesis.speak(utter);
+          };
+
+          const switchMode = (mode) => {
+            currentMode.value = mode;
+            if (mode.startsWith('quiz')) startQuiz();
+            if (mode === 'game_memory') initMemoryGame();
+          };
+
+          const quizModeLabel = computed(() =>
+            currentMode.value === 'quiz_hear' ? '聽音辨字' : '看字選音'
+          )
+
+          const setLearnCategory = (cat) => { currentLearnCategory.value = cat; currentRowFilter.value = 'all'; };
+          const toggleStar = (romaji) => {
+            const idx = favorites.value.indexOf(romaji);
+            if (idx > -1) favorites.value.splice(idx,1); else favorites.value.push(romaji);
+            safeStorage.set('jp_favorites', favorites.value);
+          };
+
+          const toggleDarkMode = () => { isDark.value = !isDark.value; };
+
+          // --- 測驗還原 ---
+          const startQuiz = () => { quiz.value.deck = shuffleArray([...jpData]).slice(0, 20); quiz.value.score = 0; quiz.value.finished = false; nextQuizQuestion(); };
+          const startMistakeQuiz = () => { quiz.value.deck = shuffleArray(jpData.filter(i => mistakes.value.has(i.romaji))); quiz.value.score = 0; quiz.value.finished = false; nextQuizQuestion(); };
+          const nextQuizQuestion = () => {
+            quiz.value.answered = false; quiz.value.feedback = '';
+            if (quiz.value.deck.length === 0) { quiz.value.finished = true; return; }
+            quiz.value.currentItem = quiz.value.deck.shift();
+            let opts = [quiz.value.currentItem];
+            while (opts.length < 4) {
+              const r = jpData[Math.floor(Math.random() * jpData.length)];
+              if (!opts.find(o => o.romaji === r.romaji)) opts.push(r);
+            }
+            quiz.value.options = shuffleArray(opts);
+            if (currentMode.value === 'quiz_hear') setTimeout(() => speak(quiz.value.currentItem), 300);
+          };
+          const handleAnswer = (opt) => {
+            if (quiz.value.answered) return; quiz.value.answered = true;
+            quiz.value.isCorrect = opt.romaji === quiz.value.currentItem.romaji;
+            if (quiz.value.isCorrect) { quiz.value.score++; quiz.value.feedback = '✨ 正確！'; if (quiz.value.score % 5 === 0) confetti({ particleCount: 100 }); }
+            else { quiz.value.feedback = `❌ 錯誤！答案是 ${quiz.value.currentItem.char}`; mistakes.value.add(quiz.value.currentItem.romaji); quiz.value.deck.push(quiz.value.currentItem); }
+          };
+          const getQuizBtnStyle = (opt) => {
+            if (!quiz.value.answered) return 'border-gray-100 dark:border-slate-600';
+            return opt.romaji === quiz.value.currentItem.romaji ? 'border-indigo-500 ring-2 ring-indigo-300 bg-indigo-50 dark:bg-indigo-900/50' : 'opacity-50 grayscale';
+          };
+
+          // --- 翻牌還原 ---
+          const setMemoryMode = (mode) => { currentMemoryMode.value = mode; memoryBestRecord.value = safeStorage.get('memory_best_' + mode, null); initMemoryGame(); };
+          const initMemoryGame = () => {
+            memory.value = { cards: [], flipped: [], moves: 0, matched: 0, lock: false };
+            let pool = shuffleArray(jpData.filter(d => currentMemoryMode.value === 'vocab_mean' ? d.vocab : d.pair && d.type === 'hiragana')).slice(0, 6);
+            let cards = [];
+            pool.forEach(item => {
+              if (currentMemoryMode.value === 'hira_kata') {
+                cards.push({ name: item.romaji, content: `<div class="text-4xl jp-font text-indigo-600 dark:text-indigo-400">${item.char}</div>` });
+                cards.push({ name: item.romaji, content: `<div class="text-4xl jp-font text-pink-500 dark:text-pink-400">${item.pair}</div>` });
+              } else if (currentMemoryMode.value === 'kana_romaji') {
+                cards.push({ name: item.romaji, content: `<div class="text-4xl jp-font text-indigo-600 dark:text-indigo-400">${item.char}</div>` });
+                cards.push({ name: item.romaji, content: `<div class="text-sm font-bold text-gray-600 dark:text-gray-300">${item.romaji}</div>` });
+              } else {
+                cards.push({ name: item.romaji, content: `<div class="text-xl jp-font text-indigo-600 dark:text-indigo-400">${item.vocab.name}</div>` });
+                cards.push({ name: item.romaji, content: `<div class="text-sm font-bold text-gray-600 dark:text-gray-300">${item.vocab.meaning}</div>` });
+              }
+            });
+            memory.value.cards = shuffleArray(cards).map(c => ({...c, flipped: false, matched: false}));
+          };
+          const flipCard = (card) => {
+            if (memory.value.lock || card.flipped || card.matched) return;
+            card.flipped = true; memory.value.flipped.push(card);
+            if (memory.value.flipped.length === 2) {
+              memory.value.moves++; memory.value.lock = true;
+              const [c1, c2] = memory.value.flipped;
+              if (c1.name === c2.name) { 
+                c1.matched = c2.matched = true; memory.value.matched++; memory.value.flipped = []; memory.value.lock = false;
+                if (memory.value.matched === 6) {
+                    const key = 'memory_best_' + currentMemoryMode.value;
+                    if (!memoryBestRecord.value || memory.value.moves < memoryBestRecord.value) { safeStorage.set(key, memory.value.moves); memoryBestRecord.value = memory.value.moves; }
+                }
+              } else { setTimeout(() => { c1.flipped = c2.flipped = false; memory.value.flipped = []; memory.value.lock = false; }, 1000); }
+            }
+          };
+
+          const getStrokeAnimPaths = () => Array.from(canvasContainerRef.value?.querySelectorAll('.stroke-anim-path') || []);
+          const clearStrokeAnim = () => {
+            getStrokeAnimPaths().forEach((p) => p.classList.remove('active'));
+          };
+
+          // --- 手寫還原 ---
+          let hwCanvas = null, hwCtx = null;
+          const clearHW = () => {
+            if (!hwCanvas || !hwCtx) return;
+            hwCtx.clearRect(0, 0, hwCanvas.width, hwCanvas.height);
+            clearStrokeAnim();
+          };
+          const playHWAnim = () => {
+            clearStrokeAnim();
+            setTimeout(() => {
+              let d = 0;
+              getStrokeAnimPaths().forEach((p) => {
+                const len = p.getTotalLength();
+                p.style.setProperty('--len', len + 1);
+                const dur = Math.max(0.2, len / 60);
+                p.style.setProperty('--duration', dur + 's');
+                p.style.setProperty('--delay', d + 's');
+                p.classList.add('active');
+                d += dur;
+              });
+            }, 50);
+          };
+          const openHW = (item) => { hwItem.value = item; modals.value.writing = true; nextTick(initHW); };
+          const initHW = () => {
+            hwCanvas = hwCanvasRef.value;
+            const container = canvasContainerRef.value;
+            if (!hwCanvas || !container) return;
+            hwCtx = hwCanvas.getContext('2d');
+            hwCanvas.width = container.offsetWidth;
+            hwCanvas.height = container.offsetHeight;
+            hwCtx.lineWidth = 10;
+            hwCtx.lineCap = 'round';
+            hwCtx.strokeStyle = inkColor.value;
+            const getXY = (e) => {
+              const r = hwCanvas.getBoundingClientRect();
+              const point = e.touches ? e.touches[0] : e;
+              return [point.clientX - r.left, point.clientY - r.top];
+            };
+            hwCanvas.onmousedown = hwCanvas.ontouchstart = (e) => {
+              hwCanvas.isDrawing = true;
+              hwCtx.beginPath();
+              hwCtx.moveTo(...getXY(e));
+            };
+            hwCanvas.onmousemove = hwCanvas.ontouchmove = (e) => {
+              if (hwCanvas.isDrawing) {
+                hwCtx.lineTo(...getXY(e));
+                hwCtx.stroke();
+              }
+            };
+            hwCanvas.onmouseup = hwCanvas.ontouchend = hwCanvas.onmouseleave = () => {
+              hwCanvas.isDrawing = false;
+            };
+          };
+
+          onMounted(() => {
+            initAuthListener(async (user) => {
+              const d = await loadProgressFromCloud();
+              if (d?.japanese) favorites.value = d.japanese.favorites || [];
+            }, redirectToIndex);
+            const initV = () => {
+              voices.value = window.speechSynthesis.getVoices().filter(i => i.lang.includes('ja'));
+            };
+            initV();
+            window.speechSynthesis.onvoiceschanged = initV;
+          });
+
+          watch(isDark, (val) => {
+            document.documentElement.classList.toggle('dark', val);
+            safeStorage.set('darkMode', val);
+          }, { immediate: true });
+
+          onBeforeUnmount(() => {
+            if (window.speechSynthesis?.cancel) window.speechSynthesis.cancel();
+            if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = null;
+            if (hwCanvas) {
+              hwCanvas.onmousedown = null;
+              hwCanvas.ontouchstart = null;
+              hwCanvas.onmousemove = null;
+              hwCanvas.ontouchmove = null;
+              hwCanvas.onmouseup = null;
+              hwCanvas.ontouchend = null;
+              hwCanvas.onmouseleave = null;
+            }
+          });
+
+          return {
+            currentMode, currentLearnCategory, currentType, currentRowFilter, currentRows, filteredLearnData, speechRate, isDark, isRomajiHidden, favorites, voices, selectedVoiceIndex,
+            modeOptions, categoryList, modals, quiz, mistakes, memory, memoryModes, currentMemoryMode, hwItem, inkColor, activeSentence, memoryBestRecord, canvasContainerRef, hwCanvasRef,
+            getRowLabelText, isStarred, speak, switchMode, setLearnCategory, toggleDarkMode, toggleStar, startQuiz, startMistakeQuiz, nextQuizQuestion, handleAnswer, getQuizBtnStyle,
+            setMemoryMode, flipCard, initMemoryGame, openHW, clearHW, playHWAnim,
+            setInkColor: (c) => { inkColor.value = c; if(hwCtx) hwCtx.strokeStyle = c; },
+            openSentence: (item) => { activeSentence.value = item.sentence; modals.value.sentence = true; speak(item.sentence.text, false); },
+            jpData, colorMap, jpIcons, confusingPairs, quizModeLabel
+          };
+        }
+      }).mount('#app');
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+              console.log('ServiceWorker 註冊成功:', registration.scope);
+            })
+            .catch((error) => {
+              console.log('ServiceWorker 註冊失敗:', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

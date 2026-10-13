@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>🇰🇷 韓語學習機</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇰🇷</text></svg>"
+    />
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/learning.css">
+  </head>
+  <body
+    style="opacity: 0; transition: opacity 0.5s ease"
+    class="theme-korean min-h-screen flex flex-col items-center p-4 bg-gradient-to-b from-rose-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-300"
+  >
+    <header class="relative w-full max-w-5xl mb-6 text-center pt-8 md:pt-6">
+      <div
+        class="absolute top-0 left-0 z-20 flex flex-col gap-2 sm:flex-row sm:items-center"
+      >
+        <a
+          href="index.html"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-600 no-underline transition-all bg-white/80 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-800/80 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 hover:shadow-md hover:pl-2 glass-nav"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          大廳
+        </a>
+
+        <div
+          class="flex items-center p-1 gap-1 bg-white/80 dark:bg-gray-800/80 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 glass-nav backdrop-blur-md"
+        >
+          <a
+            href="japan.html"
+            class="w-7 h-7 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-500 hover:text-white transition-all text-sm font-bold shadow-sm"
+            title="切換至日語"
+            >JP</a
+          >
+          <a
+            href="thai.html"
+            class="w-7 h-7 flex items-center justify-center rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all text-sm font-bold shadow-sm"
+            title="切換至泰語"
+            >TH</a
+          >
+        </div>
+      </div>
+
+      <div
+        class="flex flex-col md:flex-row items-center justify-center gap-4 mb-3 relative"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-md flex items-center justify-center text-2xl md:text-3xl border border-rose-100 dark:border-gray-700"
+          >
+            🇰🇷
+          </div>
+          <h1
+            class="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-white tracking-tight"
+          >
+            韓語<span class="text-rose-500">學習機</span>
+          </h1>
+        </div>
+
+        <div
+          class="flex items-center bg-white dark:bg-slate-800 rounded-full shadow-sm border border-gray-200 dark:border-slate-600 px-4 py-2 gap-4 select-none"
+        >
+          <button
+            onclick="toggleDarkMode()"
+            class="text-yellow-500 hover:text-yellow-600 transition-colors"
+            title="切換模式"
+          >
+            <svg
+              id="icon-sun"
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5 hidden dark:block"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+              />
+            </svg>
+            <svg
+              id="icon-moon"
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5 block dark:hidden"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+              />
+            </svg>
+          </button>
+
+          <div class="w-px h-4 bg-gray-300 dark:bg-slate-600"></div>
+
+          <button
+            onclick="toggleRomaji()"
+            id="btn-toggle-romaji"
+            class="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 hover:text-rose-800 transition-colors font-bold text-sm"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+            <span>拼音</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">
+        零基礎也能學好韓文的互動工具
+      </p>
+
+      <div
+        id="voice-status"
+        class="text-xs mt-3 text-orange-600 hidden bg-orange-50 dark:bg-orange-900/30 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-orange-200 dark:border-orange-800"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        尚未偵測到韓語語音包，將使用系統預設
+      </div>
+      <div class="flex justify-center mt-3">
+        <select
+          id="voice-select"
+          onchange="setVoice(this.value)"
+          class="hidden text-xs border-gray-300 dark:border-gray-600 border rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 max-w-xs transition-colors"
+        ></select>
+      </div>
+    </header>
+
+    <div class="w-full max-w-4xl flex flex-wrap justify-center gap-3 mb-8">
+      <button
+        onclick="switchMode('learn')"
+        id="btn-mode-learn"
+        class="px-5 py-2.5 rounded-full font-bold shadow-md transition-all border active-tab flex items-center gap-2 transform active:scale-95"
+      >
+        📖 學習模式
+      </button>
+      <button
+        onclick="switchMode('builder')"
+        id="btn-mode-builder"
+        class="px-5 py-2.5 rounded-full font-bold shadow-sm transition-all border inactive-tab flex items-center gap-2 transform active:scale-95"
+      >
+        🧩 拼字練習
+      </button>
+      <button
+        onclick="switchMode('quiz_hear')"
+        id="btn-mode-quiz-hear"
+        class="px-5 py-2.5 rounded-full font-bold shadow-sm transition-all border inactive-tab flex items-center gap-2 transform active:scale-95"
+      >
+        👂 聽音辨字
+      </button>
+      <button
+        onclick="switchMode('quiz_read')"
+        id="btn-mode-quiz-read"
+        class="px-5 py-2.5 rounded-full font-bold shadow-sm transition-all border inactive-tab flex items-center gap-2 transform active:scale-95"
+      >
+        👁️ 看字選音
+      </button>
+    </div>
+
+    <div id="learn-section" class="w-full max-w-5xl">
+      <div
+        class="flex flex-col items-center bg-white dark:bg-slate-800/80 backdrop-blur p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 mb-6 transition-colors"
+      >
+        <div
+          class="flex space-x-2 overflow-x-auto w-full md:justify-center p-2 no-scrollbar"
+        >
+          <button
+            onclick="setLearnCategory('consonants')"
+            id="cat-btn-consonants"
+            class="px-3 py-2 rounded-xl text-xs font-bold transition-all category-active whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>🗣️</span> 基本子音
+          </button>
+          <button
+            onclick="setLearnCategory('vowels')"
+            id="cat-btn-vowels"
+            class="px-3 py-2 rounded-xl text-xs font-bold transition-all category-inactive whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>👄</span> 基本母音
+          </button>
+
+          <div
+            class="w-px h-6 bg-gray-200 dark:bg-slate-600 mx-1 shrink-0 self-center"
+          ></div>
+
+          <button
+            onclick="setLearnCategory('number_sino')"
+            id="cat-btn-number_sino"
+            class="px-3 py-2 rounded-xl text-xs font-bold transition-all category-inactive whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>🔢</span> 漢字數字
+          </button>
+          <button
+            onclick="setLearnCategory('number_native')"
+            id="cat-btn-number_native"
+            class="px-3 py-2 rounded-xl text-xs font-bold transition-all category-inactive whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>🍎</span> 純韓數字
+          </button>
+          <button
+            onclick="setLearnCategory('greeting')"
+            id="cat-btn-greeting"
+            class="px-3 py-2 rounded-xl text-xs font-bold transition-all category-inactive whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>💬</span> 常用語
+          </button>
+
+          <div
+            class="w-px h-6 bg-gray-200 dark:bg-slate-600 mx-1 shrink-0 self-center"
+          ></div>
+
+          <button
+            onclick="setLearnCategory('color')"
+            id="cat-btn-color"
+            class="px-3 py-2 rounded-xl text-xs font-bold transition-all category-inactive whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>🎨</span> 顏色
+          </button>
+          <button
+            onclick="setLearnCategory('week')"
+            id="cat-btn-week"
+            class="px-3 py-2 rounded-xl text-xs font-bold transition-all category-inactive whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>📅</span> 星期
+          </button>
+          <button
+            onclick="setLearnCategory('family')"
+            id="cat-btn-family"
+            class="px-3 py-2 rounded-xl text-xs font-bold transition-all category-inactive whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>👪</span> 家人
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-center gap-2 mb-4">
+        <span
+          class="text-xs text-rose-500 bg-rose-50 px-2 py-1 rounded-md border border-rose-100 dark:bg-rose-900/20 dark:border-rose-800 dark:text-rose-300"
+          >💡 提示</span
+        >
+        <span class="text-xs text-gray-500 dark:text-gray-400"
+          >點擊卡片可發音，點擊下方單字聽例句</span
+        >
+      </div>
+
+      <div
+        id="cards-container"
+        class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-10"
+      ></div>
+    </div>
+
+    <div id="builder-section" class="w-full max-w-5xl hidden flex-col">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 p-6 md:p-8"
+      >
+        <div
+          class="flex flex-col md:flex-row items-center justify-center gap-4 mb-8 bg-gray-50 dark:bg-gray-700/50 p-6 rounded-2xl border border-dashed border-gray-200 dark:border-gray-600"
+        >
+          <div class="flex flex-col items-center gap-2">
+            <span
+              class="text-xs font-bold text-gray-400 uppercase tracking-wider"
+              >Result</span
+            >
+            <div
+              id="result-display"
+              class="relative group w-32 h-32 md:w-40 md:h-40 bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-3xl flex items-center justify-center text-7xl md:text-8xl font-bold kr-font text-gray-400 dark:text-gray-500 cursor-pointer hover:border-rose-400 hover:shadow-lg transition-all"
+              onclick="playBuilderSound()"
+            >
+              <span>?</span>
+              <div
+                class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-rose-500 bg-rose-50 rounded-full p-1.5"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.618.786l-5-4A1 1 0 013 12V8a1 1 0 01.382-.786l5-4zM13.923 13.383a1 1 0 01-1.414-1.414 2.5 2.5 0 000-3.536 1 1 0 111.414-1.414 4.5 4.5 0 010 6.364z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center md:text-left md:ml-4">
+            <h3 class="font-bold text-gray-700 dark:text-gray-200 text-lg mb-1">
+              韓字組字積木
+            </h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              請依照順序點選下方積木
+            </p>
+            <div class="flex items-center gap-2 text-xs font-mono">
+              <span class="bg-rose-100 text-rose-700 px-2 py-1 rounded"
+                >1.子音</span
+              >
+              <span class="text-gray-300">+</span>
+              <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded"
+                >2.母音</span
+              >
+              <span class="text-gray-300">+</span>
+              <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded"
+                >3.收音</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-4 items-start"
+        >
+          <div
+            class="bg-rose-50/50 dark:bg-rose-900/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30"
+          >
+            <h3
+              class="flex items-center justify-center gap-2 text-center text-rose-700 dark:text-rose-300 font-bold mb-4 border-b border-rose-200 dark:border-rose-800/50 pb-2"
+            >
+              <span
+                class="bg-rose-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center"
+                >1</span
+              >
+              子音 (初聲)
+            </h3>
+            <div id="builder-consonants" class="grid grid-cols-4 gap-2"></div>
+          </div>
+
+          <div
+            class="hidden md:flex h-full items-center justify-center text-gray-300"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-8 w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </div>
+
+          <div
+            class="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30"
+          >
+            <h3
+              class="flex items-center justify-center gap-2 text-center text-blue-700 dark:text-blue-300 font-bold mb-4 border-b border-blue-200 dark:border-blue-800/50 pb-2"
+            >
+              <span
+                class="bg-blue-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center"
+                >2</span
+              >
+              母音 (中聲)
+            </h3>
+            <div id="builder-vowels" class="grid grid-cols-4 gap-2"></div>
+          </div>
+
+          <div
+            class="hidden md:flex h-full items-center justify-center text-gray-300"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-8 w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </div>
+
+          <div
+            class="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30"
+          >
+            <h3
+              class="flex items-center justify-center gap-2 text-center text-emerald-700 dark:text-emerald-300 font-bold mb-4 border-b border-emerald-200 dark:border-emerald-800/50 pb-2"
+            >
+              <span
+                class="bg-emerald-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center"
+                >3</span
+              >
+              收音 (終聲)
+            </h3>
+            <div id="builder-batchims" class="grid grid-cols-4 gap-2"></div>
+            <div
+              class="text-[10px] text-center text-gray-400 mt-3 bg-white dark:bg-gray-800 py-1 rounded-full border border-gray-100 dark:border-gray-700"
+            >
+              可選：點擊「無」移除
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="quiz-section"
+      class="w-full max-w-2xl hidden flex-col items-center"
+    >
+      <div
+        class="w-full bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm mb-6 border border-gray-100 dark:border-gray-700 transition-colors"
+      >
+        <div class="flex justify-between items-end mb-3">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 bg-rose-100 text-rose-500 rounded-lg">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                />
+              </svg>
+            </div>
+            <div>
+              <div
+                class="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider"
+              >
+                Mode
+              </div>
+              <div
+                class="text-gray-700 dark:text-gray-200 font-bold text-sm"
+                id="quiz-mode-label"
+              >
+                聽音辨字
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div
+              class="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider"
+            >
+              Score
+            </div>
+            <div class="text-rose-600 dark:text-rose-400 font-black text-xl">
+              <span id="progress-current">0</span> /
+              <span id="progress-total">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-3 overflow-hidden"
+        >
+          <div
+            id="progress-bar"
+            class="bg-gradient-to-r from-rose-400 to-rose-600 h-3 rounded-full transition-all duration-500 relative"
+            style="width: 0%"
+          >
+            <div
+              class="absolute top-0 right-0 bottom-0 w-full animate-pulse bg-white/20"
+            ></div>
+          </div>
+        </div>
+        <div class="flex justify-between mt-3 px-1">
+          <div
+            class="text-xs font-medium text-gray-400 flex items-center gap-1"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-3 w-3"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            錯題將自動重新出現
+          </div>
+          <button
+            onclick="startQuiz()"
+            class="text-xs font-bold text-blue-500 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+          >
+            ↺ 重新開始
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="quiz-card"
+        class="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl w-full text-center border-b-[6px] border-rose-500 dark:border-rose-600 relative pb-20 transition-colors"
+      >
+        <div id="question-hear" class="hidden mb-8">
+          <div
+            class="inline-block p-2 rounded-full bg-rose-50 dark:bg-rose-900/20 mb-4"
+          >
+            <span class="text-rose-500 text-xs font-bold px-2">🔊 請聆聽</span>
+          </div>
+          <div class="relative group w-32 h-32 mx-auto">
+            <button
+              onclick="playCurrentQuizAudio()"
+              class="w-32 h-32 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/50 flex items-center justify-center mx-auto transition-all transform active:scale-95 hover:scale-105 group-hover:ring-4 ring-rose-100 dark:ring-rose-800"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-14 w-14"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                />
+              </svg>
+            </button>
+            <div
+              class="absolute -bottom-8 w-full text-center text-xs font-bold text-gray-400"
+            >
+              點擊播放
+            </div>
+          </div>
+        </div>
+
+        <div id="question-read" class="hidden mb-8">
+          <div
+            class="inline-block p-2 rounded-full bg-blue-50 dark:bg-blue-900/20 mb-4"
+          >
+            <span class="text-blue-500 text-xs font-bold px-2"
+              >👁️ 請問發音</span
+            >
+          </div>
+          <div
+            id="display-char"
+            class="text-9xl font-black kr-font text-gray-800 dark:text-gray-100 mb-2 drop-shadow-sm"
+          >
+            ㄱ
+          </div>
+          <div class="text-sm text-gray-400 font-medium">
+            請選擇下方正確的發音
+          </div>
+        </div>
+
+        <div id="quiz-options" class="grid grid-cols-2 gap-4"></div>
+
+        <div
+          id="feedback-msg"
+          class="mt-8 h-12 flex items-center justify-center font-bold text-lg"
+        ></div>
+
+        <div class="mt-4 flex justify-center absolute bottom-6 left-0 w-full">
+          <button
+            id="btn-next-question"
+            onclick="nextQuestion()"
+            class="hidden px-8 py-3 bg-gray-800 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-200 text-white rounded-full font-bold shadow-xl transform transition-all hover:scale-105 flex items-center gap-2"
+          >
+            下一題
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="completion-screen"
+        class="hidden flex-col items-center justify-center bg-white dark:bg-gray-800 p-10 rounded-3xl shadow-xl w-full text-center border-b-8 border-yellow-400 transition-colors"
+      >
+        <div class="text-7xl mb-6 animate-bounce">🎉</div>
+        <h2 class="text-3xl font-black text-gray-800 dark:text-white mb-3">
+          恭喜完成！
+        </h2>
+        <p class="text-gray-500 dark:text-gray-400 mb-8 font-medium">
+          您已經掌握了本模式的所有題目。
+        </p>
+        <button
+          onclick="startQuiz()"
+          class="px-10 py-4 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+        >
+          再次挑戰
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="toast"
+      class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white px-6 py-3 rounded-full opacity-0 transition-opacity duration-300 pointer-events-none text-sm font-medium z-50 shadow-2xl flex items-center gap-2"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4 text-rose-400"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.618.786l-5-4A1 1 0 013 12V8a1 1 0 01.382-.786l5-4zM13.923 13.383a1 1 0 01-1.414-1.414 2.5 2.5 0 000-3.536 1 1 0 111.414-1.414 4.5 4.5 0 010 6.364z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      <span id="toast-msg">正在播放...</span>
+    </div>
+
+    <script type="module">
+      // 1. 引入模組
+      import { krData, CHOSUNG, JUNGSUNG, JONGSUNG, krIcons, colorMap } from './data/korean.js'
+      import { initAuthListener } from './js/auth.js'
+      import { safeStorage, shuffleArray } from './js/utils.js'
+      import {
+        saveProgressToCloud,
+        loadProgressFromCloud,
+      } from './js/dbService.js'
+
+      // 2. 全域變數狀態管理
+      let currentLearnCategory = 'consonants'
+      let currentMode = 'learn'
+      let currentFilter = 'consonant'
+      let isQuizLocked = false
+      let isRomajiHidden = false
+
+      // 語音相關
+      let krVoice = null
+      let krVoiceList = []
+      let voicesLoaded = false
+      let toastTimeout
+
+      // 測驗相關
+      let quizDeck = []
+      let totalQuestions = 0
+      let masteredCount = 0
+      let currentQuizItem = null
+
+      // 拼字機 (Builder) 狀態
+      let builderConsonant = null
+      let builderVowel = null
+      let builderBatchim = 0 // 0 = no batchim
+      let builderResult = '?'
+      let correctCounts = safeStorage.get('kr_correct_counts', {})
+
+      // 3. 常數定義
+      
+
+      function getIconForWord(name, category) {
+        return krIcons[name] || (category === 'greeting' ? '💬' : '📝')
+      }
+
+      // --- Dark Mode ---
+      function toggleDarkMode() {
+        const html = document.documentElement
+        html.classList.toggle('dark')
+        safeStorage.set('darkMode', html.classList.contains('dark'))
+      }
+
+      // --- TTS Engine ---
+      function showToast(message, duration = 2000) {
+        const toast = document.getElementById('toast')
+        const toastMsg = document.getElementById('toast-msg')
+        toastMsg.textContent = message.replace('播放: ', '')
+        toast.classList.remove('opacity-0')
+        toast.classList.add('bottom-8') // Animation
+        if (toastTimeout) clearTimeout(toastTimeout)
+        toastTimeout = setTimeout(() => {
+          toast.classList.add('opacity-0')
+        }, duration)
+      }
+
+      function initVoices() {
+        const voices = window.speechSynthesis.getVoices()
+        if (voices.length === 0) return
+
+        krVoiceList = voices.filter(
+          (v) => v.lang === 'ko-KR' || v.lang.includes('ko')
+        )
+        const voiceSelect = document.getElementById('voice-select')
+
+        if (krVoiceList.length > 0) {
+          voicesLoaded = true
+          document.getElementById('voice-status').classList.add('hidden')
+          voiceSelect.innerHTML = ''
+          krVoiceList.forEach((v, i) => {
+            const option = document.createElement('option')
+            option.value = i
+            option.textContent = v.name
+            if (krVoice && v.name === krVoice.name) option.selected = true
+            voiceSelect.appendChild(option)
+          })
+
+          if (!krVoice) {
+            const savedName = safeStorage.get('preferredKrVoice')
+            krVoice =
+              krVoiceList.find((v) => v.name === savedName) || krVoiceList[0]
+          }
+          voiceSelect.classList.remove('hidden')
+        } else {
+          document.getElementById('voice-status').classList.remove('hidden')
+          voiceSelect.classList.add('hidden')
+        }
+      }
+
+      function setVoice(index) {
+        const selectedIndex = parseInt(index)
+        if (krVoiceList[selectedIndex]) {
+          krVoice = krVoiceList[selectedIndex]
+          safeStorage.set('preferredKrVoice', krVoice.name)
+          showToast(`已切換: ${krVoice.name}`)
+          speak({ soundText: '안녕하세요' }, false)
+        }
+      }
+
+      function speak(textItem, showToastFlag = true) {
+        if (!window.speechSynthesis) return alert('您的瀏覽器不支援發音')
+        window.speechSynthesis.cancel()
+
+        const textToSpeak =
+          typeof textItem === 'string'
+            ? textItem
+            : textItem.soundText || textItem.char
+        const utterance = new SpeechSynthesisUtterance(textToSpeak)
+        utterance.lang = 'ko-KR'
+        if (krVoice) utterance.voice = krVoice
+        utterance.rate = 0.8
+
+        if (showToastFlag) {
+          showToast(`播放: ${textToSpeak}`)
+        }
+        window.speechSynthesis.speak(utterance)
+      }
+
+      // Wrapper for onclick strings
+      function speakText(text) {
+        speak(text, false)
+      }
+
+      // --- UI Interactions ---
+      function toggleRomaji() {
+        isRomajiHidden = !isRomajiHidden
+        const btn = document.getElementById('btn-toggle-romaji')
+
+        if (!isRomajiHidden) {
+          // Showing Pinyin (Active)
+          btn.classList.add('text-rose-600', 'dark:text-rose-400')
+          btn.classList.remove('text-gray-500', 'dark:text-gray-500')
+        } else {
+          // Hiding Pinyin (Inactive)
+          btn.classList.remove('text-rose-600', 'dark:text-rose-400')
+          btn.classList.add('text-gray-500', 'dark:text-gray-500')
+        }
+        renderLearnCards()
+      }
+
+      function switchMode(mode) {
+        currentMode = mode
+        const learnSection = document.getElementById('learn-section')
+        const quizSection = document.getElementById('quiz-section')
+        const builderSection = document.getElementById('builder-section')
+
+        const btnLearn = document.getElementById('btn-mode-learn')
+        const btnHear = document.getElementById('btn-mode-quiz-hear')
+        const btnRead = document.getElementById('btn-mode-quiz-read')
+        const btnBuilder = document.getElementById('btn-mode-builder')
+
+        const activeClasses =
+          'px-5 py-2.5 rounded-full font-bold shadow-md transition-all border active-tab flex items-center gap-2 transform active:scale-95'
+        const inactiveClasses =
+          'px-5 py-2.5 rounded-full font-bold shadow-sm transition-all border inactive-tab flex items-center gap-2 transform active:scale-95 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600'
+
+        ;[btnLearn, btnHear, btnRead, btnBuilder].forEach((b) => {
+          if (b) b.className = inactiveClasses
+        })
+
+        learnSection.classList.add('hidden')
+        quizSection.classList.add('hidden')
+        quizSection.classList.remove('flex')
+        builderSection.classList.add('hidden')
+        builderSection.classList.remove('flex')
+
+        if (mode === 'learn') {
+          learnSection.classList.remove('hidden')
+          btnLearn.className = activeClasses
+        } else if (mode === 'builder') {
+          builderSection.classList.remove('hidden')
+          builderSection.classList.add('flex')
+          btnBuilder.className = activeClasses
+        } else {
+          quizSection.classList.remove('hidden')
+          quizSection.classList.add('flex')
+          if (mode === 'quiz_hear') {
+            btnHear.className = activeClasses
+            document.getElementById('quiz-mode-label').textContent = '聽音辨字'
+          } else {
+            btnRead.className = activeClasses
+            document.getElementById('quiz-mode-label').textContent = '看字選音'
+          }
+          startQuiz()
+        }
+      }
+
+      function setLearnCategory(cat) {
+        currentLearnCategory = cat
+        const btnIds = [
+          'cat-btn-consonants',
+          'cat-btn-vowels',
+          'cat-btn-number_sino',
+          'cat-btn-number_native',
+          'cat-btn-greeting',
+          'cat-btn-color',
+          'cat-btn-week',
+          'cat-btn-family',
+        ]
+
+        btnIds.forEach((id) => {
+          const btn = document.getElementById(id)
+          if (btn) {
+            btn.classList.remove('category-active')
+            btn.classList.add('category-inactive')
+            btn.className =
+              'px-3 py-2 rounded-xl text-xs font-bold transition-all category-inactive whitespace-nowrap flex items-center gap-1.5'
+          }
+        })
+
+        const activeBtn = document.getElementById('cat-btn-' + cat)
+        if (activeBtn) {
+          activeBtn.classList.remove('category-inactive')
+          activeBtn.classList.add('category-active')
+          activeBtn.className =
+            'px-3 py-2 rounded-xl text-xs font-bold transition-all category-active whitespace-nowrap flex items-center gap-1.5'
+        }
+        renderLearnCards()
+      }
+
+      // --- Render Logic ---
+      function renderLearnCards() {
+        const container = document.getElementById('cards-container')
+        container.innerHTML = ''
+
+        const filteredData = krData.filter(
+          (item) => item.category === currentLearnCategory
+        )
+
+        if (filteredData.length === 0) {
+          container.innerHTML =
+            '<div class="col-span-full text-center text-gray-400 py-10">暫無資料</div>'
+          return
+        }
+
+        filteredData.forEach((item, index) => {
+          const card = document.createElement('div')
+          card.className =
+            'bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 card-hover cursor-pointer transition-all duration-200 flex flex-col relative overflow-hidden group select-none h-full justify-between min-h-[160px]'
+          card.style.animationDelay = `${index * 0.05}s`
+
+          // Add Speaker Icon Overlay
+          const speakerOverlay = `
+                    <div class="absolute top-2 right-2 text-rose-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                    </div>
+                `
+
+          // 隱藏拼音邏輯
+          const romajiClass = isRomajiHidden ? 'opacity-0' : 'opacity-100'
+          const displayMeaning = item.emoji
+            ? `${item.meaning} <span class="ml-1">${item.emoji}</span>`
+            : item.meaning
+
+          let contentHTML = ''
+
+          if (item.category === 'color') {
+            const colorHex = colorMap[item.name] || '#ccc'
+            const borderClass =
+              item.name === 'hayansaek' ? 'border border-gray-300' : ''
+            contentHTML = `<div class="flex flex-col items-center justify-center h-full pt-4"><div class="w-14 h-14 rounded-full shadow-inner mb-3 ${borderClass}" style="background-color: ${colorHex};"></div><div class="text-xl font-bold text-gray-800 dark:text-white kr-font">${item.char}</div><div class="text-xs text-gray-400 mt-1 transition-opacity ${romajiClass}">${item.name}</div></div>`
+          } else if (item.category === 'greeting') {
+            contentHTML = `<div class="flex flex-col h-full pt-6 px-1 items-center"><div class="bg-indigo-50 dark:bg-slate-700/50 p-3 rounded-xl mb-2 relative w-full text-center"><div class="absolute -top-3 left-2 text-2xl">💬</div><div class="text-lg font-bold text-indigo-700 dark:text-indigo-300 kr-font leading-tight break-words">${item.char}</div></div><div class="text-xs text-gray-400 mb-auto text-center w-full transition-opacity ${romajiClass}">${item.name}</div></div>`
+          } else if (item.category.includes('number')) {
+            const tag = item.category === 'number_sino' ? '漢' : '韓'
+            const tagColor =
+              item.category === 'number_sino'
+                ? 'text-gray-200 dark:text-slate-600'
+                : 'text-orange-100 dark:text-orange-900'
+            contentHTML = `<div class="flex flex-col items-center justify-center h-full pt-2 relative"><div class="absolute top-0 right-0 text-6xl font-black ${tagColor} opacity-30 select-none pointer-events-none z-0">${tag}</div><div class="text-4xl font-bold text-gray-800 dark:text-white kr-font z-10 mt-2">${item.char}</div><div class="text-xs text-gray-400 mt-1 z-10 transition-opacity ${romajiClass}">${item.name}</div></div>`
+          } else if (['week', 'family'].includes(item.category)) {
+            const icon = getIconForWord(item.name, item.category)
+            let charColor = 'text-gray-800 dark:text-white'
+            if (item.name === 'iryoil')
+              charColor = 'text-red-500 dark:text-red-400'
+            if (item.name === 'toyoil')
+              charColor = 'text-blue-500 dark:text-blue-400'
+            contentHTML = `<div class="flex flex-col items-center justify-center h-full pt-4"><div class="text-4xl mb-2 filter drop-shadow-sm">${icon}</div><div class="text-2xl font-bold ${charColor} kr-font text-center leading-tight">${item.char}</div><div class="text-xs text-gray-400 mt-1 text-center transition-opacity ${romajiClass}">${item.name}</div></div>`
+          } else {
+            contentHTML = `<div class="flex flex-col items-center justify-center h-full pt-2"><div class="text-6xl font-bold text-gray-800 dark:text-white kr-font mb-2">${item.char}</div><div class="text-sm text-gray-500 dark:text-gray-400 font-bold transition-opacity ${romajiClass}">${item.name}</div></div>`
+          }
+
+          card.innerHTML = `${speakerOverlay}<div class="flex-1 w-full relative">${contentHTML}</div><div class="w-full pt-2 mt-auto text-sm font-medium text-center text-gray-600 border-t border-gray-100 dark:text-gray-300 dark:border-slate-700 leading-tight">${displayMeaning}</div>`
+
+          card.onclick = () => {
+            speak(item)
+            card.classList.add(
+              'ring-2',
+              'ring-rose-400',
+              'ring-offset-2',
+              'dark:ring-offset-gray-900'
+            )
+            setTimeout(
+              () =>
+                card.classList.remove(
+                  'ring-2',
+                  'ring-rose-400',
+                  'ring-offset-2',
+                  'dark:ring-offset-gray-900'
+                ),
+              300
+            )
+          }
+          container.appendChild(card)
+        })
+      }
+
+      // --- Builder Logic ---
+      function renderBuilderOptions() {
+        const cContainer = document.getElementById('builder-consonants')
+        const vContainer = document.getElementById('builder-vowels')
+        const bContainer = document.getElementById('builder-batchims')
+
+        cContainer.innerHTML = ''
+        vContainer.innerHTML = ''
+        bContainer.innerHTML = ''
+
+        CHOSUNG.forEach((char, idx) => {
+          const btn = document.createElement('div')
+          btn.className = `h-10 flex items-center justify-center rounded-lg border cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-800 transition-colors font-bold kr-font border-rose-200 dark:border-rose-800 text-gray-700 dark:text-gray-200`
+          btn.textContent = char
+          btn.onclick = () => selectBuilderConsonant(idx, btn)
+          btn.id = `bc-${idx}`
+          cContainer.appendChild(btn)
+        })
+
+        JUNGSUNG.forEach((char, idx) => {
+          const btn = document.createElement('div')
+          btn.className = `h-10 flex items-center justify-center rounded-lg border cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors font-bold kr-font border-blue-200 dark:border-blue-800 text-gray-700 dark:text-gray-200`
+          btn.textContent = char
+          btn.onclick = () => selectBuilderVowel(idx, btn)
+          btn.id = `bv-${idx}`
+          vContainer.appendChild(btn)
+        })
+
+        JONGSUNG.forEach((char, idx) => {
+          const btn = document.createElement('div')
+          const isEmpty = idx === 0
+          btn.className = `h-10 flex items-center justify-center rounded-lg border cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-800 transition-colors font-bold kr-font border-emerald-200 dark:border-emerald-800 text-gray-700 dark:text-gray-200 ${
+            isEmpty ? 'text-xs text-gray-400' : ''
+          }`
+          btn.textContent = char
+          btn.onclick = () => selectBuilderBatchim(idx, btn)
+          btn.id = `bb-${idx}`
+          if (idx === 0) btn.classList.add('builder-batchim-active')
+          bContainer.appendChild(btn)
+        })
+      }
+
+      function selectBuilderConsonant(index, btn) {
+        CHOSUNG.forEach((_, i) =>
+          document
+            .getElementById(`bc-${i}`)
+            .classList.remove(
+              'builder-btn-active',
+              'ring-2',
+              'ring-offset-1',
+              'dark:ring-offset-gray-800'
+            )
+        )
+        btn.classList.add(
+          'builder-btn-active',
+          'ring-2',
+          'ring-offset-1',
+          'dark:ring-offset-gray-800'
+        )
+        builderConsonant = index
+        updateBuilderResult()
+      }
+
+      function selectBuilderVowel(index, btn) {
+        JUNGSUNG.forEach((_, i) =>
+          document
+            .getElementById(`bv-${i}`)
+            .classList.remove(
+              'builder-vowel-active',
+              'ring-2',
+              'ring-offset-1',
+              'dark:ring-offset-gray-800'
+            )
+        )
+        btn.classList.add(
+          'builder-vowel-active',
+          'ring-2',
+          'ring-offset-1',
+          'dark:ring-offset-gray-800'
+        )
+        builderVowel = index
+        updateBuilderResult()
+      }
+
+      function selectBuilderBatchim(index, btn) {
+        JONGSUNG.forEach((_, i) =>
+          document
+            .getElementById(`bb-${i}`)
+            .classList.remove(
+              'builder-batchim-active',
+              'ring-2',
+              'ring-offset-1',
+              'dark:ring-offset-gray-800'
+            )
+        )
+        btn.classList.add(
+          'builder-batchim-active',
+          'ring-2',
+          'ring-offset-1',
+          'dark:ring-offset-gray-800'
+        )
+        builderBatchim = index
+        updateBuilderResult()
+      }
+
+      function updateBuilderResult() {
+        const display = document.getElementById('result-display')
+        if (builderConsonant !== null && builderVowel !== null) {
+          const code =
+            (builderConsonant * 21 + builderVowel) * 28 +
+            builderBatchim +
+            0xac00
+          const char = String.fromCharCode(code)
+          builderResult = char
+          display.innerHTML = `<span class="animate-pulse">${char}</span>`
+          display.classList.remove('border-dashed', 'text-gray-400')
+          display.classList.add(
+            'border-solid',
+            'border-rose-500',
+            'text-rose-600',
+            'bg-white',
+            'shadow-lg'
+          )
+          setTimeout(() => {
+            display.querySelector('span').classList.remove('animate-pulse')
+            speak(char, true)
+          }, 100)
+        } else {
+          display.innerHTML = '<span>?</span>'
+          builderResult = '?'
+        }
+      }
+
+      function playBuilderSound() {
+        if (builderResult && builderResult !== '?') {
+          speak(builderResult, true)
+          const display = document.getElementById('result-display')
+          display.classList.add('scale-95')
+          setTimeout(() => display.classList.remove('scale-95'), 150)
+        }
+      }
+
+      // --- Quiz Logic ---
+      function startQuiz() {
+        masteredCount = 0
+        quizDeck = shuffleArray([...krData]) // 使用 Utils 的 shuffle
+        totalQuestions = quizDeck.length
+        document.getElementById('feedback-msg').textContent = ''
+        document.getElementById('completion-screen').classList.add('hidden')
+        document.getElementById('quiz-card').classList.remove('hidden')
+        document.getElementById('btn-next-question').classList.add('hidden')
+        updateProgressUI()
+        nextQuestion()
+      }
+
+      function updateProgressUI() {
+        document.getElementById('progress-current').textContent = masteredCount
+        document.getElementById('progress-total').textContent = totalQuestions
+        const percent =
+          totalQuestions === 0 ? 0 : (masteredCount / totalQuestions) * 100
+        document.getElementById('progress-bar').style.width = `${percent}%`
+      }
+
+      function playCurrentQuizAudio() {
+        if (currentQuizItem) speak(currentQuizItem.soundText, false)
+      }
+
+      function nextQuestion() {
+        isQuizLocked = false
+        document.getElementById('feedback-msg').textContent = ''
+        document.getElementById('btn-next-question').classList.add('hidden')
+
+        if (quizDeck.length === 0) return showCompletionScreen()
+
+        currentQuizItem = quizDeck.shift()
+        const hearContainer = document.getElementById('question-hear')
+        const readContainer = document.getElementById('question-read')
+        const displayChar = document.getElementById('display-char')
+
+        if (currentMode === 'quiz_hear') {
+          hearContainer.classList.remove('hidden')
+          readContainer.classList.add('hidden')
+          setTimeout(() => playCurrentQuizAudio(), 500)
+        } else {
+          hearContainer.classList.add('hidden')
+          readContainer.classList.remove('hidden')
+          displayChar.textContent = currentQuizItem.char
+        }
+
+        let options = [currentQuizItem]
+        while (options.length < 4) {
+          const randomItem = krData[Math.floor(Math.random() * krData.length)]
+          const isDuplicate = options.some((o) => o.char === randomItem.char)
+          const isSameType = randomItem.type === currentQuizItem.type
+          if (!isDuplicate && isSameType) options.push(randomItem)
+          else if (!isDuplicate && options.length < 4 && Math.random() > 0.8)
+            options.push(randomItem)
+        }
+        options = shuffleArray(options)
+
+        const optionsContainer = document.getElementById('quiz-options')
+        optionsContainer.innerHTML = ''
+
+        options.forEach((opt) => {
+          const btn = document.createElement('div')
+          btn.dataset.char = opt.char
+          btn.dataset.name = opt.name
+          btn.className =
+            'h-24 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-600 flex overflow-hidden transition-all active:scale-95 cursor-pointer shadow-sm hover:shadow-md select-none group'
+
+          if (currentMode === 'quiz_hear') {
+            btn.innerHTML = `<div class="w-full flex items-center justify-center text-4xl font-bold kr-font text-gray-800 dark:text-white pointer-events-none group-hover:text-rose-500 transition-colors">${opt.char}</div>`
+            btn.onclick = () => handleAnswer(btn, opt)
+          } else {
+            btn.innerHTML = `
+                        <div onclick="event.stopPropagation(); window.speakText('${opt.soundText}')" class="w-1/3 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/60 flex items-center justify-center border-r border-gray-100 dark:border-gray-600 text-rose-500 dark:text-rose-300 transition-colors" title="試聽">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                        </div>
+                        <div class="w-2/3 flex flex-col items-center justify-center option-text-area px-2 text-center" onclick="window.handleAnswerFromChild(this)">
+                            <span class="text-sm font-bold text-gray-400 dark:text-gray-500 pointer-events-none option-label group-hover:text-gray-600 dark:group-hover:text-gray-300">選擇此音</span>
+                        </div>
+                    `
+            btn.onclick = (e) => handleAnswer(btn, opt)
+          }
+          optionsContainer.appendChild(btn)
+        })
+      }
+
+      function handleAnswer(btnElement, selectedOpt) {
+        if (isQuizLocked) return
+        isQuizLocked = true
+        const feedbackEl = document.getElementById('feedback-msg')
+        const isCorrect = selectedOpt.char === currentQuizItem.char
+
+        if (currentMode === 'quiz_read') {
+          Array.from(document.getElementById('quiz-options').children).forEach(
+            (btn) => {
+              const label = btn.querySelector('.option-label')
+              if (label) {
+                label.textContent = btn.dataset.name
+                label.classList.add(
+                  'text-lg',
+                  'font-black',
+                  'text-gray-800',
+                  'dark:text-white',
+                  'truncate',
+                  'w-full'
+                )
+                label.classList.remove(
+                  'text-gray-400',
+                  'dark:text-gray-500',
+                  'text-sm'
+                )
+              }
+            }
+          )
+        }
+
+        if (isCorrect) {
+          btnElement.classList.remove(
+            'border-gray-100',
+            'dark:border-gray-600',
+            'bg-white',
+            'dark:bg-gray-700'
+          )
+          btnElement.classList.add(
+            'border-rose-500',
+            'dark:border-rose-500',
+            'bg-rose-50',
+            'dark:bg-rose-900/50',
+            'ring-2',
+            'ring-rose-300',
+            'dark:ring-rose-600'
+          )
+          const key = currentQuizItem.name
+          correctCounts[key] = (correctCounts[key] || 0) + 1
+          safeStorage.set('kr_correct_counts', correctCounts)
+
+          // 同步到雲端
+          syncToCloud()
+          feedbackEl.innerHTML = `<span class="flex items-center gap-2">✨ 正確！<span class="kr-font text-2xl">${currentQuizItem.char}</span> (${currentQuizItem.name})</span>`
+          feedbackEl.className =
+            'mt-8 h-12 flex items-center justify-center font-bold text-lg text-rose-600 dark:text-rose-400'
+          masteredCount++
+          updateProgressUI()
+        } else {
+          btnElement.classList.remove(
+            'border-gray-100',
+            'dark:border-gray-600',
+            'bg-white',
+            'dark:bg-gray-700'
+          )
+          btnElement.classList.add(
+            'border-red-400',
+            'bg-red-50',
+            'dark:bg-red-900/50'
+          )
+          btnElement.classList.add('shake-anim')
+          feedbackEl.innerHTML = `<span class="flex items-center gap-2">❌ 錯誤！答案是 <span class="kr-font text-2xl">${currentQuizItem.char}</span> (${currentQuizItem.name})</span>`
+          feedbackEl.className =
+            'mt-8 h-12 flex items-center justify-center font-bold text-lg text-red-500 dark:text-red-400'
+          setTimeout(() => speak(currentQuizItem.soundText, false), 500)
+
+          // Highlight correct answer
+          Array.from(document.getElementById('quiz-options').children).forEach(
+            (b) => {
+              if (b.dataset.char === currentQuizItem.char) {
+                b.classList.add(
+                  'border-rose-500',
+                  'dark:border-rose-500',
+                  'ring-2',
+                  'ring-rose-300',
+                  'dark:ring-rose-600',
+                  'bg-rose-50'
+                )
+              }
+            }
+          )
+
+          // Re-insert into deck for review
+          const offset = 3 + Math.floor(Math.random() * 3)
+          quizDeck.splice(Math.min(offset, quizDeck.length), 0, currentQuizItem)
+          setTimeout(() => btnElement.classList.remove('shake-anim'), 500)
+        }
+        document.getElementById('btn-next-question').classList.remove('hidden')
+      }
+
+      function showCompletionScreen() {
+        document.getElementById('quiz-card').classList.add('hidden')
+        document.getElementById('completion-screen').classList.remove('hidden')
+        document.getElementById('completion-screen').classList.add('flex')
+        document.getElementById('progress-bar').style.width = '100%'
+      }
+
+      window.toggleDarkMode = toggleDarkMode
+      window.toggleRomaji = toggleRomaji
+      window.setVoice = setVoice
+      window.switchMode = switchMode
+      window.setLearnCategory = setLearnCategory
+      window.playCurrentQuizAudio = playCurrentQuizAudio
+      window.startQuiz = startQuiz
+      window.nextQuestion = nextQuestion
+      window.speakText = speakText
+
+      // Builder related global binding
+      window.playBuilderSound = playBuilderSound
+      window.handleAnswerFromChild = (childEl) => childEl.parentElement.click()
+
+      document.addEventListener('DOMContentLoaded', () => {
+        if (safeStorage.get('darkMode'))
+          document.documentElement.classList.add('dark')
+
+        initAuthListener(
+          async (user) => {
+            // 登入成功
+            document.body.style.opacity = '1'
+            console.log('Verified User:', user.email)
+            const cloudData = await loadProgressFromCloud()
+            if (cloudData && cloudData.korean) {
+              console.log('☁️ 下載雲端韓語進度:', cloudData.korean)
+
+              if (cloudData.korean.correctCounts) {
+                correctCounts = cloudData.korean.correctCounts
+                // 更新本地快取
+                safeStorage.set('kr_correct_counts', correctCounts)
+              }
+            }
+            // 初始化介面
+            setLearnCategory('consonants')
+            renderBuilderOptions()
+
+            // 初始化語音
+            initVoices()
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+              window.speechSynthesis.onvoiceschanged = initVoices
+            }
+            setTimeout(initVoices, 500)
+          },
+          (errorMsg) => {
+            if (errorMsg) alert(errorMsg)
+            window.location.href = 'index.html'
+          },
+          (isLoading) => {}
+        )
+      })
+
+      function syncToCloud() {
+        const dataToSave = {
+          correctCounts: correctCounts,
+          lastPlayTime: Date.now(),
+        }
+        saveProgressToCloud('korean', dataToSave)
+      }
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+              console.log('ServiceWorker 註冊成功:', registration.scope);
+            })
+            .catch((error) => {
+              console.log('ServiceWorker 註冊失敗:', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

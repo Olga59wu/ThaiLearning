@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>日文音檔同步 Pro - 穩定版</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="apple-touch-icon" href="icon-192x192.png">
+  <style>
+    [v-cloak] { display: none !important; }
+    body { font-family: 'Noto Sans JP', 'Inter', system-ui, sans-serif; background-color: #f8fafc; color: #334155; }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    .compact-panel { background: #ffffff; border: 1px solid #edf2f7; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+    .word-item { transition: background-color 0.2s; border-bottom: 1px solid #f7fafc; }
+    .word-item:hover { background-color: #f9fbff; }
+    .word-item.selected { background-color: #f0f7ff; }
+    .progress-fill { background: linear-gradient(90deg, #e11d48, #be123c); transition: width 0.4s ease; }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <div id="app" class="max-w-4xl mx-auto" v-cloak>
+    <header class="flex justify-between items-center mb-6 px-2">
+      <div class="flex items-center gap-3">
+        <div class="bg-rose-600 text-white p-2 rounded-xl shadow-md">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <h1 class="text-xl font-extrabold text-slate-800 tracking-tight">日文音檔同步 <span class="text-rose-600">Pro</span></h1>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-[9px] font-black uppercase tracking-wider text-slate-400">
+        <div :class="isSyncing ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'" class="w-1.5 h-1.5 rounded-full"></div>
+        {{ isSyncing ? 'Syncing' : 'Cloud OK' }}
+      </div>
+    </header>
+
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="compact-panel p-4 rounded-2xl"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">庫存</p><div class="text-2xl font-black text-slate-700">{{ wordsToDownload.length }}</div></div>
+      <div class="compact-panel p-4 rounded-2xl border-emerald-100 bg-emerald-50/30"><p class="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">已就緒</p><div class="text-2xl font-black text-emerald-600">{{ downloadedHistory.length }}</div></div>
+      <div class="compact-panel p-4 rounded-2xl border-rose-100 bg-rose-50/30"><p class="text-[10px] font-bold text-rose-600/70 uppercase mb-1">待抓</p><div class="text-2xl font-black text-rose-600">{{ wordsToDownload.length - downloadedHistory.length }}</div></div>
+    </div>
+
+    <div class="compact-panel rounded-3xl overflow-hidden flex flex-col shadow-sm">
+      <div class="px-6 py-3 bg-slate-50/50 border-b flex justify-between items-center">
+        <div class="flex gap-4">
+          <button @click="selectAll" class="text-[11px] font-bold text-slate-400">全選</button>
+          <button @click="selectMechanical" class="text-[11px] font-bold text-rose-600">✨ 只選機械音</button>
+          <button @click="selectNone" class="text-[11px] font-bold text-slate-400">不選</button>
+        </div>
+        <div class="text-[10px] font-black text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded-md">已選: {{ selectedWords.length }}</div>
+      </div>
+
+      <div class="h-[450px] overflow-y-auto custom-scroll">
+        <div v-for="word in wordsToDownload" :key="word.ja" class="word-item flex items-center gap-4 px-6 py-3 cursor-pointer" :class="{'selected': selectedWords.some(w => w.ja === word.ja)}" @click="toggleRow(word)">
+          <input type="checkbox" :checked="selectedWords.some(w => w.ja === word.ja)" class="w-4 h-4 rounded border-slate-300 text-rose-600 focus:ring-0 cursor-pointer">
+          <div class="flex-1 flex items-center justify-between min-w-0">
+            <div class="flex flex-col items-start min-w-0">
+              <span class="text-lg font-bold text-slate-700 tracking-tight truncate">{{ word.ja }}</span>
+              <span class="text-[11px] text-slate-400 font-medium truncate">{{ word.zh }} ({{ word.kana }})</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span v-if="downloadedHistory.includes(word.ja)" class="text-[8px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 uppercase">Ready</span>
+              <span v-else class="text-[8px] font-bold px-2 py-0.5 rounded bg-orange-100 text-orange-600 uppercase">Raw</span>
+              <button v-if="downloadedHistory.includes(word.ja)" @click.stop="forgetWord(word)" class="p-1.5 text-slate-300 hover:text-rose-500"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 bg-slate-50/50 border-t flex gap-3">
+        <button @click="startDownload" :disabled="isDownloading || selectedWords.length === 0" class="flex-[3] py-3.5 bg-rose-600 hover:bg-rose-700 disabled:bg-slate-200 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+          <span v-if="!isDownloading">⬇️ 打包音檔 (ZIP)</span>
+          <span v-else class="flex items-center gap-2"><div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>正在抓取...</span>
+        </button>
+        <button @click="resetHistory" :disabled="isDownloading" class="flex-1 py-3.5 bg-white border border-slate-200 text-slate-400 hover:text-red-500 rounded-xl font-bold text-[10px] uppercase">重置</button>
+      </div>
+    </div>
+
+    <!-- 右下角通知 -->
+    <div v-if="isDownloading || isFinished" class="fixed bottom-6 right-6 w-80 bg-white p-5 rounded-2xl shadow-2xl border border-slate-100 z-[100] animate-in slide-in-from-right-10 duration-500">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-[11px] font-black text-slate-800 uppercase">{{ isDownloading ? '同步抓取中...' : '任務完成' }}</div>
+        <div class="text-[11px] font-black text-rose-600">{{ progressPercent }}%</div>
+      </div>
+      <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2"><div class="progress-fill h-full" :style="{ width: progressPercent + '%' }"></div></div>
+      <div class="text-[9px] text-slate-400 font-bold truncate" v-if="isDownloading">處理中: {{ currentWordDisplay }}</div>
+      <div class="text-[9px] text-emerald-500 font-bold" v-else>✅ ZIP 檔案已產生，若 audio 為空請重新下載。</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { VOCAB_CATEGORIES } from './data/jpTyping.js';
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const wordsToDownload = ref([]), selectedWords = ref([]), isDownloading = ref(false), isFinished = ref(false);
+        const currentIndex = ref(0), currentWordDisplay = ref(''), isSyncing = ref(false);
+        const downloadedHistory = ref(JSON.parse(localStorage.getItem('jp-mp3-history') || '[]'));
+        let saveProgressToCloud = null, loadProgressFromCloud = null, cachedCloudJpData = {};
+
+        const syncToCloud = async () => {
+          if (!saveProgressToCloud) return; isSyncing.value = true;
+          try {
+            const payload = { ...cachedCloudJpData, mp3History: JSON.parse(JSON.stringify(downloadedHistory.value)), playerLastUpdated: Date.now() };
+            await saveProgressToCloud('jp', payload);
+          } finally { isSyncing.value = false; }
+        };
+
+        const initializeCloudSync = async () => {
+          try {
+            const [authMod, dbMod] = await Promise.all([import('./js/auth.js'), import('./js/dbService.js')]);
+            loadProgressFromCloud = dbMod.loadProgressFromCloud; saveProgressToCloud = dbMod.saveProgressToCloud;
+            authMod.initAuthListener(async (user) => {
+              if (user) {
+                const cloudData = await loadProgressFromCloud();
+                if (cloudData?.jp) {
+                  cachedCloudJpData = cloudData.jp;
+                  if (cloudData.jp.mp3History) {
+                    downloadedHistory.value = cloudData.jp.mp3History;
+                    localStorage.setItem('jp-mp3-history', JSON.stringify(downloadedHistory.value));
+                    selectPending();
+                  }
+                  if (cloudData.jp.customList) {
+                    localStorage.setItem('jp-custom-list', JSON.stringify(cloudData.jp.customList));
+                    refreshWordPool();
+                  }
+                }
+              }
+            });
+          } catch (e) {}
+        };
+
+        const refreshWordPool = () => {
+          let all = []; Object.values(VOCAB_CATEGORIES).forEach(l => all.push(...l));
+          const localCustom = JSON.parse(localStorage.getItem('jp-custom-list') || '[]');
+          all = [...all, ...localCustom];
+          const unique = []; const seen = new Set();
+          all.forEach(w => { if(!seen.has(w.ja)) { seen.add(w.ja); unique.push(w); } });
+          wordsToDownload.value = unique; selectPending();
+        };
+
+        const fetchMp3Blob = async (text, lang, retry = 2) => {
+          const googleUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
+          const proxies = [
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(googleUrl)}`,
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(googleUrl)}`
+          ];
+          
+          for(let proxy of proxies) {
+            try {
+              const res = await fetch(proxy);
+              if (res.ok) {
+                const blob = await res.blob();
+                if (blob.size > 500) return blob; 
+              }
+            } catch (e) { console.warn(`Proxy failed: ${proxy}`); }
+          }
+          
+          if (retry > 0) return await fetchMp3Blob(text, lang, retry - 1);
+          return null;
+        };
+
+        const startDownload = async () => {
+          if (selectedWords.value.length === 0) return;
+          isDownloading.value = true; isFinished.value = false; currentIndex.value = 0;
+          
+          const zip = new JSZip(), audioFolder = zip.folder("audio").folder("JP");
+          let failCount = 0;
+
+          for (const word of selectedWords.value) {
+            
+            currentWordDisplay.value = `[日] ${word.ja}`;
+            
+            // 修正 TTS 發音問題：
+            // 1. Google TTS 會把單一漢字「暇」預設唸成音讀「か」(ka)，所以強制替換成「ひま」
+            // 2. 把「/」替換成句號「。」，讓 TTS 中斷重起語氣，不僅不會唸出 slash，還會有個明顯的停頓
+            const ttsFixMap = { '暇': 'ひま', '何': 'なに' };
+            const queryJa = (ttsFixMap[word.ja] || word.ja).replace(/\s*\/\s*/g, '。');
+            
+            const bJa = await fetchMp3Blob(queryJa, 'ja');
+            if (bJa) {
+                const safeText = word.ja.replace(/[\/（）\s〜]/g, '_');
+                audioFolder.file(`ja_${safeText}.mp3`, bJa);
+            } else { failCount++; }
+            currentIndex.value++;
+            
+            await new Promise(r => setTimeout(r, 1200));
+            
+            currentWordDisplay.value = `[中] ${word.zh}`;
+            const queryZh = word.zh.replace(/\s*\/\s*/g, '、');
+            const bZh = await fetchMp3Blob(queryZh, 'zh-TW');
+            if (bZh) {
+                const safeText = word.zh.replace(/[\/（）\s〜]/g, '_');
+                audioFolder.file(`zh_${safeText}.mp3`, bZh);
+            } else { failCount++; }
+            currentIndex.value++;
+            
+            await new Promise(r => setTimeout(r, 1200));
+            
+            if (bJa || bZh) {
+                if (!downloadedHistory.value.includes(word.ja)) downloadedHistory.value.push(word.ja);
+            }
+            
+            if (currentIndex.value % 20 === 0) await new Promise(r => setTimeout(r, 1000));
+          }
+          
+          if (failCount > 0) {
+              console.warn(`有 ${failCount} 個檔案下載失敗，ZIP 可能不完整。`);
+          }
+
+          localStorage.setItem('jp-mp3-history', JSON.stringify(downloadedHistory.value));
+          syncToCloud();
+          
+          const zipBlob = await zip.generateAsync({ type: "blob" });
+          if (zipBlob.size < 100) {
+              alert("⚠️ 錯誤：生成的 ZIP 檔過小，可能沒有成功抓到任何音檔。請重試或檢查網路。");
+          } else {
+              saveAs(zipBlob, "jp_audio_assets.zip");
+          }
+          
+          isDownloading.value = false; isFinished.value = true; selectPending();
+        };
+
+        const totalWords = computed(() => selectedWords.value.length * 2);
+        const progressPercent = computed(() => totalWords.value === 0 ? 0 : Math.round((currentIndex.value / totalWords.value) * 100));
+        const selectAll = () => { selectedWords.value = [...wordsToDownload.value]; };
+        const selectNone = () => { selectedWords.value = []; };
+        const selectPending = () => { selectedWords.value = wordsToDownload.value.filter(word => !downloadedHistory.value.includes(word.ja)); };
+        const toggleRow = (word) => {
+            const idx = selectedWords.value.findIndex(w => w.ja === word.ja);
+            if (idx > -1) selectedWords.value.splice(idx, 1); else selectedWords.value.push(word);
+        };
+
+        onMounted(() => { refreshWordPool(); initializeCloudSync(); });
+
+        return { 
+          isDownloading, isFinished, currentIndex, totalWords, progressPercent, currentWordDisplay, 
+          startDownload, wordsToDownload, selectedWords, selectAll, selectNone, selectPending, 
+          resetHistory: () => { if (confirm('重置紀錄？')) { downloadedHistory.value = []; localStorage.removeItem('jp-mp3-history'); syncToCloud(); selectAll(); } }, 
+          forgetWord: (w) => { downloadedHistory.value = downloadedHistory.value.filter(ja => ja !== w.ja); localStorage.setItem('jp-mp3-history', JSON.stringify(downloadedHistory.value)); syncToCloud(); if (!selectedWords.value.some(sw => sw.ja === w.ja)) selectedWords.value.push(w); }, 
+          downloadedHistory, selectMechanical: selectPending, toggleRow, isSyncing
+        };
+      }
+    }).mount('#app');
+  </script>
+  <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+              console.log('ServiceWorker 註冊成功:', registration.scope);
+            })
+            .catch((error) => {
+              console.log('ServiceWorker 註冊失敗:', error);
+            });
+        });
+      }
+    </script>
+</body>
+</html>
