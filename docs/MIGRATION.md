@@ -25,10 +25,15 @@
 | `/downloader` 原版 bug 修正（抓取失敗判斷、下載中鎖住選取、待抓數、已打包寫入時機、上傳失敗狀態、按鈕改名） | ✅ | `5fec2ba` |
 | `/player` 同步失敗圖示（改看 `saveThai()` 回傳值） | ✅ | `db3e87c` |
 | 筆順產生器（`/path`） | ✅ 使用者已對照確認 | `cb446d6` |
-| `/path` 原版 bug 修正（連按複製、拖曳出界、雙擊多點、匯入失敗、單引號跳脫、Clipboard API） | ✅ | （本 commit） |
-| **第 5 步 對照檢查** | **下一步** | |
+| `/path` 原版 bug 修正（連按複製、拖曳出界、雙擊多點、匯入失敗、單引號跳脫、Clipboard API） | ✅ | `a1c88cb` |
+| 第 5 步 對照檢查（逐項對照盤點清單、TODO 一次決定） | ✅ | — |
+| 第 5 步決定的修正：`/path` 匯入失敗保留內容 | ✅ | `178dd15` |
+| 第 5 步決定的修正：`/thai` 錯題複習標籤、雲端資料寫回 localStorage、語速存數字 | ✅ | `a85be57` |
+| 第 5 步決定的修正：`/player` 淺色模式播放光暈 | ✅ | `1d58a2d` |
+| **SW／離線功能實測（`pnpm build && pnpm preview`）** | **下一步（使用者實測中）** | |
+| 部署（Hosting 設定、Authorized domains） | 待辦，見 TODO.md | |
 
-順序：**player → typing → downloader → path**，之後第 5 步逐項對照第 1 步盤點清單。
+順序：**player → typing → downloader → path** → 第 5 步對照檢查（已完成）→ SW／離線實測 → 部署。
 
 ---
 
@@ -91,13 +96,16 @@ pnpm dev                               # 新版：http://localhost:5173/player
 4. Player 重複的 `watch(isDarkMode)` 合併成一個
 5. Downloader 右下角通知**不加動畫**（原版 `animate-in slide-in-from-right-10` 本來就無效）
 6. 缺少的 `zh_傍晚.mp3`、`zh_預訂.mp3` 照原版退回 TTS
-7. `alert` / `confirm` 先照原樣保留
+7. `alert` / `confirm` 照原樣保留（第 5 步確認不改）
 
 ### 已修正的 /thai 原版 bug
 - 「重置所有數據」只清除 thai 自己的 6 個 key（原版 `localStorage.clear()`）
 - 聲調訓練「挑戰」按鈕可進入挑戰模式（`enterToneChallenge`）；數字鍵 1～5 只在挑戰模式作答
 - 翻牌記憶全部 6 組配對完才顯示「恭喜通關」
 - 測驗範圍新增「收藏」按鈕（樣式同範圍按鈕，`disabled:opacity-50 disabled:cursor-not-allowed`，沒有收藏時 disabled）
+- 錯題複習：`quiz.filter` 記錄出題來源（`startQuiz` 時設定），`filter === 'mistakes'` 時 Mode 標籤顯示「錯題複習」並隱藏範圍按鈕（`currentMode` 不變，否則 QuizSection 會被卸載）
+- 雲端載入的 `correctCounts`／`favorites`／`mistakeList` 寫回 localStorage（`ThaiView.vue` onMounted）
+- 語速滑桿 `v-model.number`；store 讀入 `preferredRate` 時 `Number()` 轉換（相容舊的字串資料）
 
 ### /player 的決策與已修正 bug
 - 壞音檔名單啟動時從 localStorage `thai-broken-audio` 讀取（原版不讀；使用者確認保留）；雲端有 `brokenAudio` 時覆蓋並寫回 localStorage（改由 `vocabProgress.applyCloudData()` 處理，見 /typing）
@@ -105,7 +113,8 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - `updatePlaylist` 遇到不存在的分類當空清單；已學會清空時比照自訂單字移除「已學會」分類
 - 從雲端恢復分類時不觸發上傳（分類 watch 檢查 `isSyncingFromCloud`）
 - `syncToCloud` 改看 `cloud.saveThai()` 回傳值，失敗時顯示「同步失敗」圖示（原版錯誤被吞掉，永遠不會出現）
-- 保留未修：`.playing-glow` 淺色模式被 `shadow-xl` 蓋掉、隨機模式洗牌兩次（見 TODO.md）
+- `.playing-glow` 規則改為 `:where(html.shell-player) .player-card.playing-glow`（權重 0,2,0 高於 `shadow-xl`），淺色模式也看得到光暈；深色模式規則不變
+- 決定不修：隨機模式洗牌兩次（見 TODO.md）
 
 ### /typing 的實作與決策
 - `src/composables/typing/useTypingPage.ts`（`createTypingPage()` + provide／inject）、`useTypingSounds.ts`（WebAudio；每次進頁建立 AudioContext、離開時 `close()`，原版存在 `window.audioCtx`）
@@ -150,9 +159,17 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - 複製改用 `navigator.clipboard.writeText`（失敗時 console.error、按鈕不變）；連按時 `cancel(copyTimer)` 重新計時，固定恢復成原文字與 `bg-emerald-500`
   - `mouseleave` 呼叫 `endDrag()`（清 `isDragging` 與拖曳索引）並清除 hover 標示，移出畫布即結束拖曳
   - 雙擊斷筆：`mousedown` 以 `e.detail <= 1` 判斷新點擊序列、`clickAddedCount` 記錄在空白處新增的點數；`dblclick` 先從最後一筆畫尾端移除這些點再 `nextStroke()`
-  - 匯入：先解析出 `parsedStrokes`，為空就不改動字底圖／`currentCharObj`／畫布，以 placeholder 顯示失敗訊息（`showImportMessage()`，連續匯入時重新計時）
+  - 匯入：先解析出 `parsedStrokes`，為空就不改動字底圖／`currentCharObj`／畫布；**保留匯入框內容**，失敗訊息以 `importError` 紅字顯示在匯入框下方（再次匯入或 `@input` 時清除）；成功訊息照原版用 placeholder（`showImportMessage()`，3 秒，連續匯入時重新計時）
   - 輸出用 `quote()` 跳脫 `\` 與 `'`；匯入的 `char` regex 支援跳脫字元並還原
-- 未修：觸控支援（見 TODO）
+- 決定不修：觸控支援（見 TODO）
+
+### 第 5 步對照檢查結論（2026-10-13）
+- 7 頁全部搬完並經使用者對照確認；§2 決策、§3 架構、§5 盤點項目逐項核對皆已實作
+- 刻意差異（已決定）：音檔純 cache-first、Workbox precache、新網域本機資料歸零、無舊網址導向、Firebase 10.7.1 CDN → 13.x npm、JSZip 3.10.1 → 3.10.x npm、各頁已修正的原版 bug
+- 技術上無法 100% 等同但視覺一致：Tailwind v3 → v4（§4.3～4.5 的處理）、SPA 換頁（手動清理、字型連結動態替換，首次進頁可能短暫顯示後備字體）、Typing 的 AudioContext 每頁建立
+- 「離線語音」下載 652 個網址中 2 個不存在（`zh_傍晚`、`zh_預訂`），console 會有 2 筆警告，同原版
+- TODO.md 的原版怪異行為已全部決定（修：/path 匯入保留內容、/thai 錯題標籤／雲端寫回／語速型別、/player 光暈；其餘不修）
+- 剩下：SW／離線實測、部署（見 TODO.md「部署」）
 
 ### 給 /typing 的接手提示（已完成）
 - 共用：`useOfflineAudioDownload()` + `<OfflineAudioModal :modal success-message="現在打字練習時，發音會更加流暢無延遲！" @close @confirm>`（Typing 原版彈窗本來就在 `#app` 第一層）
