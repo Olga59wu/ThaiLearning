@@ -23,8 +23,9 @@
 | `/typing` 原版 bug 修正（發音與 TTS 重疊、剩餘顯示、清空分類、雲端資料寫回 localStorage、同字多義用 id） | ✅ | `9aff9eb` |
 | 音檔打包（`/downloader`） | ✅ 使用者已對照確認 | `ffa5aa4` |
 | `/downloader` 原版 bug 修正（抓取失敗判斷、下載中鎖住選取、待抓數、已打包寫入時機、上傳失敗狀態、按鈕改名） | ✅ | `5fec2ba` |
-| `/player` 同步失敗圖示（改看 `saveThai()` 回傳值） | ✅ | （本 commit） |
-| 筆順產生器（`/path`） | ✅ 待使用者對照確認 | （本 commit） |
+| `/player` 同步失敗圖示（改看 `saveThai()` 回傳值） | ✅ | `db3e87c` |
+| 筆順產生器（`/path`） | ✅ 使用者已對照確認 | `cb446d6` |
+| `/path` 原版 bug 修正（連按複製、拖曳出界、雙擊多點、匯入失敗、單引號跳脫、Clipboard API） | ✅ | （本 commit） |
 | **第 5 步 對照檢查** | **下一步** | |
 
 順序：**player → typing → downloader → path**，之後第 5 步逐項對照第 1 步盤點清單。
@@ -141,10 +142,17 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - `styles/pages/path.css`（`shell-common shell-path`），body class 照原版 `bg-gray-100 flex flex-col items-center p-4 h-screen overflow-hidden`；View 根元素是原版 body 內的兩個元素（主面板 + 選字表），沒有 #app
 - 選字表只保留泰語輔音／元音；`jpData` 的查找（選字、匯入）全部移除
 - canvas 繪圖、`strokes`、`currentCharObj` 等維持一般變數（非 reactive）；`#input-char`（contenteditable）以 ref 直接讀寫 `textContent`；字底圖、預覽 path `d`、輸出文字、圓潤度數值、匯入 placeholder、canvas `hovering-point` 改為 ref 綁定
-- 複製按鈕：原版改 innerHTML + `classList.replace`，改用 `copyLabel`／`copyBg` 狀態重現（連按的怪異行為也一樣，見 TODO）
+- 複製按鈕：原版改 innerHTML + `classList.replace`，改用 `copyLabel`／`copyBg` 狀態
 - 選字表原版有 `animate-slide-up`，但 path.html 的 Tailwind 沒定義（無動畫）；新版 `@theme` 為 index 定義了它，故移除此 class；`hidden` 改由 `v-if` 控制
 - 計時器（畫布閃綠 150ms、複製 1 秒、匯入 placeholder 3 秒）用 `useTimers().later()`
 - 顏色排序掃描：無 DIFF
+- 已修正 bug：
+  - 複製改用 `navigator.clipboard.writeText`（失敗時 console.error、按鈕不變）；連按時 `cancel(copyTimer)` 重新計時，固定恢復成原文字與 `bg-emerald-500`
+  - `mouseleave` 呼叫 `endDrag()`（清 `isDragging` 與拖曳索引）並清除 hover 標示，移出畫布即結束拖曳
+  - 雙擊斷筆：`mousedown` 以 `e.detail <= 1` 判斷新點擊序列、`clickAddedCount` 記錄在空白處新增的點數；`dblclick` 先從最後一筆畫尾端移除這些點再 `nextStroke()`
+  - 匯入：先解析出 `parsedStrokes`，為空就不改動字底圖／`currentCharObj`／畫布，以 placeholder 顯示失敗訊息（`showImportMessage()`，連續匯入時重新計時）
+  - 輸出用 `quote()` 跳脫 `\` 與 `'`；匯入的 `char` regex 支援跳脫字元並還原
+- 未修：觸控支援（見 TODO）
 
 ### 給 /typing 的接手提示（已完成）
 - 共用：`useOfflineAudioDownload()` + `<OfflineAudioModal :modal success-message="現在打字練習時，發音會更加流暢無延遲！" @close @confirm>`（Typing 原版彈窗本來就在 `#app` 第一層）

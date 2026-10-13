@@ -11,7 +11,7 @@ usePageShell({
   bodyClass: 'bg-gray-100 flex flex-col items-center p-4 h-screen overflow-hidden',
 })
 
-const { later } = useTimers()
+const { later, cancel } = useTimers()
 
 interface Point {
   x: number
@@ -22,7 +22,6 @@ type CharObj = Pick<ThaiItem, 'char'> & Partial<ThaiItem>
 // 變數與綁定
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 const inputCharEl = ref<HTMLDivElement | null>(null)
-const outputEl = ref<HTMLTextAreaElement | null>(null)
 let ctx: CanvasRenderingContext2D | null = null
 
 const guideChar = ref('')
@@ -32,12 +31,14 @@ const smoothVal = ref('0.5')
 const importText = ref('')
 const IMPORT_PLACEHOLDER = '在此貼上完整物件代碼 (包含 char 和 strokes)'
 const importPlaceholder = ref(IMPORT_PLACEHOLDER)
+let importPlaceholderTimer: ReturnType<typeof setTimeout> | null = null
 const isPickerOpen = ref(false)
 const isHoveringPoint = ref(false)
-// 原版直接改按鈕 innerHTML 與 classList.replace，這裡以狀態重現（含連點時的行為）
+// 原版直接改按鈕 innerHTML 與 classList.replace，這裡改用狀態
 const COPY_LABEL = '📋 複製完整物件'
 const copyLabel = ref(COPY_LABEL)
 const copyBg = ref('bg-emerald-500')
+let copyTimer: ReturnType<typeof setTimeout> | null = null
 
 let strokes: Point[][] = [[]]
 let tension = 0.5
@@ -53,6 +54,8 @@ let dragStrokeIndex = -1
 let dragPointIndex = -1
 let hoverStrokeIndex = -1
 let hoverPointIndex = -1
+// 目前這次連續點擊（雙擊的兩下）新增到最後一筆畫的點數，雙擊斷筆時移除
+let clickAddedCount = 0
 
 // --- 功能函式 ---
 
@@ -140,16 +143,30 @@ const clearPath = () => {
   render()
 }
 
-const copyCode = () => {
+// 匯入結果訊息：顯示在 placeholder，3 秒後恢復（連續匯入時重新計時）
+const showImportMessage = (message: string) => {
+  importPlaceholder.value = message
+  cancel(importPlaceholderTimer)
+  importPlaceholderTimer = later(() => {
+    importPlaceholder.value = IMPORT_PLACEHOLDER
+  }, 3000)
+}
+
+const copyCode = async () => {
   if (!outputValue.value) return
-  outputEl.value!.select()
-  document.execCommand('copy')
-  const originalLabel = copyLabel.value
+  try {
+    await navigator.clipboard.writeText(outputValue.value)
+  } catch (error) {
+    console.error('複製失敗:', error)
+    return
+  }
   copyLabel.value = '✅ 已複製'
-  if (copyBg.value === 'bg-emerald-500') copyBg.value = 'bg-slate-700'
-  later(() => {
-    copyLabel.value = originalLabel
-    if (copyBg.value === 'bg-slate-700') copyBg.value = 'bg-emerald-500'
+  copyBg.value = 'bg-slate-700'
+  // 連按時重新計時，固定恢復成原本的文字與底色
+  cancel(copyTimer)
+  copyTimer = later(() => {
+    copyLabel.value = COPY_LABEL
+    copyBg.value = 'bg-emerald-500'
   }, 1000)
 }
 
@@ -158,11 +175,41 @@ const importPath = () => {
   const rawInput = importText.value
   if (!rawInput) return
 
-  // 1. 嘗試解析 "char" 屬性來顯示字底圖
-  // 尋找 char: 'X' 或 char: "X"
-  const charMatch = rawInput.match(/char:\s*['"]([^'"]+)['"]/)
-  if (charMatch && charMatch[1]) {
-    const importedChar = charMatch[1]
+  // 1. 先解析 strokes；解析不到任何路徑就顯示失敗，不改動字底圖與畫布
+  const parsedStrokes: Point[][] = []
+  const matches = rawInput.match(/['"](M[^'"]+)['"]/g)
+
+  if (matches && matches.length > 0) {
+    matches.forEach((pathStr) => {
+      const cleanPath = pathStr.replace(/['"]/g, '')
+      const points = parseSVGPath(cleanPath)
+      if (points.length > 0) parsedStrokes.push(points)
+    })
+  } else {
+    // 相容舊模式 (只貼上單一路徑)
+    let pathData = rawInput
+    if (rawInput.includes('M')) {
+      const start = rawInput.indexOf('M')
+      let end = rawInput.lastIndexOf("'")
+      if (end === -1) end = rawInput.lastIndexOf('"')
+      if (end < start) end = rawInput.length
+      pathData = rawInput.substring(start).replace(/['"],?$/, '').trim()
+    }
+    const points = parseSVGPath(pathData)
+    if (points.length > 0) parsedStrokes.push(points)
+  }
+
+  if (parsedStrokes.length === 0) {
+    importText.value = ''
+    showImportMessage('❌ 匯入失敗：找不到筆順路徑（M 開頭），畫布未變更')
+    return
+  }
+
+  // 2. 嘗試解析 "char" 屬性來顯示字底圖
+  // 尋找 char: 'X' 或 char: "X"（支援輸出時跳脫的 \' \\）
+  const charMatch = rawInput.match(/char:\s*(['"])((?:\\.|(?!\1)[^\\])+)\1/)
+  if (charMatch && charMatch[2]) {
+    const importedChar = charMatch[2].replace(/\\(.)/g, '$1')
     inputCharEl.value!.textContent = importedChar
     drawGuide() // 這一行會更新畫布背景的字底圖
 
@@ -177,37 +224,12 @@ const importPath = () => {
     }
   }
 
-  // 2. 解析 strokes
-  const matches = rawInput.match(/['"](M[^'"]+)['"]/g)
-
-  if (matches && matches.length > 0) {
-    strokes = []
-    matches.forEach((pathStr) => {
-      const cleanPath = pathStr.replace(/['"]/g, '')
-      const points = parseSVGPath(cleanPath)
-      if (points.length > 0) strokes.push(points)
-    })
-    if (strokes.length === 0) strokes.push([])
-  } else {
-    // 相容舊模式 (只貼上單一路徑)
-    let pathData = rawInput
-    if (rawInput.includes('M')) {
-      const start = rawInput.indexOf('M')
-      let end = rawInput.lastIndexOf("'")
-      if (end === -1) end = rawInput.lastIndexOf('"')
-      if (end < start) end = rawInput.length
-      pathData = rawInput.substring(start).replace(/['"],?$/, '').trim()
-    }
-    const points = parseSVGPath(pathData)
-    strokes = [points]
-  }
+  // 3. 套用解析到的 strokes
+  strokes = parsedStrokes
 
   render()
   importText.value = ''
-  importPlaceholder.value = '✅ 匯入成功！字底圖與筆順已更新'
-  later(() => {
-    importPlaceholder.value = IMPORT_PLACEHOLDER
-  }, 3000)
+  showImportMessage('✅ 匯入成功！字底圖與筆順已更新')
 }
 
 const parseSVGPath = (pathData: string): Point[] => {
@@ -374,12 +396,15 @@ const render = () => {
       outputValue.value = objectToString(newObj) + ','
     } else {
       // 無物件時 (自創字)：只輸出 strokes 陣列
-      outputValue.value = `strokes: [\n${resultStrings.map((s) => `      '${s}',`).join('\n')}\n    ],`
+      outputValue.value = `strokes: [\n${resultStrings.map((s) => `      ${quote(s)},`).join('\n')}\n    ],`
     }
   } else {
     outputValue.value = ''
   }
 }
+
+// 輸出成單引號字串，跳脫反斜線與單引號
+const quote = (value: unknown) => `'${String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
 
 const objectToString = (obj: Record<string, unknown>, indentLevel = 1): string => {
   const indent = '  '.repeat(indentLevel)
@@ -393,13 +418,13 @@ const objectToString = (obj: Record<string, unknown>, indentLevel = 1): string =
     if (key === 'strokes' && Array.isArray(value)) {
       str += '[\n'
       value.forEach((v) => {
-        str += `${indent}  '${v}',\n`
+        str += `${indent}  ${quote(v)},\n`
       })
       str += `${indent}],\n`
     } else if (Array.isArray(value)) {
-      str += `[${value.map((v) => `'${v}'`).join(', ')}],\n`
+      str += `[${value.map((v) => quote(v)).join(', ')}],\n`
     } else if (typeof value === 'string') {
-      str += `'${value}',\n`
+      str += `${quote(value)},\n`
     } else if (typeof value === 'object' && value !== null) {
       str += objectToString(value as Record<string, unknown>, indentLevel + 1) + ',\n'
     } else {
@@ -435,6 +460,8 @@ const onMouseDown = (e: MouseEvent) => {
   const hit = findPointInfo(pos)
 
   if (e.button === 0) {
+    // 每次新的點擊序列（不是雙擊的第二下）重新計算新增的點數
+    if (e.detail <= 1) clickAddedCount = 0
     if (hit) {
       isDragging = true
       dragStrokeIndex = hit.sIdx
@@ -443,6 +470,7 @@ const onMouseDown = (e: MouseEvent) => {
       if (strokes.length === 0) strokes.push([])
       const currentStroke = strokes[strokes.length - 1]!
       currentStroke.push(pos)
+      clickAddedCount++
       isDragging = true
       dragStrokeIndex = strokes.length - 1
       dragPointIndex = currentStroke.length - 1
@@ -471,15 +499,23 @@ const onMouseMove = (e: MouseEvent) => {
   }
 }
 
-const onMouseUp = () => {
+const endDrag = () => {
   isDragging = false
   dragStrokeIndex = -1
   dragPointIndex = -1
+}
+
+const onMouseUp = () => {
+  endDrag()
   render()
 }
 
+// 移出畫布即結束拖曳並清除 hover 標示（之後在畫布外放開也不會殘留橘色點）
 const onMouseLeave = () => {
-  isDragging = false
+  endDrag()
+  hoverStrokeIndex = -1
+  hoverPointIndex = -1
+  isHoveringPoint.value = false
   render()
 }
 
@@ -498,7 +534,13 @@ const onContextMenu = (e: MouseEvent) => {
 
 const onDblClick = (e: MouseEvent) => {
   e.preventDefault()
+  // 雙擊的兩下 mousedown 若在空白處新增了點，斷筆前先移除（都在最後一筆畫的尾端）
+  const currentStroke = strokes[strokes.length - 1]!
+  const removeCount = Math.min(clickAddedCount, currentStroke.length)
+  currentStroke.splice(currentStroke.length - removeCount, removeCount)
+  clickAddedCount = 0
   nextStroke()
+  render()
 }
 
 // 初始化
@@ -559,7 +601,7 @@ onMounted(() => {
 
       <div class="flex flex-col gap-1 pt-1 border-t border-gray-200 flex-1 min-h-0">
         <h1 class="text-xs font-bold text-gray-700 uppercase tracking-wide">4. 輸出結果 (完整物件)</h1>
-        <textarea id="output-path" ref="outputEl" :value="outputValue" class="w-full flex-1 p-2 text-[9px] font-mono border rounded-lg bg-slate-800 text-emerald-400 resize-none focus:outline-hidden leading-tight" readonly></textarea>
+        <textarea id="output-path" :value="outputValue" class="w-full flex-1 p-2 text-[9px] font-mono border rounded-lg bg-slate-800 text-emerald-400 resize-none focus:outline-hidden leading-tight" readonly></textarea>
         <button id="btn-copy" :class="copyBg" class="w-full px-4 py-2 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm" @click="copyCode">
           <span>{{ copyLabel }}</span>
         </button>
