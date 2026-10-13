@@ -11,6 +11,7 @@
 @import "./pages/player.css" layer(utilities);
 @import "./pages/typing.css" layer(utilities);
 @import "./pages/downloader.css" layer(utilities);
+@import "./pages/path.css" layer(utilities);
 @import "tailwindcss";
 
 /* legacy/ 只是參考來源、docs/ 是文件與工具，不掃描其中的 class */

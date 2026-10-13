@@ -24,8 +24,8 @@
 | 音檔打包（`/downloader`） | ✅ 使用者已對照確認 | `ffa5aa4` |
 | `/downloader` 原版 bug 修正（抓取失敗判斷、下載中鎖住選取、待抓數、已打包寫入時機、上傳失敗狀態、按鈕改名） | ✅ | `5fec2ba` |
 | `/player` 同步失敗圖示（改看 `saveThai()` 回傳值） | ✅ | （本 commit） |
-| **筆順產生器（`/path`）** | **下一步** | |
-| 第 5 步 對照檢查 | 待辦 | |
+| 筆順產生器（`/path`） | ✅ 待使用者對照確認 | （本 commit） |
+| **第 5 步 對照檢查** | **下一步** | |
 
 順序：**player → typing → downloader → path**，之後第 5 步逐項對照第 1 步盤點清單。
 
@@ -136,6 +136,16 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - `saveProgressToCloud()` 改為回傳 `boolean`（其他呼叫端忽略回傳值，不影響）；`cloud.saveThai()` 一併回傳；失敗時 `isSyncFailed` → 紅點 + 「Sync Failed」，下次上傳成功即恢復
   - 「✨ 只選機械音」改名「✨ 只選未打包」
 
+### /path 的實作與決策
+- 邏輯直接寫在 `PathEditorView.vue`（一對一翻譯原版 script）；選字表拆成 `components/path/CharPickerModal.vue`（父層 `v-if` 控制，每次打開從「泰語輔音」開始，同原版 `openCharPicker`）
+- `styles/pages/path.css`（`shell-common shell-path`），body class 照原版 `bg-gray-100 flex flex-col items-center p-4 h-screen overflow-hidden`；View 根元素是原版 body 內的兩個元素（主面板 + 選字表），沒有 #app
+- 選字表只保留泰語輔音／元音；`jpData` 的查找（選字、匯入）全部移除
+- canvas 繪圖、`strokes`、`currentCharObj` 等維持一般變數（非 reactive）；`#input-char`（contenteditable）以 ref 直接讀寫 `textContent`；字底圖、預覽 path `d`、輸出文字、圓潤度數值、匯入 placeholder、canvas `hovering-point` 改為 ref 綁定
+- 複製按鈕：原版改 innerHTML + `classList.replace`，改用 `copyLabel`／`copyBg` 狀態重現（連按的怪異行為也一樣，見 TODO）
+- 選字表原版有 `animate-slide-up`，但 path.html 的 Tailwind 沒定義（無動畫）；新版 `@theme` 為 index 定義了它，故移除此 class；`hidden` 改由 `v-if` 控制
+- 計時器（畫布閃綠 150ms、複製 1 秒、匯入 placeholder 3 秒）用 `useTimers().later()`
+- 顏色排序掃描：無 DIFF
+
 ### 給 /typing 的接手提示（已完成）
 - 共用：`useOfflineAudioDownload()` + `<OfflineAudioModal :modal success-message="現在打字練習時，發音會更加流暢無延遲！" @close @confirm>`（Typing 原版彈窗本來就在 `#app` 第一層）
 - 共用：`useVocabProgressStore()`（setup 時呼叫 `loadFromStorage()`，再用 `migrateToId()` 遷移，符合決策「Typing 啟動先讀 localStorage」與「一律用 id 比對」）、`useCloudStore()`（`loadThai()`／`saveThai()`）
@@ -182,7 +192,7 @@ src/
 │  │           MemoryGameSection, ToneCalcModal, HelpModal, HandwritingModal
 │  ├─ player/ ✅ PlayerHeader, CategoryBar, PlayerCard, PlayerControls, WordListModal
 │  ├─ typing/ ✅ TypingHeader, TypingCard, TypingInputBar
-│  └─ path/     CharPickerModal —待建
+│  └─ path/ ✅ CharPickerModal
 ├─ composables/
 │  ├─ usePageShell.ts ✅   useTimers.ts ✅   thai/useThaiPage.ts ✅
 │  ├─ player/usePlayerPage.ts ✅（播放、滑動、Media Session、語音清單都在這裡）  useWakeLock.ts ✅  useOfflineAudioDownload.ts ✅
@@ -196,7 +206,7 @@ src/
 ├─ utils/{storage.ts ✅（safeStorage）, shuffle.ts ✅（shuffleArray 回傳新陣列 / shuffleInPlace 原地）}
 └─ styles/
    ├─ main.css ✅ v3-compat.css ✅ legacy-common.css ✅
-   └─ pages/{home.css ✅, not-found.css ✅, learning.css ✅}   // 已新增 player.css ✅、typing.css ✅、downloader.css ✅；之後新增 path.css
+   └─ pages/{home.css ✅, not-found.css ✅, learning.css ✅}   // 已新增 player.css ✅、typing.css ✅、downloader.css ✅、path.css ✅
 ```
 
 原則：**DOM 結構與 class 一字不改**（只做 v3→v4 必要改名），只是把 template 切到子元件。

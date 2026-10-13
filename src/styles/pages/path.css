@@ -1,0 +1,13 @@
+/*
+ * legacy/css/path.css（以 html.shell-path 限定範圍，:where 不增加權重）
+ */
+:where(html.shell-path) .thai-font { font-family: 'Sarabun', sans-serif; }
+:where(html.shell-path) canvas { cursor: crosshair; }
+:where(html.shell-path) canvas.hovering-point { cursor: move; }
+:where(html.shell-path) .no-select { user-select: none; }
+
+:where(html.shell-path) #guide-text {
+  /* 透過稍微向上平移，補償泰文下標佔用的空間 */
+  transform: translateY(-8%);
+  overflow: visible;
+}
