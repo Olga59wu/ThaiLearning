@@ -27,7 +27,7 @@ const {
         </div>
 
         <!-- 學習狀態 (單張大字卡) -->
-        <div v-else-if="currentWord" :key="currentWord.th"
+        <div v-else-if="currentWord" :key="currentWord.id"
           class="col-start-1 row-start-1 w-full bg-white rounded-[2rem] shadow-xl border border-slate-100 p-8 flex flex-col items-center justify-center relative">
 
           <!-- 手動發音按鈕 -->

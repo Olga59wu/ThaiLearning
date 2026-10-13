@@ -19,7 +19,8 @@
 | 隨身聽（`/player`） | ✅ 使用者已對照確認 | `4d7da27` |
 | `/player` 原版 bug 修正（離線語音彈窗、分類消失卡 LOADING、恢復分類不上傳、壞音檔寫回 localStorage） | ✅ | `fdb176a` |
 | 撤銷 player 錯誤的顏色排序相容規則；確認 Home／thai 無顏色排序差異 | ✅ | `a96f880` |
-| 打字練習（`/typing`） | ✅ 使用者指示繼續下一頁 | `b5c76c3` |
+| 打字練習（`/typing`） | ✅ 使用者已對照確認 | `b5c76c3` |
+| `/typing` 原版 bug 修正（發音與 TTS 重疊、剩餘顯示、清空分類、雲端資料寫回 localStorage、同字多義用 id） | ✅ | （本 commit） |
 | **音檔打包（`/downloader`）** | ⏳ **已搬遷，等使用者對照確認** | （本 commit） |
 | 筆順產生器（`/path`） | 待辦 | |
 | 第 5 步 對照檢查 | 待辦 | |
@@ -96,7 +97,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 測驗範圍新增「收藏」按鈕（樣式同範圍按鈕，`disabled:opacity-50 disabled:cursor-not-allowed`，沒有收藏時 disabled）
 
 ### /player 的決策與已修正 bug
-- 壞音檔名單啟動時從 localStorage `thai-broken-audio` 讀取（原版不讀；使用者確認保留）；雲端有 `brokenAudio` 時覆蓋並寫回 localStorage
+- 壞音檔名單啟動時從 localStorage `thai-broken-audio` 讀取（原版不讀；使用者確認保留）；雲端有 `brokenAudio` 時覆蓋並寫回 localStorage（改由 `vocabProgress.applyCloudData()` 處理，見 /typing）
 - 「離線語音」確認／成功彈窗放在 View 外層（原版誤包在單字清單彈窗內）
 - `updatePlaylist` 遇到不存在的分類當空清單；已學會清空時比照自訂單字移除「已學會」分類
 - 從雲端恢復分類時不觸發上傳（分類 watch 檢查 `isSyncingFromCloud`）
@@ -106,11 +107,15 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - `src/composables/typing/useTypingPage.ts`（`createTypingPage()` + provide／inject）、`useTypingSounds.ts`（WebAudio；每次進頁建立 AudioContext、離開時 `close()`，原版存在 `window.audioCtx`）
 - 元件 `components/typing/{TypingHeader, TypingCard, TypingInputBar}.vue`；分類圖例與 `OfflineAudioModal` 直接寫在 View（原版位置：`#app` 的 `v-else` 內，LOADING 時不顯示）
 - `styles/pages/typing.css`（`shell-typing`）：`@keyframes shake` 改名 `typing-shake`（原版沒用到）；原版 `@keyframes pulse` 與 Tailwind 內建完全相同，不重複定義
-- 啟動：setup 時 `loadFromStorage()` + `migrateToId()`（遷移後寫回 localStorage）→ mount 載入雲端（有資料就覆蓋並遷移，遷移後回寫雲端）→ **一律** `initGame(false)`（原版只有雲端有 thai 資料才開始）
-- 收藏／已學會判斷、`initGame` 的已學會過濾、抽卡的 `inOtherCats`／`findIndex` 全部改用 `id`；清單去重與 Transition `:key` 仍用 `th`（同原版）
+- 啟動：setup 時 `loadFromStorage()` + `migrateToId()`（遷移後寫回 localStorage）→ mount 載入雲端（`vocab.applyCloudData()`：有資料就覆蓋、遷移並寫回 localStorage，遷移後回寫雲端）→ **一律** `initGame(false)`（原版只有雲端有 thai 資料才開始）
+- 收藏／已學會判斷、`initGame` 的已學會過濾、抽卡的 `inOtherCats`／`findIndex` 全部改用 `id`；清單去重與 Transition `:key` 也改用 `id`（使用者要求修正，同字多義兩個意思都會出現）
 - 兩段重複的「抽掉卡片」程式合併為 `removeFromGame()`（行為相同）
 - SPA 清理：離開頁面時被中斷的 `play()` 不再退回 TTS（`disposed` 檢查）
 - 顏色排序掃描：無 DIFF
+- 已修正 bug：
+  - 播放加 `playToken` + 過濾 AbortError（同 Player），被中斷的播放不退回 TTS，延遲 70ms 的 TTS 也會檢查 token → 連續換題只念目前的字
+  - 「剩餘」用 `remainingCount`（完成時 0）
+  - `pruneEmptyCategory()`：自訂單字／已學會清空時從已選分類移除，沒有已選分類就回到「全部」並 `initGame(false)`（此時不再執行 `removeFromGame`，避免延遲 splice 到新清單）
 
 ### /downloader 的實作與決策
 - 頁面小，邏輯直接寫在 `ThaiDownloaderView.vue`（不拆元件／composable）；`styles/pages/downloader.css`（`shell-downloader`），body class `p-4 md:p-8`
@@ -193,7 +198,7 @@ src/
 | `auth` ✅ | `user`、`isLoading`、`errorMessage`、`isLoggedIn`、`isAdmin`、`ready`（Promise）；`init()`、`login()`、`logout()` | `js/auth.js`、`config.js`、index.html |
 | `thaiLearn` ✅ | `isDark`(`theme`)、`showPinyin`、`speechRate`(`preferredRate`)、`favorites`、`mistakeList`、`correctCounts`；`syncToCloud()`、`resetOwnData()` | thai.html |
 | `cloud` ✅ | `cachedThai`（雲端 `thai` 快取）；`loadThai()`（每頁重抓、有 thai 才快取並回傳）、`saveThai(payload)`（`{...cachedThai, ...payload}`）；`syncStatus` 放在各頁（原版每頁從 synced 開始） | Player/Typing/Downloader 的 `cachedCloudThaiData` + `syncToCloud` |
-| `vocabProgress` ✅ | `customList`、`knownWords`（id 比對）、`brokenAudio`、`mp3History`；`loadFromStorage()`（每頁 setup 時重讀）；匯出 `migrateToId()`（th+zh → th 第一筆）。寫回 localStorage 與套用雲端資料由各頁 watch 處理（照原版各頁邏輯） | Player/Typing/Downloader 共用清單 |
+| `vocabProgress` ✅ | `customList`、`knownWords`（id 比對）、`brokenAudio`、`mp3History`；`loadFromStorage()`（每頁 setup 時重讀）；匯出 `migrateToId()`（th+zh → th 第一筆）。`applyCloudData(thai)`：套用雲端收藏／已學會／壞音檔名單 → UUID 遷移 → 寫回 localStorage，回傳是否需回寫雲端（Player、Typing 共用）；其餘 localStorage 寫入由各頁處理 | Player/Typing/Downloader 共用清單 |
 | `playerSettings` ✅ | `isShuffle`、`repeatMode`、`playbackRate`、`speakChineseOrder`、`isMultiSelect`、`hideKnownWords`、`isDarkMode`、`selectedVoice`、`isFlashcardMode`、`selectedCategories`；store 內 watch 負責寫 localStorage，**值格式維持原始字串**（`"true"`、`"0"`）；`thai-last-word-th` 照原版直接讀寫 localStorage | thaiPlayer.html |
 
 - 頁面暫時狀態（quiz、memory、playlist、typing words/input）放在 View 或頁面 composable，換頁即重置（同原版）

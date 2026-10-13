@@ -4,7 +4,7 @@ import { useTypingPageContext } from '@/composables/typing/useTypingPage'
 const {
   isDownloading, downloadProgress, downloadTotal, startDownload, initGame,
   allCategories, selectedCategories, toggleCategory, resetCategories,
-  accuracy, stats, words, currentIndex,
+  accuracy, stats, remainingCount,
 } = useTypingPageContext()
 </script>
 
@@ -115,7 +115,7 @@ const {
         </div>
         <div class="text-center p-1.5 bg-blue-50 rounded-xl border border-blue-100">
           <div class="text-[8px] text-blue-500 font-bold uppercase tracking-widest">剩餘</div>
-          <div class="text-sm font-black">{{ Math.max(0, words.length - currentIndex) }}</div>
+          <div class="text-sm font-black">{{ remainingCount }}</div>
         </div>
       </div>
     </div>

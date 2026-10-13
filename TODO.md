@@ -26,10 +26,11 @@
 - [ ] 開啟隨機模式時清單會洗牌兩次（`updatePlaylist()` 內已洗牌，watch 又洗一次），結果無差異
 
 ### 打字練習（/typing）
-- [ ] **切換分類／重置遊戲時，發音會和 TTS 重疊**：`initGame` 把 `currentIndex` 歸零時，`watch(currentIndex)` 先念一次，`nextTick` 又念一次；第二次的 `pause()` 中斷第一次的 `play()`（AbortError），`playMediaWithFallback` 沒有過濾 AbortError，於是同一個字再用 TTS 念一次，與 mp3 重疊。連續快速滑動切題、抽掉最後一張卡（index 改變 + 明確呼叫 `playCurrentWord`）也會發生，此時 TTS 念的是**上一個字**（Player 有過濾 AbortError，Typing 沒有）
-- [ ] 練習完成後「剩餘」顯示 1（`currentIndex` 停在最後一題，`words.length - currentIndex` = 1）
-- [ ] 「自訂單字」或「已學會」被清空後，該分類按鈕消失但仍留在已選分類中；若它是唯一選取的分類，畫面直接顯示「練習完成！」，只能按「全部」離開
-- [ ] 從雲端載入的 `customList`／`knownWords` 不會寫回 localStorage，要等下一次點星星／打勾才會存（新版啟動時會先讀 localStorage，雲端資料仍會覆蓋，影響不大）
+- [x] ~~**切換分類／重置遊戲時，發音會和 TTS 重疊**~~（已修正：比照隨身聽過濾 AbortError，並加上播放 token，舊的播放與延遲 70ms 的 TTS 在換題後不再發聲）：`initGame` 把 `currentIndex` 歸零時，`watch(currentIndex)` 先念一次，`nextTick` 又念一次；第二次的 `pause()` 中斷第一次的 `play()`（AbortError），`playMediaWithFallback` 沒有過濾 AbortError，於是同一個字再用 TTS 念一次，與 mp3 重疊。連續快速滑動切題、抽掉最後一張卡（index 改變 + 明確呼叫 `playCurrentWord`）也會發生，此時 TTS 念的是**上一個字**（Player 有過濾 AbortError，Typing 沒有）
+- [x] ~~練習完成後「剩餘」顯示 1~~（已修正：`remainingCount` 在完成時為 0）（`currentIndex` 停在最後一題，`words.length - currentIndex` = 1）
+- [x] ~~「自訂單字」或「已學會」被清空後，該分類按鈕消失但仍留在已選分類中~~（已修正：`pruneEmptyCategory()` 從已選分類移除；沒有已選分類時回到「全部」重新開始）；若它是唯一選取的分類，畫面直接顯示「練習完成！」，只能按「全部」離開
+- [x] ~~從雲端載入的 `customList`／`knownWords` 不會寫回 localStorage~~（已修正：`vocabProgress.applyCloudData()` 統一套用雲端的收藏／已學會／壞音檔名單、UUID 遷移並寫回 localStorage，Player 與 Typing 共用），要等下一次點星星／打勾才會存
+- [x] ~~同字多義的單字（`เย็น`、`จอง`）只會出現一個意思~~（已修正：練習清單去重與卡片動畫 key 改用 `id`）：清單以 `th` 去重
 
 ### 音檔打包（/downloader）
 - [ ] **「ZIP 檔過小」警告永遠不會出現**：全部抓取失敗時 ZIP 仍含 `audio/TH/` 空資料夾（實測 204 bytes），大於判斷門檻 100 bytes，所以會直接下載一個空 ZIP，通知顯示「任務完成」

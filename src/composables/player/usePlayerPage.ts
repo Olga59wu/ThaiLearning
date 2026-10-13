@@ -754,30 +754,12 @@ export const createPlayerPage = () => {
       if (thai.lastSelectedCategories) {
         selectedCategories.value = thai.lastSelectedCategories
       }
-      // 2. 恢復壞音檔名單
-      if (thai.brokenAudio) {
-        brokenAudio.value = thai.brokenAudio
-        localStorage.setItem('thai-broken-audio', JSON.stringify(brokenAudio.value))
-      }
-      // 3. 恢復自訂單字
-      if (thai.customList) {
-        customList.value = thai.customList
-      }
-      // 4. 恢復最後單字位置
+      // 2. 恢復壞音檔名單、自訂單字、已學會（UUID 遷移與寫回 localStorage 由 store 統一處理）
+      if (vocab.applyCloudData(thai)) syncToCloud() // 覆寫舊格式回雲端
+      // 3. 恢復最後單字位置
       if (thai.lastPlayedWord) {
         localStorage.setItem('thai-last-word-th', thai.lastPlayedWord)
       }
-      if (thai.knownWords) {
-        knownWords.value = thai.knownWords
-      }
-
-      // --- Firebase 資料 UUID 無痛遷移邏輯 ---
-      const km = migrateToId(knownWords.value)
-      const cm = migrateToId(customList.value)
-      knownWords.value = km.newArr
-      customList.value = cm.newArr
-      if (km.mutated || cm.mutated) syncToCloud() // 覆寫舊格式回雲端
-      // --------------------------------------
 
       // 5. 關鍵：恢復完資料後立刻重新產生清單並跳轉位置
       updatePlaylist()

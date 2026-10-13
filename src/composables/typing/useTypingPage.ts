@@ -138,7 +138,10 @@ export const createTypingPage = () => {
     initGame(false)
   }
 
-  const speakFallbackTTS = (text: string) => {
+  // 每次播放遞增；舊的播放（或延遲中的 TTS）發現 token 已變就不再發聲，換題時只念目前這個字
+  let playToken = 0
+
+  const speakFallbackTTS = (text: string, token: number) => {
     if (!window.speechSynthesis) return
     window.speechSynthesis.cancel()
     const ut = new SpeechSynthesisUtterance(text)
@@ -146,13 +149,15 @@ export const createTypingPage = () => {
     ut.rate = 0.9
     ut.volume = 1.0
     later(() => {
+      if (token !== playToken) return
       window.speechSynthesis.speak(ut)
     }, 70)
   }
 
   const playMediaWithFallback = async (text: string) => {
+    const token = ++playToken
     if (!mainAudioObj) {
-      speakFallbackTTS(text)
+      speakFallbackTTS(text, token)
       return
     }
     const audio = mainAudioObj
@@ -163,16 +168,27 @@ export const createTypingPage = () => {
     audio.load()
     audio.playbackRate = 1.0
 
+    let isResolved = false // 狀態鎖：防止 catch 與 onerror 雙重觸發
+    const triggerFallback = () => {
+      if (isResolved || token !== playToken) return
+      isResolved = true
+      speakFallbackTTS(text, token)
+    }
+
     audio.onerror = () => {
       audio.onerror = null
-      speakFallbackTTS(text)
+      triggerFallback()
     }
 
     try {
       await audio.play()
-    } catch {
+    } catch (e) {
       if (disposed) return // 離開頁面時 pause() 造成的中斷，不再退回 TTS
-      speakFallbackTTS(text)
+      const err = e as Error
+      if (err.name === 'AbortError' || err.message.includes('interrupted')) {
+        return // 被下一次播放的 pause() 截斷（同隨身聽），不退回 TTS
+      }
+      triggerFallback()
     }
   }
 
@@ -218,9 +234,9 @@ export const createTypingPage = () => {
       })
     }
 
-    // 3. 排除重複（選多個分類時可能會有重複單字）
+    // 3. 排除重複（選多個分類時可能會有重複單字；用 id，同字多義的單字都會出現）
     const uniqueMap = new Map<string, VocabWord>()
-    combinedWords.forEach((w) => uniqueMap.set(w.th, w))
+    combinedWords.forEach((w) => uniqueMap.set(w.id, w))
     combinedWords = Array.from(uniqueMap.values())
 
     // 4. 洗牌並存入 words.value
@@ -366,6 +382,11 @@ export const createTypingPage = () => {
     }
   })
 
+  // 練習完成後 currentIndex 停在最後一題，剩餘要顯示 0
+  const remainingCount = computed(() =>
+    isFinished.value ? 0 : Math.max(0, words.value.length - currentIndex.value),
+  )
+
   const accuracy = computed(() => {
     const total = stats.value.correct + stats.value.incorrect
     return total === 0 ? 0 : Math.round((stats.value.correct / total) * 100)
@@ -445,6 +466,20 @@ export const createTypingPage = () => {
     }
   }
 
+  /**
+   * 「自訂單字」或「已學會」清空後，從已選分類移除；
+   * 沒有任何已選分類時回到「全部」並重新開始。
+   * @returns 是否已回到「全部」重新開始（此時不必再抽掉卡片）
+   */
+  const pruneEmptyCategory = (cat: '自訂單字' | '已學會') => {
+    const list = cat === '自訂單字' ? customList.value : knownWords.value
+    if (list.length > 0 || !selectedCategories.value.includes(cat)) return false
+    selectedCategories.value = selectedCategories.value.filter((c) => c !== cat)
+    if (selectedCategories.value.length > 0) return false
+    initGame(false)
+    return true
+  }
+
   const toggleCustomWord = (item: VocabWord | null) => {
     if (!item) return
     const index = customList.value.findIndex((w) => w.id === item.id)
@@ -477,6 +512,7 @@ export const createTypingPage = () => {
         if (!inOtherCats) shouldRemoveFromGame = true
       }
 
+      if (pruneEmptyCategory('自訂單字')) return
       if (shouldRemoveFromGame) removeFromGame(item)
     }
   }
@@ -525,6 +561,8 @@ export const createTypingPage = () => {
       }
     }
 
+    if (pruneEmptyCategory('已學會')) return
+
     // 執行卡片抽除與畫面過渡
     if (shouldRemoveFromGame) removeFromGame(item)
   }
@@ -535,18 +573,8 @@ export const createTypingPage = () => {
     try {
       const thai = await cloud.loadThai()
       if (disposed) return
-      if (thai) {
-        if (thai.customList) customList.value = thai.customList
-        if (thai.knownWords) knownWords.value = thai.knownWords
-
-        // --- Firebase 資料 UUID 無痛遷移邏輯 ---
-        const km = migrateToId(knownWords.value)
-        const cm = migrateToId(customList.value)
-        knownWords.value = km.newArr
-        customList.value = cm.newArr
-        if (km.mutated || cm.mutated) syncToCloud() // 覆寫舊格式回雲端
-        // --------------------------------------
-      }
+      // 收藏／已學會／壞音檔名單：覆蓋本機、UUID 遷移並寫回 localStorage（store 統一處理）
+      if (thai && vocab.applyCloudData(thai)) syncToCloud() // 覆寫舊格式回雲端
     } catch (error) {
       console.warn('雲端同步模組載入失敗', error)
     }
@@ -632,7 +660,7 @@ export const createTypingPage = () => {
     isLoading,
     isDownloading, downloadProgress, downloadTotal, downloadModal, startDownload, closeDownloadModal, executeDownload,
     allCategories, selectedCategories, toggleCategory, resetCategories,
-    words, currentIndex, inputValue, stats, isFinished, isWrong, isTransitioning, currentWord, accuracy,
+    words, currentIndex, inputValue, stats, isFinished, isWrong, isTransitioning, currentWord, accuracy, remainingCount,
     matchedText, wrongText, remainingText, nextCharToType,
     handleInput, initGame, playCurrentWord, keepFocus, initAudioEngine,
     isCustomWord, toggleCustomWord, isKnownWord, toggleKnownWord,

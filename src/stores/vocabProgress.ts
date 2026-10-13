@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { FULL_VOCAB } from '@/data/thaiVocab'
 import { safeStorage } from '@/utils/storage'
-import type { VocabWord } from '@/types/thai'
+import type { ThaiCloudData, VocabWord } from '@/types/thai'
 
 /**
  * 舊資料（沒有 id）轉成目前單字庫的物件。
@@ -41,5 +41,28 @@ export const useVocabProgressStore = defineStore('vocabProgress', () => {
     mp3History.value = safeStorage.get<string[]>('thai-mp3-history', [])
   }
 
-  return { customList, knownWords, brokenAudio, mp3History, loadFromStorage }
+  /**
+   * 套用雲端載入的收藏／已學會／壞音檔名單（Player、Typing 共用）：
+   * 有資料的欄位覆蓋本機 → UUID 遷移 → 寫回 localStorage（原版不寫回，要等下一次變動才存）。
+   * @returns 遷移時是否改動了資料（需要回寫雲端）
+   */
+  const applyCloudData = (thai: ThaiCloudData): boolean => {
+    if (thai.customList) customList.value = thai.customList
+    if (thai.knownWords) knownWords.value = thai.knownWords
+    if (thai.brokenAudio) brokenAudio.value = thai.brokenAudio
+
+    // --- Firebase 資料 UUID 無痛遷移邏輯 ---
+    const km = migrateToId(knownWords.value)
+    const cm = migrateToId(customList.value)
+    knownWords.value = km.newArr
+    customList.value = cm.newArr
+
+    safeStorage.set('thai-custom-list', customList.value)
+    safeStorage.set('thai-known-words', knownWords.value)
+    safeStorage.set('thai-broken-audio', brokenAudio.value)
+
+    return km.mutated || cm.mutated
+  }
+
+  return { customList, knownWords, brokenAudio, mp3History, loadFromStorage, applyCloudData }
 })
