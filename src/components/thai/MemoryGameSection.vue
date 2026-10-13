@@ -28,7 +28,8 @@ const { memory, initMemoryGame, flipMemoryCard } = useThaiPageContext()
           </div>
         </div>
 
-        <div v-if="memory.matched === 6" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs rounded-xl transition-all">
+        <!-- 修正原版 bug：原版條件為 matched === 6（每組 +2，配對 3 組就會顯示），改為全部卡片配對完成 -->
+        <div v-if="memory.cards.length > 0 && memory.matched === memory.cards.length" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs rounded-xl transition-all">
           <div class="text-6xl mb-2 animate-bounce">🏆</div>
           <h3 class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">恭喜通關！</h3>
           <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">總步數：<span class="font-bold">{{ memory.moves }}</span></p>

@@ -91,7 +91,7 @@ export const createThaiPage = () => {
 
   // Quiz
   const quiz = reactive({
-    scope: 'basic' as 'basic' | 'vocab' | 'advanced',
+    scope: 'basic' as 'basic' | 'vocab' | 'advanced' | 'favorites',
     score: 0,
     total: 0,
     currentItem: null as ThaiItem | null,
@@ -198,6 +198,8 @@ export const createThaiPage = () => {
     else {
       if (quiz.scope === 'basic') deck = thaiData.filter((i) => i.type === 'consonant' || i.type === 'vowel')
       else if (quiz.scope === 'vocab') deck = thaiData.filter((i) => ['fruits', 'animals', 'colors', 'days', 'family'].includes(i.type))
+      // 新增「收藏」範圍：只出收藏過的題目（收藏 id 為 soundText 或 char，與 toggleStar 一致）
+      else if (quiz.scope === 'favorites') deck = thaiData.filter((i) => favorites.value.includes(i.soundText || i.char))
       else deck = thaiData.filter((i) => i.type === 'toneMark' || i.type === 'numbers')
     }
     quiz.deck = shuffleArray(deck)
@@ -314,6 +316,11 @@ export const createThaiPage = () => {
     const toneIdx = Math.floor(Math.random() * 5)
     const names = ['中音 (Mid)', '低音 (Low)', '下聲 (Falling)', '高音 (High)', '上聲 (Rising)']
     toneTraining.targetChar = base.chars[toneIdx]; toneTraining.targetIdx = toneIdx; toneTraining.targetLabel = names[toneIdx]
+  }
+  // 修正原版 bug：原版「挑戰」按鈕只呼叫 startNewToneChallenge，不會切換到挑戰畫面
+  const enterToneChallenge = () => {
+    toneTraining.mode = 'challenge'
+    startNewToneChallenge()
   }
   const checkToneGuess = (idx: number) => {
     if (toneTraining.isLocked) return
@@ -438,7 +445,7 @@ export const createThaiPage = () => {
     quiz, quizModeLabel, getQuizOptClass, setQuizScope, startQuiz, nextQuizQuestion, handleQuizAnswer,
     sentenceCats, sentence, setSentenceCat, nextSentence,
     memory, initMemoryGame, flipMemoryCard,
-    toneTraining, toneHeaders, toneGraphs, toneColors, currentTonePracticeChars, animatingToneIdx, playToneSequence, triggerToneButtonAnimation, toneChallengeOpts, selectedToneOpt, startNewToneChallenge, checkToneGuess, getToneBtnStyle, isToneOptSelected,
+    toneTraining, toneHeaders, toneGraphs, toneColors, currentTonePracticeChars, animatingToneIdx, playToneSequence, triggerToneButtonAnimation, toneChallengeOpts, selectedToneOpt, startNewToneChallenge, enterToneChallenge, checkToneGuess, getToneBtnStyle, isToneOptSelected,
     hwItem, strokeSpeed, inkColor, hwSvgViewBox, canvasContainerRef, hwCanvasRef, openHW, setInkColor, clearHW, playHWAnim,
     speak, switchMode, toggleDarkMode, togglePinyin, resetAllData, toggleStar,
     initVoices, handleKeydown,

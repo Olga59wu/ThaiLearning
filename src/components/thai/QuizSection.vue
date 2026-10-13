@@ -2,7 +2,7 @@
 import { useThaiPageContext } from '@/composables/thai/useThaiPage'
 
 const {
-  currentMode, quiz, quizModeLabel, mistakeList,
+  currentMode, quiz, quizModeLabel, mistakeList, favorites,
   speak, setQuizScope, startQuiz, nextQuizQuestion, handleQuizAnswer, getQuizOptClass,
 } = useThaiPageContext()
 </script>
@@ -14,6 +14,8 @@ const {
         <button @click="setQuizScope('basic')" :class="quiz.scope === 'basic' ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500 border border-emerald-500' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all">基礎 (輔/元)</button>
         <button @click="setQuizScope('vocab')" :class="quiz.scope === 'vocab' ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500 border border-emerald-500' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all">單字</button>
         <button @click="setQuizScope('advanced')" :class="quiz.scope === 'advanced' ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500 border border-emerald-500' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all">進階 (聲調)</button>
+        <!-- 新增「收藏」範圍按鈕（收藏複習入口），樣式沿用範圍按鈕；沒有收藏時 disabled -->
+        <button @click="setQuizScope('favorites')" :disabled="favorites.length === 0" :class="quiz.scope === 'favorites' ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500 border border-emerald-500' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-slate-700">收藏</button>
       </div>
 
       <div class="flex justify-between items-end mb-3">

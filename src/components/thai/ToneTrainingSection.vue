@@ -4,7 +4,7 @@ import { useThaiPageContext } from '@/composables/thai/useThaiPage'
 
 const {
   toneTraining, toneHeaders, toneGraphs, toneColors, currentTonePracticeChars, animatingToneIdx, toneChallengeOpts,
-  speak, playToneSequence, triggerToneButtonAnimation, startNewToneChallenge, checkToneGuess, getToneBtnStyle, isToneOptSelected,
+  speak, playToneSequence, triggerToneButtonAnimation, startNewToneChallenge, enterToneChallenge, checkToneGuess, getToneBtnStyle, isToneOptSelected,
 } = useThaiPageContext()
 </script>
 
@@ -30,7 +30,7 @@ const {
             class="px-3 py-1.5 text-xs font-bold rounded-md transition-all">
             對照
           </button>
-          <button @click="startNewToneChallenge"
+          <button @click="enterToneChallenge"
             :class="toneTraining.mode === 'challenge' ? 'bg-white shadow-xs text-emerald-600 dark:bg-slate-600 dark:text-white' : 'text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-slate-600'"
             class="px-3 py-1.5 text-xs font-bold rounded-md transition-all">
             挑戰
