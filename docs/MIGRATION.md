@@ -22,7 +22,8 @@
 | 打字練習（`/typing`） | ✅ 使用者已對照確認 | `b5c76c3` |
 | `/typing` 原版 bug 修正（發音與 TTS 重疊、剩餘顯示、清空分類、雲端資料寫回 localStorage、同字多義用 id） | ✅ | `9aff9eb` |
 | 音檔打包（`/downloader`） | ✅ 使用者已對照確認 | `ffa5aa4` |
-| `/downloader` 原版 bug 修正（抓取失敗判斷、下載中鎖住選取、待抓數、已打包寫入時機、上傳失敗狀態、按鈕改名） | ✅ | （本 commit） |
+| `/downloader` 原版 bug 修正（抓取失敗判斷、下載中鎖住選取、待抓數、已打包寫入時機、上傳失敗狀態、按鈕改名） | ✅ | `5fec2ba` |
+| `/player` 同步失敗圖示（改看 `saveThai()` 回傳值） | ✅ | （本 commit） |
 | **筆順產生器（`/path`）** | **下一步** | |
 | 第 5 步 對照檢查 | 待辦 | |
 
@@ -102,6 +103,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 「離線語音」確認／成功彈窗放在 View 外層（原版誤包在單字清單彈窗內）
 - `updatePlaylist` 遇到不存在的分類當空清單；已學會清空時比照自訂單字移除「已學會」分類
 - 從雲端恢復分類時不觸發上傳（分類 watch 檢查 `isSyncingFromCloud`）
+- `syncToCloud` 改看 `cloud.saveThai()` 回傳值，失敗時顯示「同步失敗」圖示（原版錯誤被吞掉，永遠不會出現）
 - 保留未修：`.playing-glow` 淺色模式被 `shadow-xl` 蓋掉、隨機模式洗牌兩次（見 TODO.md）
 
 ### /typing 的實作與決策

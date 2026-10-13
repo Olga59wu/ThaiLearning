@@ -722,7 +722,7 @@ export const createPlayerPage = () => {
   const syncToCloud = async () => {
     syncStatus.value = 'syncing'
     try {
-      await cloud.saveThai({
+      const ok = await cloud.saveThai({
         customList: clone(customList.value),
         brokenAudio: clone(brokenAudio.value),
         knownWords: clone(knownWords.value),
@@ -731,7 +731,9 @@ export const createPlayerPage = () => {
         lastPlayedWord: localStorage.getItem('thai-last-word-th'),
         playerLastUpdated: Date.now(),
       })
-      later(() => { syncStatus.value = 'synced' }, 600)
+      // saveProgressToCloud 內部吞掉錯誤，改看回傳值判斷是否失敗
+      if (ok) later(() => { syncStatus.value = 'synced' }, 600)
+      else syncStatus.value = 'error'
     } catch {
       syncStatus.value = 'error'
     }

@@ -23,7 +23,7 @@
 - [ ] 播放中的光暈 `.playing-glow` 被同權重、較晚輸出的 `shadow-xl` 覆蓋，淺色模式下看不到（深色模式的 `.dark-mode .player-card.playing-glow` 權重較高才看得到）
 - [x] ~~從雲端恢復 `lastSelectedCategories` 時~~（已修正：分類 watch 也檢查 `isSyncingFromCloud`；UUID 遷移時仍會主動上傳一次），分類的 watch 沒有檢查 `isSyncingFromCloud` 鎖，所以每次進頁面載入完雲端資料都會立刻再上傳一次
 - [x] ~~從雲端載入的 `brokenAudio`（原版 `mp3History`）不會寫回 localStorage~~（已修正：載入時寫入 `thai-broken-audio`），要等下一次回報壞音檔才會存
-- [ ] 同步狀態圖示的「同步失敗」永遠不會出現：`saveProgressToCloud` 內部吞掉錯誤，`syncToCloud` 的 catch 不會執行（`saveProgressToCloud` 現在會回傳成功與否，要修正時改看回傳值即可，同 Downloader）
+- [x] ~~同步狀態圖示的「同步失敗」永遠不會出現~~（已修正：`syncToCloud` 改看 `cloud.saveThai()` 的回傳值，失敗時 `syncStatus = 'error'`，同 Downloader）：`saveProgressToCloud` 內部吞掉錯誤，`syncToCloud` 的 catch 不會執行
 - [ ] 開啟隨機模式時清單會洗牌兩次（`updatePlaylist()` 內已洗牌，watch 又洗一次），結果無差異
 
 ### 打字練習（/typing）
