@@ -2,6 +2,10 @@
 
 將 `legacy/` 多語學習機中的泰文部分，搬遷為 Vue 3 + TypeScript 專案（Vite、Tailwind CSS v4、Pinia、Vue Router history 模式、vite-plugin-pwa）。
 
+## 接手必讀
+- **`docs/MIGRATION.md`**：搬遷計畫、已確認決策、目前進度、技術處理慣例、每頁工作流程（開始工作前先讀）
+- `TODO.md`：原版照搬的怪異行為與部署待辦
+
 ## 溝通
 - 所有回覆、計畫、說明一律使用**繁體中文**（程式碼識別字維持英文）
 
