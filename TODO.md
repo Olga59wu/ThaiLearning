@@ -12,9 +12,9 @@
 - [x] ~~**聲調訓練的「挑戰」按鈕無法進入挑戰畫面**~~（已修正：新增 `enterToneChallenge`）：按鈕綁定 `startNewToneChallenge`，但該函式不會把 `toneTraining.mode` 設為 `'challenge'`，所以挑戰畫面（連勝、5 選 1）永遠看不到。原版在「對照」畫面按數字鍵 1–5 也會在背景觸發 `checkToneGuess`（已修正：數字鍵只在挑戰模式作答）
 - [x] ~~**翻牌記憶提早顯示「恭喜通關」**~~（已修正：改為全部卡片配對完成才顯示）：判斷條件是 `memory.matched === 6`，但每配對一組 `matched += 2`，所以配對 3 組（共 6 組）時就會跳出通關畫面
 - [x] ~~**「收藏複習」模式無法進入**~~（已修正：測驗範圍新增「收藏」按鈕）：程式有 `startQuiz('favorites')` 與 `quizModeLabel` 的「收藏複習」，但沒有任何按鈕觸發；收藏的星星目前只有存檔與同步，沒有用途
-- [ ] **「複習錯題」的 Mode 標籤不會變**：`startQuiz('mistakes')` 沒有改 `currentMode`，所以標籤仍顯示「聽音辨字／看字選音」，範圍按鈕（基礎／單字／進階）也不會隱藏
-- [ ] 從雲端載入的 `correctCounts`／`favorites`／`mistakeList` 不會寫回 localStorage，要等下一次變動才會存
-- [ ] 語速滑桿 `v-model` 沒有 `.number`，拖動後 `preferredRate` 會以字串（例如 `"0.9"`）存入 localStorage
+- [x] ~~**「複習錯題」的 Mode 標籤不會變**~~（已修正：`quiz.filter` 記錄出題來源，錯題複習時 Mode 標籤顯示「錯題複習」並隱藏範圍按鈕；按「↺ 重新開始」或切換模式回到一般測驗）：`startQuiz('mistakes')` 沒有改 `currentMode`，所以標籤仍顯示「聽音辨字／看字選音」，範圍按鈕（基礎／單字／進階）也不會隱藏
+- [x] ~~從雲端載入的 `correctCounts`／`favorites`／`mistakeList` 不會寫回 localStorage~~（已修正：載入時寫入 `thai_correct_counts`／`thai_favorites`／`thai_mistakes`），要等下一次變動才會存
+- [x] ~~語速滑桿 `v-model` 沒有 `.number`~~（已修正：改用 `v-model.number`；舊資料是字串時讀入轉回數字），拖動後 `preferredRate` 會以字串（例如 `"0.9"`）存入 localStorage
 - [ ] 學習卡片有 `animationDelay` 樣式，但卡片沒有任何動畫，該樣式沒有作用
 
 ### 隨身聽（/player）

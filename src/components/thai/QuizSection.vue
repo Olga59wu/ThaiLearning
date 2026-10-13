@@ -10,7 +10,7 @@ const {
 <template>
   <section class="w-full max-w-2xl flex flex-col items-center">
     <div class="w-full bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-xs mb-6 border border-gray-100 dark:border-slate-700 transition-colors">
-      <div v-show="currentMode !== 'favorites' && currentMode !== 'mistakes'" class="flex flex-wrap justify-center gap-2 mb-4 pb-4 border-b border-gray-100 dark:border-slate-700">
+      <div v-show="currentMode !== 'favorites' && currentMode !== 'mistakes' && quiz.filter !== 'mistakes'" class="flex flex-wrap justify-center gap-2 mb-4 pb-4 border-b border-gray-100 dark:border-slate-700">
         <button @click="setQuizScope('basic')" :class="quiz.scope === 'basic' ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500 border border-emerald-500' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all">基礎 (輔/元)</button>
         <button @click="setQuizScope('vocab')" :class="quiz.scope === 'vocab' ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500 border border-emerald-500' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all">單字</button>
         <button @click="setQuizScope('advanced')" :class="quiz.scope === 'advanced' ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500 border border-emerald-500' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-300'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all">進階 (聲調)</button>

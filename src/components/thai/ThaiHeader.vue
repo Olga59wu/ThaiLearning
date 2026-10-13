@@ -87,7 +87,7 @@ const { isDark, showPinyin, speechRate, voices, selectedVoiceIndex, modals, togg
       class="flex flex-wrap items-center justify-center gap-3 px-4 py-2 mx-auto mt-4 text-xs text-gray-500 bg-white border border-gray-100 shadow-xs dark:text-gray-400 dark:bg-slate-800/80 rounded-2xl dark:border-slate-700 w-fit backdrop-blur-xs">
       <div class="flex items-center gap-2">
         <span>🐢</span>
-        <input type="range" min="0.5" max="1.5" step="0.1" v-model="speechRate"
+        <input type="range" min="0.5" max="1.5" step="0.1" v-model.number="speechRate"
           class="h-1.5 w-20 bg-gray-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
         <span>🐇</span>
         <span class="ml-1 font-mono text-emerald-600 dark:text-emerald-400">{{ speechRate }}</span>

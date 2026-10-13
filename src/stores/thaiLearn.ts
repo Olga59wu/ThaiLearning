@@ -20,8 +20,8 @@ const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 export const useThaiLearnStore = defineStore('thaiLearn', () => {
   const isDark = ref(safeStorage.get<string | null>('theme', null) === 'dark')
   const showPinyin = ref(safeStorage.get('showPinyin', true))
-  // v-model 綁定 range input，拖動後會變成字串（與原版相同）
-  const speechRate = ref<number | string>(safeStorage.get<number | string>('preferredRate', 0.8))
+  // 一律存成數字（原版 v-model 沒有 .number，拖動後會以字串存入；舊資料讀入時轉回數字）
+  const speechRate = ref<number>(Number(safeStorage.get<number | string>('preferredRate', 0.8)) || 0.8)
   const favorites = ref<string[]>(safeStorage.get<string[]>('thai_favorites', []))
   const mistakeList = ref<ThaiItem[]>(safeStorage.get<ThaiItem[]>('thai_mistakes', []))
   const correctCounts = ref<Record<string, number>>(

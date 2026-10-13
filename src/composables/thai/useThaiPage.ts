@@ -92,6 +92,8 @@ export const createThaiPage = () => {
   // Quiz
   const quiz = reactive({
     scope: 'basic' as 'basic' | 'vocab' | 'advanced' | 'favorites',
+    // 目前出題來源（原版 startQuiz('mistakes') 沒有記錄，Mode 標籤與範圍按鈕不會跟著變）
+    filter: 'normal' as 'normal' | 'mistakes' | 'favorites',
     score: 0,
     total: 0,
     currentItem: null as ThaiItem | null,
@@ -102,7 +104,7 @@ export const createThaiPage = () => {
     deck: [] as ThaiItem[],
   })
   const quizModeLabel = computed(() =>
-    currentMode.value === 'quiz_hear' ? '聽音辨字' : currentMode.value === 'favorites' ? '收藏複習' : currentMode.value === 'mistakes' ? '錯題複習' : '看字選音',
+    quiz.filter === 'mistakes' ? '錯題複習' : currentMode.value === 'quiz_hear' ? '聽音辨字' : currentMode.value === 'favorites' ? '收藏複習' : currentMode.value === 'mistakes' ? '錯題複習' : '看字選音',
   )
 
   // Sentence
@@ -158,7 +160,7 @@ export const createThaiPage = () => {
       ;(window as unknown as { currentUtterance: SpeechSynthesisUtterance }).currentUtterance = utterance
       utterance.lang = 'th-TH'
       if (voices.value[selectedVoiceIndex.value]) utterance.voice = voices.value[selectedVoiceIndex.value]
-      utterance.rate = speechRate.value as number
+      utterance.rate = speechRate.value
       if (showToast) {
         toast.value = { show: true, message: `播放: ${soundText}` }
         cancel(toastTimeout)
@@ -191,7 +193,7 @@ export const createThaiPage = () => {
   // Quiz Logic
   const setQuizScope = (scope: typeof quiz.scope) => { quiz.scope = scope; startQuiz('normal') }
   const startQuiz = (modeFilter: 'normal' | 'mistakes' | 'favorites') => {
-    quiz.score = 0; quiz.finished = false
+    quiz.score = 0; quiz.finished = false; quiz.filter = modeFilter
     let deck: ThaiItem[] = []
     if (modeFilter === 'mistakes') deck = [...mistakeList.value]
     else if (modeFilter === 'favorites') deck = thaiData.filter((i) => favorites.value.includes(i.soundText || i.char))

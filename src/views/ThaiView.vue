@@ -48,9 +48,10 @@ onMounted(async () => {
   if (disposed) return
   const thai = d?.thai as ThaiCloudData | undefined
   if (thai) {
-    if (thai.correctCounts) correctCounts.value = thai.correctCounts
-    if (thai.favorites) favorites.value = thai.favorites
-    if (thai.mistakeList) mistakeList.value = thai.mistakeList
+    // 雲端資料一併寫回 localStorage（原版要等下一次變動才會存）
+    if (thai.correctCounts) { correctCounts.value = thai.correctCounts; safeStorage.set('thai_correct_counts', correctCounts.value) }
+    if (thai.favorites) { favorites.value = thai.favorites; safeStorage.set('thai_favorites', favorites.value) }
+    if (thai.mistakeList) { mistakeList.value = thai.mistakeList; safeStorage.set('thai_mistakes', mistakeList.value) }
   }
 })
 
