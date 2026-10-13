@@ -3,13 +3,18 @@
  * 且排在 Tailwind 之前，讓衝突依「選擇器權重 → 先後順序」決定，與原版 v3 Play CDN（無圖層）一致。
  */
 @layer theme, base, components, utilities;
+@import "./v3-compat.css" layer(utilities);
 @import "./legacy-common.css" layer(utilities);
+@import "./pages/learning.css" layer(utilities);
 @import "./pages/home.css" layer(utilities);
 @import "./pages/not-found.css" layer(utilities);
 @import "tailwindcss";
 
 /* legacy/ 只是參考來源，不掃描其中的 class */
 @source not "../../legacy";
+
+/* 原版以字串拼接產生的 class（thai 手寫墨水顏色的 ring），掃描不到需手動加入 */
+@source inline("ring-emerald-600 ring-blue-600 ring-gray-300 ring-gray-800");
 
 /* 原版 Tailwind v3.4 Play CDN 設定：darkMode: 'class'，產生 :is(.dark *)（權重與 v3 相同） */
 @custom-variant dark (&:is(.dark *));

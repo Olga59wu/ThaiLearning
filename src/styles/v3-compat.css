@@ -1,0 +1,10 @@
+/*
+ * Tailwind v3 行為相容 class（v4 的實作與 v3 不同、會造成版面差異時使用）
+ */
+
+/* v3 space-x-2：> :not([hidden]) ~ :not([hidden])，margin-left 0.5rem、margin-right 0，權重 (0,3,0)
+   v4 的 space-x 改用 :where() 且改設 margin-inline-end，與子元素的 mr-*／mx-* 互動結果不同 */
+.v3-space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}

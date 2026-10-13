@@ -1,0 +1,209 @@
+/*
+ * legacy/css/learning.css（只保留泰文用到的部分）
+ * 原版只有 thai.html 載入；以 html.shell-learning 限定範圍。
+ * 一般規則用 :where(html.shell-learning) 前綴（權重 +0）；
+ * 深色規則用 .dark:where(.shell-learning) 前綴，保留原版 .dark 的權重。
+ */
+
+/* --- 字體設定 --- */
+:where(html.shell-learning) .thai-font { font-family: 'Sarabun', sans-serif; }
+
+/* --- 卡片與互動基礎設定 --- */
+:where(html.shell-learning) .card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+:where(html.shell-learning) canvas {
+  touch-action: none;
+  cursor: crosshair;
+}
+:where(html.shell-learning) .no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+:where(html.shell-learning) .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* =========================================
+   按鈕樣式 (結合主題配色)
+   ========================================= */
+
+/* 1. 分頁按鈕 (Tab) - 基礎結構 */
+:where(html.shell-learning) .active-tab {
+  color: white;
+  border: none;
+  /* v4 的 .border 透過 --tw-border-style 設定樣式；設為 none 以維持原版「無邊框」 */
+  --tw-border-style: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background-color: #64748b; /* 保險顏色：灰色 (若主題失效時顯示) */
+}
+:where(html.shell-learning) .inactive-tab {
+  background-color: white;
+  color: #4b5563; /* gray-600 */
+  border: 1px solid #e5e7eb; /* gray-200 */
+}
+.dark:where(.shell-learning) .inactive-tab {
+  background-color: #1e293b;
+  color: #9ca3af;
+  border-color: #374151;
+}
+
+/* 2. 分類按鈕 (Category) - 基礎結構 */
+:where(html.shell-learning) .category-active {
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid transparent;
+  background-color: #64748b; /* 保險顏色 */
+}
+:where(html.shell-learning) .category-inactive {
+  background-color: white;
+  color: #52525b; /* zinc-600 */
+  border: 1px solid #e4e4e7;
+}
+.dark:where(.shell-learning) .category-inactive {
+  background-color: #1e293b;
+  color: #d1d5db;
+  border-color: #374151;
+}
+
+/* 3. 子選項與篩選按鈕 - 基礎結構 */
+:where(html.shell-learning) .row-btn-active,
+:where(html.shell-learning) .sub-active {
+  color: white;
+  background-color: #64748b; /* 保險顏色 */
+  border-color: transparent;
+}
+:where(html.shell-learning) .row-btn-inactive,
+:where(html.shell-learning) .sub-inactive {
+  background-color: white;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+.dark:where(.shell-learning) .row-btn-inactive,
+.dark:where(.shell-learning) .sub-inactive {
+  background-color: #1e293b;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+/* 4. 未選中狀態 (共用) */
+:where(html.shell-learning) .inactive-tab,
+:where(html.shell-learning) .category-inactive,
+:where(html.shell-learning) .row-btn-inactive,
+:where(html.shell-learning) .sub-inactive {
+  background-color: white;
+  color: #4b5563; /* gray-600 */
+  border: 1px solid #e5e7eb; /* gray-200 */
+}
+.dark:where(.shell-learning) .inactive-tab,
+.dark:where(.shell-learning) .category-inactive,
+.dark:where(.shell-learning) .row-btn-inactive,
+.dark:where(.shell-learning) .sub-inactive {
+  background-color: #1e293b;
+  color: #9ca3af;
+  border-color: #374151;
+}
+
+/* =========================================
+   主題配色 (依據 body class 自動變色) —— 只保留泰語主題
+   ========================================= */
+
+/* --- 🇹🇭 泰語主題 (Thai) - Emerald/Green --- */
+.theme-thai .active-tab {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* Emerald-500 to 600 */
+}
+.theme-thai .category-active {
+  background-color: #059669; /* Emerald-600 */
+}
+.theme-thai .sub-active {
+  background-color: #10b981;
+  border-color: #10b981;
+}
+/* 懸浮時文字變色 */
+.theme-thai .inactive-tab:hover,
+.theme-thai .category-inactive:hover {
+  color: #059669;
+  background-color: #ecfdf5; /* Emerald-50 */
+}
+
+/* =========================================
+   其他特效 (拼音模糊、搖晃)
+   ========================================= */
+:where(html.shell-learning) .pinyin-hidden .pinyin-text {
+  filter: blur(4px);
+  opacity: 0.3;
+  transition: all 0.3s ease;
+}
+:where(html.shell-learning) .pinyin-hidden .pinyin-text {
+  display: none !important;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+:where(html.shell-learning) .shake-anim {
+  animation: shake 0.3s ease-in-out;
+}
+
+/* =========================================
+   手寫板背景 (共用)
+   ========================================= */
+:where(html.shell-learning) #hw-canvas {
+  background-color: transparent; /* 保持透明，讓底下的字透出來 */
+  background-image: none;        /* ✨ 關鍵：移除米字格線條 */
+  border: 2px solid #e5e7eb;     /* 選用：加個淡邊框，才知道畫布範圍在哪 */
+  border-radius: 12px;           /* 選用：跟著外框一起圓角 */
+}
+.dark:where(.shell-learning) #hw-canvas {
+  background-color: transparent;
+  background-image: none;
+  border-color: #334155;         /* 深色模式的邊框顏色 */
+}
+
+/* =========================================
+   SVG 筆順動畫優化 (Dynamic Stroke Animation)
+   ========================================= */
+
+/* 1. 底層鬼影 (Guide Layer) - 顯示淡淡的完整字形 */
+:where(html.shell-learning) .stroke-guide-path {
+  fill: none;
+  stroke: #e2e8f0; /* slate-200: 淺灰底色 */
+  stroke-width: 4; /* 與手寫筆觸寬度一致 */
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dark:where(.shell-learning) .stroke-guide-path {
+  stroke: #334155; /* slate-700: 深色模式底色 */
+}
+
+/* 2. 動畫筆跡 (Animation Layer) */
+:where(html.shell-learning) .stroke-anim-path {
+  fill: none;
+  stroke: #f97316; /* orange-500: 演示顏色 (可改) */
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  /* 初始狀態：隱藏線條 */
+  stroke-dasharray: var(--len);
+  stroke-dashoffset: var(--len);
+  opacity: 0;
+}
+
+/* 3. 播放狀態 (由 JS 添加此 class 觸發動畫) */
+:where(html.shell-learning) .stroke-anim-path.active {
+  opacity: 1;
+  /* ease-out 模擬真實下筆：起筆快、收筆穩 */
+  animation: drawStroke var(--duration) ease-out forwards;
+  animation-delay: var(--delay);
+}
+
+/* 4. 關鍵影格：將虛線偏移量歸零，實現畫線效果 */
+@keyframes drawStroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
