@@ -429,12 +429,13 @@ export const createThaiPage = () => {
     if (voices.value.length > 0 && selectedVoiceIndex.value >= voices.value.length) selectedVoiceIndex.value = 0
   }
 
+  // 數字鍵 1～5 只在聲調「挑戰」模式作答（原版在「對照」模式也會於背景觸發 checkToneGuess）
   const handleKeydown = (e: KeyboardEvent) => {
     const tagName = (e.target as HTMLElement | null)?.tagName
     if (tagName === 'INPUT' || tagName === 'SELECT') return
     if (e.code === 'Space') { e.preventDefault(); if (currentMode.value === 'sentence_practice') speak({ soundText: sentence.current?.soundText }, true); else if (currentMode.value.startsWith('quiz')) speak(quiz.currentItem, false); else if (currentMode.value === 'tone_training') speak(toneTraining.targetChar, false) }
     else if (e.code === 'ArrowRight' || e.code === 'Enter') { if (currentMode.value === 'sentence_practice') nextSentence(); else if (currentMode.value.startsWith('quiz') && quiz.answered) nextQuizQuestion(); else if (currentMode.value === 'tone_training' && toneTraining.isLocked) startNewToneChallenge() }
-    else if (currentMode.value === 'tone_training' && !toneTraining.isLocked && e.code.startsWith('Digit')) { const idx = parseInt(e.key) - 1; if (idx >= 0 && idx < 5) checkToneGuess(idx) }
+    else if (currentMode.value === 'tone_training' && toneTraining.mode === 'challenge' && !toneTraining.isLocked && e.code.startsWith('Digit')) { const idx = parseInt(e.key) - 1; if (idx >= 0 && idx < 5) checkToneGuess(idx) }
     else if (currentMode.value.startsWith('quiz') && !quiz.answered && e.code.startsWith('Digit')) { const idx = parseInt(e.key) - 1; if (idx >= 0 && idx < 4) handleQuizAnswer(quiz.options[idx]) }
   }
 
