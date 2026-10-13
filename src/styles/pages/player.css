@@ -47,7 +47,8 @@
   /* 稍微縮小一點 */
 }
 
-:where(html.shell-player) .playing-glow {
+/* 原版 .playing-glow 被同權重、較晚輸出的 shadow-xl 蓋掉，淺色模式看不到；加上 .player-card 提高權重（深色模式規則權重仍較高） */
+:where(html.shell-player) .player-card.playing-glow {
   box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.15);
 }
 
