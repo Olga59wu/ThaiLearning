@@ -2,8 +2,8 @@
 import { computed, ref } from 'vue'
 import { thaiData } from '@/data/thai'
 
-// 原版 #picker-modal：只保留泰語輔音／元音 tab（日語平假名／片假名已移除）
-type PickerType = 'thai_con' | 'thai_vow'
+// 原版 #picker-modal：只保留泰語輔音／元音／數字 tab（日語平假名／片假名已移除）
+type PickerType = 'thai_con' | 'thai_vow' | 'thai_num'
 
 interface PickerItem {
   char: string
@@ -25,10 +25,12 @@ const TAB_INACTIVE = 'picker-tab px-4 py-2 rounded-lg text-sm font-bold bg-white
 const tabs: { type: PickerType; label: string }[] = [
   { type: 'thai_con', label: '泰語輔音' },
   { type: 'thai_vow', label: '泰語元音' },
+  { type: 'thai_num', label: '泰文數字' },
 ]
 
 const list = computed<PickerItem[]>(() => {
   if (pickerType.value === 'thai_con') return thaiData.filter((d) => d.type === 'consonant').map((d) => ({ char: d.char, label: d.reading }))
+  if (pickerType.value === 'thai_num') return thaiData.filter((d) => d.type === 'numbers').map((d) => ({ char: d.char, label: d.reading }))
   return thaiData.filter((d) => d.type === 'vowel').map((d) => ({ char: d.char.replace(/◌/g, '-'), realChar: d.char, label: d.reading }))
 })
 

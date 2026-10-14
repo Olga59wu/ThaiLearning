@@ -60,7 +60,8 @@ pnpm dev                               # 新版：http://localhost:5173/player
 
 ### 範圍
 - 只搬泰文；**移除所有日韓相關內容**（大廳 JP 快捷列、JP/KR 卡片、thai 頁首 JP/KR 切換鈕）
-- `path.html` 要搬，選字表**只保留「泰語輔音／泰語元音」tab**（移除日語平假名／片假名）
+- `path.html` 要搬，選字表**只保留「泰語輔音／泰語元音／泰文數字」tab**（移除日語平假名／片假名；「泰文數字」是 2026-10-14 原版 `c0d1443` 新增的 tab，已同步）
+- 筆順資料之後一律在新版 `/path` 編輯、直接改 `src/data/thai.ts`，不再動 `legacy/`（數字筆順已於 2026-10-14 從 legacy 同步一次，用腳本比對整個 `thaiData` 一致）
 - `404.html` 做成 Router catch-all route，畫面照原版
 - 大廳 `<title>` 與畫面 h1 的「語言學習中心」改成「**泰語學習機**」，其他文字照原版
 - manifest：`name 泰語學習機`、`short_name ThaiLearn`、`description 泰語學習機`、`lang zh-TW`
@@ -149,7 +150,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
 ### /path 的實作與決策
 - 邏輯直接寫在 `PathEditorView.vue`（一對一翻譯原版 script）；選字表拆成 `components/path/CharPickerModal.vue`（父層 `v-if` 控制，每次打開從「泰語輔音」開始，同原版 `openCharPicker`）
 - `styles/pages/path.css`（`shell-common shell-path`），body class 照原版 `bg-gray-100 flex flex-col items-center p-4 h-screen overflow-hidden`；View 根元素是原版 body 內的兩個元素（主面板 + 選字表），沒有 #app
-- 選字表只保留泰語輔音／元音；`jpData` 的查找（選字、匯入）全部移除
+- 選字表只保留泰語輔音／元音／數字（數字 tab 比照原版 `renderPicker('thai_num')`：`type === 'numbers'`，label 用 `reading`）；`jpData` 的查找（選字、匯入）全部移除
 - canvas 繪圖、`strokes`、`currentCharObj` 等維持一般變數（非 reactive）；`#input-char`（contenteditable）以 ref 直接讀寫 `textContent`；字底圖、預覽 path `d`、輸出文字、圓潤度數值、匯入 placeholder、canvas `hovering-point` 改為 ref 綁定
 - 複製按鈕：原版改 innerHTML + `classList.replace`，改用 `copyLabel`／`copyBg` 狀態
 - 選字表原版有 `animate-slide-up`，但 path.html 的 Tailwind 沒定義（無動畫）；新版 `@theme` 為 index 定義了它，故移除此 class；`hidden` 改由 `v-if` 控制
@@ -386,7 +387,7 @@ usePageShell({
 
 ### 5.4 path.html → `/path`
 - 管理員限定；載入 common.css + path.css（`.thai-font`、canvas cursor、`.no-select`、`#guide-text` 位移）
-- 選字表只保留泰語輔音／元音 tab；`jpData` 相關邏輯移除
+- 選字表只保留泰語輔音／元音／數字 tab；`jpData` 相關邏輯移除
 - canvas 編輯（左鍵新增／拖曳、右鍵刪除、雙擊斷筆）、圓潤度、復原、清空、匯入解析、輸出完整物件、複製（`document.execCommand('copy')`）
 
 ---
