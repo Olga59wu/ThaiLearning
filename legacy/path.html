@@ -93,6 +93,7 @@
             <div class="flex gap-2 overflow-x-auto no-scrollbar">
                 <button onclick="renderPicker('thai_con')" class="picker-tab px-4 py-2 rounded-lg text-sm font-bold bg-emerald-500 text-white shadow-sm transition-all whitespace-nowrap">泰語輔音</button>
                 <button onclick="renderPicker('thai_vow')" class="picker-tab px-4 py-2 rounded-lg text-sm font-bold bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 transition-all whitespace-nowrap">泰語元音</button>
+                <button onclick="renderPicker('thai_num')" class="picker-tab px-4 py-2 rounded-lg text-sm font-bold bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 transition-all whitespace-nowrap">泰文數字</button>
                 <button onclick="renderPicker('jp_hira')" class="picker-tab px-4 py-2 rounded-lg text-sm font-bold bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 transition-all whitespace-nowrap">日語平假名</button>
                 <button onclick="renderPicker('jp_kata')" class="picker-tab px-4 py-2 rounded-lg text-sm font-bold bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 transition-all whitespace-nowrap">日語片假名</button>
             </div>
@@ -202,6 +203,7 @@
 
         if (type === 'thai_con') list = thaiData.filter(d => d.type === 'consonant').map(d => ({ char: d.char, label: d.reading }));
         else if (type === 'thai_vow') list = thaiData.filter(d => d.type === 'vowel').map(d => ({ char: d.char.replace(/◌/g, '-'), realChar: d.char, label: d.reading }));
+        else if (type === 'thai_num') list = thaiData.filter(d => d.type === 'numbers').map(d => ({ char: d.char, label: d.reading }));
         else if (type === 'jp_hira') list = jpData.filter(d => d.type === 'hiragana').map(d => ({ char: d.char, label: d.romaji }));
         else if (type === 'jp_kata') {
              const k = jpData.filter(d => d.type === 'katakana');
