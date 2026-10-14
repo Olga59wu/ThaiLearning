@@ -5,7 +5,7 @@
   "targets": {
     "learning-9fd6c": {
       "hosting": {
-        "thai": ["SITE_ID_待填"]
+        "thai": ["thai-learning-og"]
       }
     }
   }
