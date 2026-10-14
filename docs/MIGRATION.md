@@ -35,8 +35,9 @@
 | CLAUDE.md 新增繁體中文回覆／註解規則 | ✅ | `afe288a` |
 | `/path` 選字表新增「泰文數字」、同步 ๐～๙ 筆順到 `src/data/thai.ts`（๑๐ 以上尚無筆順） | ✅ | `42e3d83` |
 | 記錄 `optimizeDeps.entries`、`pnpm-workspace.yaml` 用途；`.gitignore` 加入 `legacy/audio/JP/` | ✅ | `1c50b36` |
-| **SW／離線功能實測（`pnpm build && pnpm preview`）** | **下一步（使用者實測中）** | |
-| 部署（Hosting 設定、Authorized domains） | 待辦，見 TODO.md | |
+| SW／離線功能實測 | ✅ 使用者實測通過 | |
+| 部署設定檔（`firebase.json`、`.firebaserc`、`firestore.rules`） | ✅ site ID 待填 | 見下一筆 commit |
+| **部署（建立 site、Authorized domains、deploy）** | **下一步（使用者手動）**，見 TODO.md | |
 
 順序：**player → typing → downloader → path** → 第 5 步對照檢查（已完成）→ SW／離線實測 → 部署。
 
@@ -74,7 +75,11 @@ pnpm dev                               # 新版：http://localhost:5173/player
 ### 部署
 - 部署到**新的 Firebase Hosting site**（舊站保留給日韓）→ 本機進度、已下載音檔歸零可接受，Firestore 雲端進度能延續即可
 - 新網域：不做舊 `.html` 網址導向
-- 不沿用 `legacy/.firebaserc`、`legacy/firebase.json`，部署設定使用者另外處理
+- 不沿用 `legacy/.firebaserc`、`legacy/firebase.json`；新版部署設定在根目錄（2026-10-14 建立）：
+  - `firebase.json`：hosting target `thai`、`public: dist`、全部 rewrite 到 `/index.html`；`/assets/**` `public, max-age=31536000, immutable`；`/sw.js`、`/index.html`、`/`、無副檔名路徑（`**/!(*.*)`，即 SPA 路由）`no-cache`；其他檔案（manifest、icon、音檔）用 Hosting 預設。已用 `firebase serve --only hosting` 驗證各路徑標頭
+  - `.firebaserc`：專案 `learning-9fd6c`，target `thai` → 新 site（site ID 待使用者提供，目前是 `SITE_ID_待填`）
+  - `firestore.rules`：**與舊站共用**。只允許 `users/{uid}` 本人且 email 在白名單（並 `email_verified`）時 read／create／update；不開放 delete，其他路徑全拒絕。已確認兩站的存取都只有 `users/{uid}` 的 `getDoc`／`setDoc(merge)`（舊站 `js/dbService.js`；大廳另寫 `vue_sync` 欄位），規則不檢查欄位內容
+  - 白名單改動時要同時改 `src/config.ts`、`legacy/js/config.js`（舊站）、`firestore.rules` 三處
 - Firebase 設定沿用寫死方式（`src/config.ts`）
 - 部署時要把新網域加入 Firebase Auth Authorized domains（已記在 TODO.md）
 

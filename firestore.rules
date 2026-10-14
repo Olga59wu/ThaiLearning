@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// 新站（泰語學習機）與舊站（legacy 多語學習機）共用這份規則
+// 兩站的 Firestore 存取都只有 users/{uid}：getDoc 讀取、setDoc(merge) 寫入
+// （舊站欄位：thai、japanese、korean、vue_sync、lastUpdated…；不檢查欄位內容，避免舊站寫入被擋）
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 白名單需與 src/config.ts、legacy/js/config.js 的 allowedEmails 一致
+    function isAllowedUser() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'chipang59@gmail.com',
+          'a950399@gmail.com',
+          'olga59.wu@gmail.com',
+          'chaoyafang@gmail.com',
+          'perpledodo@gmail.com'
+        ];
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      // 兩站都沒有刪除文件的操作，不開放 delete
+      allow read, create, update: if isOwner(uid) && isAllowedUser();
+    }
+
+    // 其他路徑一律拒絕（未列出的 match 預設即拒絕）
+  }
+}

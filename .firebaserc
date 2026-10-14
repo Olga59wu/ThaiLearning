@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "learning-9fd6c"
+  },
+  "targets": {
+    "learning-9fd6c": {
+      "hosting": {
+        "thai": ["SITE_ID_待填"]
+      }
+    }
+  }
+}

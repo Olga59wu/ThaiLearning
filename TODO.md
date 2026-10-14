@@ -56,5 +56,7 @@
 ## 部署
 
 - [ ] 新的 Firebase Hosting site 網域確定後，到 Firebase Console → Authentication → Settings → **Authorized domains** 加入新網域，否則 Google 登入會失敗（`localhost` 預設已授權）
-- [ ] Hosting 設定 SPA rewrite：所有路徑導向 `/index.html`（history 模式，直接開 `/player` 等網址才不會 404）
-- [ ] Hosting 設定 `/sw.js` 不快取（`Cache-Control: no-cache`），確保改版後瀏覽器能抓到新的 Service Worker
+- [x] Hosting 設定 SPA rewrite：所有路徑導向 `/index.html`（history 模式，直接開 `/player` 等網址才不會 404）（已寫在 `firebase.json`）
+- [x] Hosting 設定 `/sw.js` 不快取（`Cache-Control: no-cache`），確保改版後瀏覽器能抓到新的 Service Worker（已寫在 `firebase.json`，`index.html` 與 SPA 路由同樣 no-cache）
+- [ ] Firebase Console 建立新 Hosting site，把 site ID 填入 `.firebaserc`（取代 `SITE_ID_待填`）
+- [ ] 部署 `firestore.rules` 前先備份 Console 上目前的規則（這份規則與舊站共用，部署會整份取代）
