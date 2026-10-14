@@ -396,4 +396,7 @@ usePageShell({
 - TypeScript 固定 `~6.0.3`（TS 7 與 vue-tsc 3.3 不相容）
 - 主要套件：Vue 3.5、vue-router 5、Pinia 4、Firebase 13、Vite 8、Tailwind 4.3、vite-plugin-pwa 2
 - build 會有 Firebase 造成的 chunk > 500 kB 警告、pnpm 略過 `@firebase/util`／`protobufjs` 安裝腳本，皆不影響
+- `pnpm-workspace.yaml` 的 `allowBuilds`：明確設定 `@firebase/util`、`protobufjs` 的安裝腳本**不執行**（`false`）。pnpm 11 對未審核的安裝腳本預設會讓 `pnpm install` 失敗（`strictDepBuilds`），有這個設定才能在新電腦直接安裝；這兩個腳本只是選用的後處理，不需要執行
+- `vite.config.ts` 的 `optimizeDeps.entries: ['index.html']`：Vite dev server 預設會掃描專案內所有 `**/*.html` 找要預先打包的相依套件，會連 `legacy/*.html`（CDN 網址、`./data/thai.js` 等原版 import）一起掃而產生錯誤／警告；限定只從 `index.html` 開始掃。只影響 `pnpm dev`，不影響 build
+- `legacy/audio/JP/` 的日文音檔不屬於泰文專案，已加入 `.gitignore`
 - `.gitattributes` 統一 LF

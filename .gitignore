@@ -22,3 +22,6 @@ dev-dist/
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# legacy 的日文音檔（不屬於泰文專案）
+legacy/audio/JP/
