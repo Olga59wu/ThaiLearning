@@ -36,7 +36,7 @@
 | `/path` 選字表新增「泰文數字」、同步 ๐～๙ 筆順到 `src/data/thai.ts`（๑๐ 以上尚無筆順） | ✅ | `42e3d83` |
 | 記錄 `optimizeDeps.entries`、`pnpm-workspace.yaml` 用途；`.gitignore` 加入 `legacy/audio/JP/` | ✅ | `1c50b36` |
 | SW／離線功能實測 | ✅ 使用者實測通過 | |
-| 部署設定檔（`firebase.json`、`.firebaserc`、`firestore.rules`） | ✅ site ID 待填 | 見下一筆 commit |
+| 部署設定檔（`firebase.json`、`.firebaserc`、`firestore.rules`） | ✅ site ID 待填 | `d962aa0` |
 | **部署（建立 site、Authorized domains、deploy）** | **下一步（使用者手動）**，見 TODO.md | |
 
 順序：**player → typing → downloader → path** → 第 5 步對照檢查（已完成）→ SW／離線實測 → 部署。
