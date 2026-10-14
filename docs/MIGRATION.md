@@ -5,7 +5,7 @@
 
 ---
 
-## 0. 目前進度（2026-10-13）
+## 0. 目前進度（2026-10-14）
 
 | 項目 | 狀態 | commit |
 |---|---|---|
@@ -30,6 +30,11 @@
 | 第 5 步決定的修正：`/path` 匯入失敗保留內容 | ✅ | `178dd15` |
 | 第 5 步決定的修正：`/thai` 錯題複習標籤、雲端資料寫回 localStorage、語速存數字 | ✅ | `a85be57` |
 | 第 5 步決定的修正：`/player` 淺色模式播放光暈 | ✅ | `1d58a2d` |
+| 原版新增泰文數字筆順（使用者直接改 legacy，未完成） | ✅ | `c0d1443` |
+| legacy 例外修改一次：補上數字筆順、修正 `thai.js` 第 22 行語法錯誤（之後恢復唯讀） | ✅ | `3c177a7` |
+| CLAUDE.md 新增繁體中文回覆／註解規則 | ✅ | `afe288a` |
+| `/path` 選字表新增「泰文數字」、同步 ๐～๙ 筆順到 `src/data/thai.ts`（๑๐ 以上尚無筆順） | ✅ | `42e3d83` |
+| 記錄 `optimizeDeps.entries`、`pnpm-workspace.yaml` 用途；`.gitignore` 加入 `legacy/audio/JP/` | ✅ | `1c50b36` |
 | **SW／離線功能實測（`pnpm build && pnpm preview`）** | **下一步（使用者實測中）** | |
 | 部署（Hosting 設定、Authorized domains） | 待辦，見 TODO.md | |
 
