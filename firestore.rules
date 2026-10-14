@@ -1,12 +1,12 @@
 rules_version = '2';
 
-// 新站（泰語學習機）與舊站（legacy 多語學習機）共用這份規則
+// 新站（泰語學習機）與舊站（多語學習機，從原本的專案資料夾部署；legacy/ 只是其參考副本）共用這份規則
 // 兩站的 Firestore 存取都只有 users/{uid}：getDoc 讀取、setDoc(merge) 寫入
 // （舊站欄位：thai、japanese、korean、vue_sync、lastUpdated…；不檢查欄位內容，避免舊站寫入被擋）
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 白名單需與 src/config.ts、legacy/js/config.js 的 allowedEmails 一致
+    // 白名單需與 src/config.ts、舊網站原本專案的 js/config.js（不在此 repo）的 allowedEmails 一致
     function isAllowedUser() {
       return request.auth != null
         && request.auth.token.email_verified == true

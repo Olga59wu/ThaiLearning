@@ -21,7 +21,13 @@
 ## legacy/
 - `legacy/` 是**唯讀參考來源**，不可修改或刪除其中任何檔案
 - 搬遷時以原版行為為準：版面、顏色、字體、間距、動畫、音效、按鈕行為、題目順序與計分邏輯都要一致；不自行新增功能或「順便優化」，想改的地方先列出來詢問
+- 舊網站是從另一個原本的專案資料夾部署，`legacy/` 只是參考副本；改白名單時 `legacy/` 仍維持唯讀，不需要修改
 - 之後新增或修改筆順（`strokes`）一律在新版 `/path` 做，資料直接改 `src/data/thai.ts`，不再動 `legacy/`
+
+## 白名單（allowedEmails）
+- 改白名單時要同時改三處：`src/config.ts`、`firestore.rules`，以及**舊網站原本專案的 `js/config.js`**
+- 舊網站的 `js/config.js` 不在這個 repo 裡，必須**提醒使用者手動修改並重新部署舊網站**
+- 改完 `firestore.rules` 要部署（`firebase deploy --only firestore:rules`），規則由新舊網站共用
 
 ## Git
 - 每完成一個步驟或搬完一頁就 commit 一次

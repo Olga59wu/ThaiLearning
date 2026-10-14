@@ -78,8 +78,9 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 不沿用 `legacy/.firebaserc`、`legacy/firebase.json`；新版部署設定在根目錄（2026-10-14 建立）：
   - `firebase.json`：hosting target `thai`、`public: dist`、全部 rewrite 到 `/index.html`；`/assets/**` `public, max-age=31536000, immutable`；`/sw.js`、`/index.html`、`/`、無副檔名路徑（`**/!(*.*)`，即 SPA 路由）`no-cache`；其他檔案（manifest、icon、音檔）用 Hosting 預設。已用 `firebase serve --only hosting` 驗證各路徑標頭
   - `.firebaserc`：專案 `learning-9fd6c`，target `thai` → 新 site `thai-learning-og`（網址 `thai-learning-og.web.app`）
-  - `firestore.rules`：**與舊站共用**。只允許 `users/{uid}` 本人且 email 在白名單（並 `email_verified`）時 read／create／update；不開放 delete，其他路徑全拒絕。已確認兩站的存取都只有 `users/{uid}` 的 `getDoc`／`setDoc(merge)`（舊站 `js/dbService.js`；大廳另寫 `vue_sync` 欄位），規則不檢查欄位內容
-  - 白名單改動時要同時改 `src/config.ts`、`legacy/js/config.js`（舊站）、`firestore.rules` 三處
+  - `firestore.rules`：**與舊站共用**。只允許 `users/{uid}` 本人且 email 在白名單（並 `email_verified`）時 read／create／update；不開放 delete，其他路徑全拒絕。已確認兩站的存取都只有 `users/{uid}` 的 `getDoc`／`setDoc(merge)`（依 `legacy/js/dbService.js` 確認；大廳另寫 `vue_sync` 欄位），規則不檢查欄位內容
+  - 舊網站**不是從 `legacy/` 部署**，而是從另一個原本的專案資料夾部署；`legacy/` 只是參考副本，維持唯讀
+  - 白名單改動時要同時改三處：`src/config.ts`、`firestore.rules`、**舊網站原本專案的 `js/config.js`**（不在這個 repo，需使用者手動修改並重新部署舊網站）；`legacy/js/config.js` 不用改
 - Firebase 設定沿用寫死方式（`src/config.ts`）
 - 部署時要把新網域加入 Firebase Auth Authorized domains（已記在 TODO.md）
 
