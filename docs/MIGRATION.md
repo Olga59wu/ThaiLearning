@@ -38,6 +38,7 @@
 | SW／離線功能實測 | ✅ 使用者實測通過 | |
 | 部署設定檔（`firebase.json`、`.firebaserc`、`firestore.rules`） | ✅ site ID `thai-learning-og` | `d962aa0` |
 | **部署（建立 site、Authorized domains、deploy）** | **下一步（使用者手動）**，見 TODO.md | |
+| 新功能：每週課程（`/lessons`），流程與格式見 `docs/LESSONS.md` | ✅ 第 1 課；考試待使用者實測 | `b08fef0`～`6f35064` |
 
 順序：**player → typing → downloader → path** → 第 5 步對照檢查（已完成）→ SW／離線實測 → 部署。
 
@@ -206,6 +207,8 @@ pnpm dev                               # 新版：http://localhost:5173/player
 | `/typing` | `ThaiTypingView` | thaiTyping.html | requiresAuth、title `泰文單字大師`、viewport noZoomCover、lang zh-Hant |
 | `/downloader` | `ThaiDownloaderView` | thaiDownloader.html | requiresAuth、title `泰文音檔同步 Pro - 穩定版`、lang zh-Hant |
 | `/path` | `PathEditorView` | path.html | requiresAuth、requiresAdmin、title `筆順產生器`、favicon 🖋️ |
+| `/lessons` | `LessonListView` | （新功能） | requiresAuth、title `📘 每週課程`、favicon 📘、fonts thai |
+| `/lessons/:no` | `LessonView` | （新功能） | 同上；分頁 `?tab=practice／exam` |
 | `/:pathMatch(.*)*` | `NotFoundView` | 404.html | title `404 - 找不到頁面`、favicon 🚀 |
 
 `router.afterEach` → `applyPageMeta()`（`src/router/pageMeta.ts`）：設定 title、`<html lang>`、viewport、favicon、**每頁的 Google Fonts 連結（字重與原版完全相同）**。
@@ -240,8 +243,11 @@ src/
 ├─ stores/
 │  ├─ auth.ts ✅        thaiLearn.ts ✅
 │  └─ cloud.ts ✅  vocabProgress.ts ✅  playerSettings.ts ✅
+│     lessonSettings.ts（顯示泰文字）  lessonRecords.ts（考試紀錄）   // 每週課程
 ├─ services/{firebase.ts ✅, db.ts ✅, offlineAudio.ts ✅}
 ├─ data/{thai.ts ✅, thaiVocab.ts ✅}       // 原文複製，只加型別標註；已用腳本驗證與原版一致
+│  ├─ lessons/{registry.ts, index.ts, helpers.ts, lesson-XX.ts}   // 每週課程（見 docs/LESSONS.md）
+│  └─ vocabCategories.ts   // ALL_VOCAB_CATEGORIES＝thaiVocab＋「第N課」分類（Player/Typing/Downloader/離線語音使用）
 ├─ types/thai.ts ✅
 ├─ utils/{storage.ts ✅（safeStorage）, shuffle.ts ✅（shuffleArray 回傳新陣列 / shuffleInPlace 原地）}
 └─ styles/
