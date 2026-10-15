@@ -3,6 +3,7 @@
 // - 發音來源、語速同 /downloader（translate_tts，client=tw-ob，泰文 th、中文 zh-TW，預設語速）；Node 直接請求，不經代理、不產生 zip
 // - 每個檔案間隔 1.2 秒、每 20 個多休息 1 秒、失敗重試 2 次（同 /downloader）
 // - 自訂單字存在瀏覽器 localStorage，腳本讀不到，不在範圍內
+// - 中文念的文字會清理（檔名不變）：括號與括號內容不念、「/」改成「，」。例如「你好/再見 (女用)」念「你好，再見」
 import { existsSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -68,6 +69,15 @@ const findMissing = (categories: Record<string, VocabWord[]>, audioFileName: (t:
   return [...missing.values()]
 }
 
+/** 中文念的文字：去掉括號與括號內容（半形、全形），「/」改成「，」；泰文不處理 */
+export const spokenText = (text: string, lang: Lang): string =>
+  lang === 'zh'
+    ? text
+        .replace(/\([^)]*\)|（[^）]*）/g, '')
+        .replace(/\s*\/\s*/g, '，')
+        .trim()
+    : text
+
 const ttsUrl = (text: string, lang: Lang) =>
   `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang === 'th' ? 'th' : 'zh-TW'}&client=tw-ob`
 
@@ -97,7 +107,10 @@ const main = async () => {
   const wordCount = new Set(Object.values(categories).flat().map((w) => w.id)).size
 
   console.log(`單字 ${wordCount} 個；public/audio/TH/ 缺 ${missing.length} 個檔案（泰文 ${missing.filter((m) => m.lang === 'th').length}、中文 ${missing.filter((m) => m.lang === 'zh').length}）\n`)
-  missing.forEach((m, i) => console.log(`${String(i + 1).padStart(3)}. ${m.file}  ← ${m.words.join(', ')}`))
+  missing.forEach((m, i) => {
+    const spoken = spokenText(m.text, m.lang)
+    console.log(`${String(i + 1).padStart(3)}. ${m.file}  ← ${m.words.join(', ')}${spoken !== m.text ? `  （念：${spoken}）` : ''}`)
+  })
   if (missing.length === 0 || DRY_RUN) {
     if (DRY_RUN) console.log('\n（--dry-run：只列出，不下載）')
     return
@@ -108,7 +121,7 @@ const main = async () => {
   const failed: { file: string; error: string }[] = []
   for (let i = 0; i < missing.length; i++) {
     const m = missing[i]!
-    const { data, error } = await fetchMp3(m.text, m.lang)
+    const { data, error } = await fetchMp3(spokenText(m.text, m.lang), m.lang)
     if (data) {
       writeFileSync(resolve(AUDIO_DIR, m.file), data)
       ok.push(m.file)
