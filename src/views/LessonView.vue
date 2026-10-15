@@ -11,6 +11,7 @@ import RulesBlock from '@/components/lessons/blocks/RulesBlock.vue'
 import PhrasesBlock from '@/components/lessons/blocks/PhrasesBlock.vue'
 import NotesBlock from '@/components/lessons/blocks/NotesBlock.vue'
 import HomeworkBlock from '@/components/lessons/blocks/HomeworkBlock.vue'
+import PracticeTab from '@/components/lessons/practice/PracticeTab.vue'
 
 const props = defineProps<{ no: number }>()
 
@@ -64,7 +65,9 @@ const setTab = (t: Tab) => router.replace({ query: { ...route.query, tab: t === 
       </template>
     </div>
 
-    <!-- 練習、考試：之後的步驟實作 -->
+    <PracticeTab v-else-if="tab === 'practice'" :lesson="lesson" />
+
+    <!-- 考試：之後的步驟實作 -->
     <div v-else class="w-full p-10 text-center text-gray-400 dark:text-gray-500 bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-gray-200 dark:border-slate-600">
       🚧 製作中
     </div>

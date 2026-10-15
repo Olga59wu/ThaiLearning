@@ -6,6 +6,11 @@ import type { VocabCategories } from '@/types/thai'
 
 export const ALL_VOCAB_CATEGORIES: VocabCategories = { ...VOCAB_CATEGORIES, ...LESSON_VOCAB_CATEGORIES }
 
+const VOCAB_TH = new Set(Object.values(ALL_VOCAB_CATEGORIES).flatMap((list) => list.map((w) => w.th)))
+
+/** 是否為分類裡的單字（音檔打包只會產生這些字的 mp3，其他直接用 TTS） */
+export const isVocabText = (th: string): boolean => VOCAB_TH.has(th)
+
 /** 課程分類的圖示 */
 export const LESSON_CATEGORY_ICON = '📘'
 
