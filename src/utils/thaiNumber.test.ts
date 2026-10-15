@@ -3,6 +3,8 @@ import {
   fromThaiDigits,
   numberToSyllables,
   numberToThai,
+  numberWordSyllables,
+  readingDistractorSyllables,
   readingDistractors,
   toThaiDigits,
 } from '@/utils/thaiNumber'
@@ -148,5 +150,25 @@ describe('readingDistractors', () => {
     expect(d).toHaveLength(3)
     expect(new Set(d).size).toBe(3)
     expect(d).not.toContain(numberToThai(n))
+  })
+})
+
+describe('readingDistractorSyllables', () => {
+  it('常見錯誤的拼音', () => {
+    const roman = (n: number) => readingDistractorSyllables(n).map((s) => s.map((x) => x.roman).join('-'))
+    expect(roman(11)).toContain('sib-neung')
+    expect(roman(20)).toContain('song-sib')
+  })
+})
+
+describe('numberWordSyllables', () => {
+  it('解析數字詞', () => {
+    expect(numberWordSyllables('หนึ่งสิบ')?.map((s) => s.roman)).toEqual(['neung', 'sib'])
+    expect(numberWordSyllables('เอ็ด')?.map((s) => s.tone)).toEqual(['low'])
+    expect(numberWordSyllables('ล้าน')?.map((s) => s.roman)).toEqual(['lan'])
+  })
+  it('含其他字時回傳 null', () => {
+    expect(numberWordSyllables('บาท')).toBeNull()
+    expect(numberWordSyllables('')).toBeNull()
   })
 })

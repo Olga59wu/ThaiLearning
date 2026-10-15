@@ -3,10 +3,12 @@ import { computed, nextTick, ref } from 'vue'
 import type { NumberPool } from '@/types/lesson'
 import { isVocabText } from '@/data/vocabCategories'
 import { useLessonAudioContext } from '@/composables/lessons/useLessonAudio'
-import { numberToSyllables, numberToThai, readingDistractors, toThaiDigits } from '@/utils/thaiNumber'
+import { numberToSyllables, numberToThai, readingDistractorSyllables, toThaiDigits } from '@/utils/thaiNumber'
+import { joinSyllables } from '@/utils/tone'
+import type { Syllable } from '@/types/lesson'
 import { pickRandom, poolNumbers } from '@/utils/numberPool'
 import { shuffleArray } from '@/utils/shuffle'
-import ToneSyllables from '../ToneSyllables.vue'
+import ThaiReading from '../ThaiReading.vue'
 
 // 數字唸法練習：隨機出數字，選出或打出正確泰文唸法（不計分、不存紀錄）
 const props = defineProps<{ pool: NumberPool }>()
@@ -17,7 +19,7 @@ const mode = ref<Mode>('choice')
 const numbers = computed(() => poolNumbers(props.pool))
 
 const current = ref(0)
-const options = ref<string[]>([])
+const options = ref<{ th: string; syllables: Syllable[] }[]>([])
 const selected = ref<string | null>(null)
 const input = ref('')
 const answered = ref(false)
@@ -32,7 +34,7 @@ const speak = () => play(answer.value, !isVocabText(answer.value))
 
 const nextQuestion = () => {
   current.value = pickRandom(numbers.value, current.value)
-  options.value = shuffleArray([answer.value, ...readingDistractors(current.value)])
+  options.value = shuffleArray([syllables.value, ...readingDistractorSyllables(current.value)]).map((s) => ({ th: joinSyllables(s), syllables: s }))
   selected.value = null
   input.value = ''
   answered.value = false
@@ -104,10 +106,10 @@ nextQuestion()
       </div>
 
       <div v-if="mode === 'choice'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button v-for="opt in options" :key="opt" @click="choose(opt)" :disabled="answered"
-          class="px-4 py-3 text-xl font-bold border-2 rounded-2xl thai-font transition-all active:scale-95 text-gray-800 dark:text-white"
-          :class="optionClass(opt)">
-          {{ opt }}
+        <button v-for="opt in options" :key="opt.th" @click="choose(opt.th)" :disabled="answered"
+          class="flex justify-center px-4 py-3 border-2 rounded-2xl transition-all active:scale-95"
+          :class="optionClass(opt.th)">
+          <ThaiReading :syllables="opt.syllables" :th="opt.th" />
         </button>
       </div>
 
@@ -126,10 +128,9 @@ nextQuestion()
           {{ isCorrect ? '⭕ 答對了！' : '❌ 正確答案' }}
         </div>
         <div class="flex items-center gap-3">
-          <span class="text-2xl font-bold thai-font text-gray-800 dark:text-white">{{ answer }}</span>
+          <ThaiReading :syllables="syllables" :th="answer" size="lg" />
           <button @click="speak" title="播放發音" class="text-emerald-600 dark:text-emerald-400 hover:scale-110 transition-transform">🔊</button>
         </div>
-        <ToneSyllables :syllables="syllables" />
         <button v-if="mode === 'choice'" @click="nextQuestion"
           class="mt-2 px-8 py-2.5 rounded-full bg-gray-800 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-200 text-white font-bold text-sm active:scale-95 transition-all">
           下一題 →

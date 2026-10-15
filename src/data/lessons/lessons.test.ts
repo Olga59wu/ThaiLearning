@@ -4,7 +4,7 @@ import { FULL_VOCAB, VOCAB_CATEGORIES } from '@/data/thaiVocab'
 import { ALL_VOCAB_CATEGORIES, lessonNoOfCategory } from '@/data/vocabCategories'
 import { blocksOf, LESSON_VOCAB_CATEGORIES, LESSONS, lessonPhrases, lessonUnits, lessonWords, resolveWord } from '@/data/lessons'
 import { sy } from '@/data/lessons/helpers'
-import { numberToSyllables, numberToThai } from '@/utils/thaiNumber'
+import { numberToSyllables, numberToThai, numberWordSyllables } from '@/utils/thaiNumber'
 import type { ExamQuestionType, LessonWord } from '@/types/lesson'
 
 const allRawWords = (): LessonWord[] =>
@@ -119,6 +119,23 @@ describe('第 1 課', () => {
     const units = lessonUnits(l1)
     expect(units).toHaveLength(10)
     expect(new Set(units.map((u) => u.meaning)).size).toBe(10)
+  })
+})
+
+describe('規則說明', () => {
+  it('{泰文} 標記都能解析成音節；標記外不含泰文字', () => {
+    LESSONS.forEach((l) =>
+      blocksOf(l, 'rules').forEach((b) =>
+        b.rules.forEach((r) => {
+          const tokens = [...r.text.matchAll(/\{([^}]+)\}/g)].map((m) => m[1]!)
+          tokens.forEach((t) => expect(numberWordSyllables(t), t).not.toBeNull())
+          expect(r.text.replace(/\{[^}]+\}/g, ''), r.text).not.toMatch(/[\u0E00-\u0E7F]/)
+        }),
+      ),
+    )
+  })
+  it('筆記不含泰文字', () => {
+    LESSONS.forEach((l) => blocksOf(l, 'notes').forEach((b) => b.items.forEach((t) => expect(t).not.toMatch(/[\u0E00-\u0E7F]/))))
   })
 })
 

@@ -107,13 +107,14 @@ export interface Denomination {
 
 /** 規則：說明與例子（例子會用數字函式產生唸法） */
 export interface LessonRule {
+  /** 說明文字；泰文用 {泰文} 標記（例如 {เอ็ด}），畫面顯示成拼音＋聲調，關閉泰文字時不顯示泰文 */
   text: string
   examples: number[]
 }
 
 export type LessonBlock =
-  | { type: 'vocab'; title: string; layout: 'numbers' | 'units' | 'plain'; words: LessonWord[] }
-  | { type: 'currency'; title: string; words: LessonWord[]; denominations: Denomination[] }
+  | { type: 'vocab'; title: string; titleTh?: string; layout: 'numbers' | 'units' | 'plain'; words: LessonWord[] }
+  | { type: 'currency'; title: string; titleTh?: string; words: LessonWord[]; denominations: Denomination[] }
   | { type: 'rules'; title: string; rules: LessonRule[] }
   | { type: 'phrases'; title: string; phrases: LessonPhrase[] }
   | { type: 'notes'; title: string; items: string[] }

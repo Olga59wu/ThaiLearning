@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useThaiLearnStore } from '@/stores/thaiLearn'
+import { useLessonSettingsStore } from '@/stores/lessonSettings'
 
-// 版面比照 /thai 的 ThaiHeader：左上返回、置中標題、深色模式切換
-defineProps<{ title: string; subtitle?: string; backTo: string; backLabel: string }>()
+// 版面比照 /thai 的 ThaiHeader：左上返回、置中標題、右上深色模式（＋顯示泰文字開關）
+withDefaults(defineProps<{ title: string; subtitle?: string; backTo: string; backLabel: string; thaiToggle?: boolean }>(), {
+  thaiToggle: false,
+})
 
 const { isDark } = storeToRefs(useThaiLearnStore())
+const { showThai } = storeToRefs(useLessonSettingsStore())
 const toggleDark = () => {
   isDark.value = !isDark.value
 }
@@ -24,7 +28,15 @@ const toggleDark = () => {
         {{ backLabel }}
       </RouterLink>
     </div>
-    <div class="absolute top-0 right-0 z-20">
+    <div class="absolute top-0 right-0 z-20 flex items-center gap-2">
+      <button v-if="thaiToggle" @click="showThai = !showThai" :aria-pressed="showThai" title="顯示泰文字"
+        class="flex items-center gap-1.5 h-9 pl-3 pr-1.5 text-xs font-bold bg-white/80 dark:bg-gray-800/80 rounded-full shadow-xs border border-gray-200 dark:border-gray-600 transition-colors"
+        :class="showThai ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'">
+        泰文字
+        <span class="relative inline-block w-8 h-5 rounded-full transition-colors" :class="showThai ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-slate-600'">
+          <span class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-xs transition-all" :class="showThai ? 'left-3.5' : 'left-0.5'"></span>
+        </span>
+      </button>
       <button @click="toggleDark" title="切換模式"
         class="flex items-center justify-center w-9 h-9 text-yellow-500 hover:text-yellow-600 bg-white/80 dark:bg-gray-800/80 rounded-full shadow-xs border border-gray-200 dark:border-gray-600 transition-colors">
         <svg v-if="isDark" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -44,7 +44,7 @@ const setTab = (t: Tab) => router.replace({ query: { ...route.query, tab: t === 
 
 <template>
   <div v-if="lesson" id="app" class="w-full max-w-4xl flex flex-col items-center">
-    <LessonHeader :title="`第${lesson.no}課 ${lesson.title}`" :subtitle="lesson.date" back-to="/lessons" back-label="課程列表" />
+    <LessonHeader :title="`第${lesson.no}課 ${lesson.title}`" :subtitle="lesson.date" back-to="/lessons" back-label="課程列表" thai-toggle />
 
     <div class="w-full flex flex-wrap justify-center gap-3 mb-6">
       <button v-for="t in TABS" :key="t.id" @click="setTab(t.id)"

@@ -94,6 +94,27 @@ export const numberToSyllables = (n: number): Syllable[] => {
 /** 數字 → 泰文唸法，例如 21 → ยี่สิบเอ็ด */
 export const numberToThai = (n: number): string => joinSyllables(numberToSyllables(n))
 
+// 所有數字音節（解析用，長的先比對）
+const ALL_NUMBER_SYLLABLES: readonly Syllable[] = [...DIGIT, SIB, YI, ED, LAN, ...UNITS.map(([, u]) => u)].sort(
+  (a, b) => b.th.length - a.th.length,
+)
+
+/**
+ * 由數字音節組成的泰文 → 音節（例如 หนึ่งสิบ → neung + sib）；含其他字時回傳 null。
+ * 規則說明裡的 {เอ็ด} 這類標記用它顯示拼音與聲調。
+ */
+export const numberWordSyllables = (th: string): Syllable[] | null => {
+  const out: Syllable[] = []
+  let rest = th
+  while (rest) {
+    const s = ALL_NUMBER_SYLLABLES.find((x) => rest.startsWith(x.th))
+    if (!s) return null
+    out.push(s)
+    rest = rest.slice(s.th.length)
+  }
+  return out.length > 0 ? out : null
+}
+
 /** 阿拉伯數字 → 泰文數字，例如 23 → ๒๓ */
 export const toThaiDigits = (n: number): string => {
   assertNumber(n)
@@ -105,23 +126,28 @@ export const fromThaiDigits = (s: string): string =>
   s.replace(/[๐-๙]/g, (c) => String(THAI_DIGITS.indexOf(c)))
 
 /**
- * 唸法的錯誤選項：先放常見錯誤（สิบหนึ่ง、สองสิบ、หนึ่งสิบ、單獨唸 เอ็ด），
+ * 唸法的錯誤選項（音節）：先放常見錯誤（sib-neung、song-sib、neung-sib、單獨唸 ed），
  * 不足再補鄰近數字的正確唸法。回傳不含正確答案、不重複，最多 count 個。
  */
-export const readingDistractors = (n: number, count = 3): string[] => {
+export const readingDistractorSyllables = (n: number, count = 3): Syllable[][] => {
   assertNumber(n)
   const correct = numberToThai(n)
-  const result: string[] = []
-  const add = (s: string) => {
-    if (s !== correct && !result.includes(s) && result.length < count) result.push(s)
+  const result: Syllable[][] = []
+  const add = (s: Syllable[]) => {
+    const th = joinSyllables(s)
+    if (th !== correct && !result.some((r) => joinSyllables(r) === th) && result.length < count) result.push(s)
   }
-  add(joinSyllables(read(n, { ...CORRECT, ed: false })))
-  add(joinSyllables(read(n, { ...CORRECT, yi: false })))
-  add(joinSyllables(read(n, { ...CORRECT, plainSib: false })))
-  if (n === 1) add(ED.th)
+  add(read(n, { ...CORRECT, ed: false }))
+  add(read(n, { ...CORRECT, yi: false }))
+  add(read(n, { ...CORRECT, plainSib: false }))
+  if (n === 1) add([ED])
   const neighbors = [n + 1, n - 1, n + 10, n - 10, n + 2, n - 2, n + 100, n + 20, n + 3]
   for (const m of neighbors) {
-    if (m >= 0 && Number.isSafeInteger(m)) add(numberToThai(m))
+    if (m >= 0 && Number.isSafeInteger(m)) add(read(m, CORRECT))
   }
   return result
 }
+
+/** readingDistractorSyllables 的泰文版本 */
+export const readingDistractors = (n: number, count = 3): string[] =>
+  readingDistractorSyllables(n, count).map(joinSyllables)

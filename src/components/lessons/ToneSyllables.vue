@@ -2,11 +2,9 @@
 import type { Syllable, Tone } from '@/types/lesson'
 import { TONE_LABEL, TONE_MARK } from '@/utils/tone'
 
-// 照課本排法：（泰文）／聲調符號／羅馬拼音，一個音節一欄
-withDefaults(defineProps<{ syllables: readonly Syllable[]; showThai?: boolean; size?: 'sm' | 'md' }>(), {
-  showThai: false,
-  size: 'md',
-})
+// 照課本排法：聲調符號在上、羅馬拼音在下，一個音節一欄
+type Size = 'sm' | 'md' | 'lg' | 'xl'
+withDefaults(defineProps<{ syllables: readonly Syllable[]; size?: Size }>(), { size: 'md' })
 
 const TONE_COLOR: Record<Tone, string> = {
   mid: 'text-gray-400 dark:text-gray-500',
@@ -15,15 +13,16 @@ const TONE_COLOR: Record<Tone, string> = {
   high: 'text-amber-500 dark:text-amber-400',
   rising: 'text-emerald-500 dark:text-emerald-400',
 }
+const MARK_SIZE: Record<Size, string> = { sm: 'text-xs', md: 'text-sm', lg: 'text-base', xl: 'text-xl' }
+const ROMAN_SIZE: Record<Size, string> = { sm: 'text-sm', md: 'text-lg', lg: 'text-2xl', xl: 'text-4xl' }
+const GAP: Record<Size, string> = { sm: 'gap-1.5', md: 'gap-2', lg: 'gap-2.5', xl: 'gap-4' }
 </script>
 
 <template>
-  <span class="inline-flex items-end gap-1.5 leading-none">
-    <span v-for="(s, i) in syllables" :key="i" class="flex flex-col items-center gap-0.5"
-      :title="`${s.th} ${s.roman}（${TONE_LABEL[s.tone]}聲）`">
-      <span v-if="showThai" class="thai-font font-bold text-gray-700 dark:text-gray-200" :class="size === 'sm' ? 'text-sm' : 'text-lg'">{{ s.th }}</span>
-      <span class="font-bold" :class="[TONE_COLOR[s.tone], size === 'sm' ? 'text-xs' : 'text-sm']">{{ TONE_MARK[s.tone] }}</span>
-      <span class="font-mono text-gray-600 dark:text-gray-300" :class="size === 'sm' ? 'text-xs' : 'text-sm'">{{ s.roman }}</span>
+  <span class="inline-flex flex-wrap items-end justify-center leading-none" :class="GAP[size]">
+    <span v-for="(s, i) in syllables" :key="i" class="flex flex-col items-center gap-0.5" :title="`${s.roman}（${TONE_LABEL[s.tone]}聲）`">
+      <span class="font-black" :class="[TONE_COLOR[s.tone], MARK_SIZE[size]]">{{ TONE_MARK[s.tone] }}</span>
+      <span class="font-bold text-gray-800 dark:text-gray-100" :class="ROMAN_SIZE[size]">{{ s.roman }}</span>
     </span>
   </span>
 </template>
