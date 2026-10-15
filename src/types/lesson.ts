@@ -127,7 +127,7 @@ export interface Lesson {
   /** 上課日期 YYYY-MM-DD */
   date: string
   title: string
-  /** 隨身聽／打字練習的分類名稱，例如 '📘 第1課' */
+  /** 隨身聽／打字練習的分類名稱，例如 '第1課'（不含 emoji 與空白；圖示 📘 由 LESSON_CATEGORY_ICON 顯示） */
   category: string
   blocks: LessonBlock[]
 }

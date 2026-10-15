@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useTypingPageContext } from '@/composables/typing/useTypingPage'
+import { LESSON_CATEGORY_ICON, lessonNoOfCategory } from '@/data/vocabCategories'
 
 const {
   isDownloading, downloadProgress, downloadTotal, startDownload, initGame,
@@ -101,6 +102,9 @@ const {
           <span v-else-if="cat === '餐廳與交通'">🚗</span>
           <span v-else-if="cat === '自訂單字'">⭐</span>
           <span v-else-if="cat === '已學會'">✅</span>
+          <!-- 課程分類（第N課）：📘＋課次 -->
+          <span v-else-if="lessonNoOfCategory(cat) !== null" class="relative">{{ LESSON_CATEGORY_ICON }}<span
+              class="absolute -bottom-1 -right-2 px-1 text-[9px] font-black leading-tight text-indigo-600 bg-white border border-indigo-200 rounded-full">{{ lessonNoOfCategory(cat) }}</span></span>
           <span v-else class="text-[10px] font-bold text-slate-400">{{ cat.substring(0, 1) }}</span>
         </button>
       </div>

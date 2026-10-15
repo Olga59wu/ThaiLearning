@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
-import { VOCAB_CATEGORIES } from '@/data/thaiVocab'
+import { ALL_VOCAB_CATEGORIES } from '@/data/vocabCategories'
 import { usePageShell } from '@/composables/usePageShell'
 import { useTimers } from '@/composables/useTimers'
 import { useCloudStore } from '@/stores/cloud'
@@ -76,7 +76,7 @@ const initializeCloudSync = async () => {
 
 const refreshWordPool = () => {
   let all: VocabWord[] = []
-  Object.values(VOCAB_CATEGORIES).forEach((l) => all.push(...l))
+  Object.values(ALL_VOCAB_CATEGORIES).forEach((l) => all.push(...l))
   const localCustom = safeStorage.get<VocabWord[]>('thai-custom-list', [])
   all = [...all, ...localCustom]
   const unique: VocabWord[] = []

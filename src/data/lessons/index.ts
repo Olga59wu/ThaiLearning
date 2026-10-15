@@ -53,7 +53,7 @@ export const lessonUnits = (lesson: Lesson): ResolvedWord[] =>
 
 export const lessonPhrases = (lesson: Lesson): LessonPhrase[] => blocksOf(lesson, 'phrases').flatMap((b) => b.phrases)
 
-/** 「📘 第N課」分類：字詞＋常用語原形＋語尾版本，以 id 去重 */
+/** 「第N課」分類：字詞＋常用語原形＋語尾版本，以 id 去重 */
 export const lessonVocab = (lesson: Lesson): VocabWord[] => {
   const result: VocabWord[] = []
   const add = (w: VocabWord) => {

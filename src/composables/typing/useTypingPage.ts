@@ -1,6 +1,6 @@
 import { computed, inject, nextTick, provide, ref, watch, type InjectionKey } from 'vue'
 import { storeToRefs } from 'pinia'
-import { VOCAB_CATEGORIES } from '@/data/thaiVocab'
+import { ALL_VOCAB_CATEGORIES } from '@/data/vocabCategories'
 import { getAudioUrl } from '@/services/offlineAudio'
 import { useCloudStore } from '@/stores/cloud'
 import { migrateToId, useVocabProgressStore } from '@/stores/vocabProgress'
@@ -47,7 +47,7 @@ export const createTypingPage = () => {
   // ---------------------------------
 
   const allCategories = computed(() => {
-    const result: VocabCategories = { ...VOCAB_CATEGORIES }
+    const result: VocabCategories = { ...ALL_VOCAB_CATEGORIES }
     if (customList.value.length > 0) {
       result['自訂單字'] = customList.value
     }

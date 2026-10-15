@@ -1,6 +1,6 @@
 import { computed, inject, provide, ref, shallowRef, watch, type InjectionKey } from 'vue'
 import { storeToRefs } from 'pinia'
-import { VOCAB_CATEGORIES } from '@/data/thaiVocab'
+import { ALL_VOCAB_CATEGORIES, LESSON_CATEGORY_ICON, lessonNoOfCategory } from '@/data/vocabCategories'
 import { getAudioUrl } from '@/services/offlineAudio'
 import { useAuthStore } from '@/stores/auth'
 import { useCloudStore } from '@/stores/cloud'
@@ -14,7 +14,7 @@ import type { VocabCategories, VocabWord } from '@/types/thai'
 
 type Timer = ReturnType<typeof setTimeout>
 
-const VOCAB_DATA = VOCAB_CATEGORIES
+const VOCAB_DATA = ALL_VOCAB_CATEGORIES
 // 喚醒實體播放器給 CarPlay 抓取用的無聲 wav
 export const SILENT_WAV =
   'data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=='
@@ -188,7 +188,8 @@ export const createPlayerPage = () => {
       自訂單字: '⭐',
       已學會: '✅',
     }
-    return icons[cat] || '📁'
+    // 課程分類（第N課）用 📘
+    return icons[cat] || (lessonNoOfCategory(cat) !== null ? LESSON_CATEGORY_ICON : '📁')
   }
 
   // 深色模式：直接操作 body 的 class（原版兩個重複的 watch 合併為一個；存檔由 store 處理）

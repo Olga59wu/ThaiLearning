@@ -66,7 +66,7 @@ const lesson: Lesson = {
   no: 1,
   date: '2026-10-12',
   title: '泰文數字',
-  category: '📘 第1課',
+  category: '第1課',
   blocks: [
     { type: 'vocab', title: '泰文數字 ตัวเลขไทย', layout: 'numbers', words: numbers },
     { type: 'vocab', title: '泰文數字特殊唸法', layout: 'numbers', words: specialNumbers },

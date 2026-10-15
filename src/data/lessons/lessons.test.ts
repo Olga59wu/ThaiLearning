@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sentenceData, thaiData } from '@/data/thai'
-import { FULL_VOCAB } from '@/data/thaiVocab'
+import { FULL_VOCAB, VOCAB_CATEGORIES } from '@/data/thaiVocab'
+import { ALL_VOCAB_CATEGORIES, lessonNoOfCategory } from '@/data/vocabCategories'
 import { blocksOf, LESSON_VOCAB_CATEGORIES, LESSONS, lessonPhrases, lessonUnits, lessonWords, resolveWord } from '@/data/lessons'
 import { sy } from '@/data/lessons/helpers'
 import { numberToSyllables, numberToThai } from '@/utils/thaiNumber'
@@ -30,6 +31,15 @@ describe('課程清單', () => {
     expect(new Set(LESSONS.map((l) => l.no)).size).toBe(LESSONS.length)
     expect(new Set(LESSONS.map((l) => l.category)).size).toBe(LESSONS.length)
     LESSONS.forEach((l) => expect(l.date).toMatch(/^\d{4}-\d{2}-\d{2}$/))
+  })
+  it('分類名稱是「第N課」：不含空白與 emoji（隨身聽用它組 class 與 substring 顯示）', () => {
+    LESSONS.forEach((l) => expect(l.category).toBe(`第${l.no}課`))
+  })
+  it('合併進完整分類，且不蓋掉原本的分類', () => {
+    LESSONS.forEach((l) => expect(ALL_VOCAB_CATEGORIES[l.category]).toBe(LESSON_VOCAB_CATEGORIES[l.category]))
+    Object.keys(VOCAB_CATEGORIES).forEach((cat) => expect(ALL_VOCAB_CATEGORIES[cat]).toBe(VOCAB_CATEGORIES[cat]))
+    expect(lessonNoOfCategory('第1課')).toBe(1)
+    expect(lessonNoOfCategory('數字與時間')).toBeNull()
   })
 })
 

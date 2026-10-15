@@ -1,4 +1,4 @@
-import { VOCAB_CATEGORIES } from '@/data/thaiVocab'
+import { ALL_VOCAB_CATEGORIES } from '@/data/vocabCategories'
 
 // 原版 ./audio/TH/{th|zh}_{文字}.mp3（斜線換成底線）
 export const getAudioUrl = (text: string, type: 'th' | 'zh' = 'th'): string => {
@@ -17,7 +17,7 @@ export const downloadOfflineAudio = async (
   const audioUrls: string[] = []
 
   // 走訪所有分類與單字
-  Object.values(VOCAB_CATEGORIES).forEach((category) => {
+  Object.values(ALL_VOCAB_CATEGORIES).forEach((category) => {
     category.forEach((word) => {
       // 1. 收集泰文發音
       if (word.th) {
