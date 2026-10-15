@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ExamWrongAnswer } from '@/types/lesson'
+import type { RecordSyncStatus } from '@/stores/lessonRecords'
 import { QUESTION_TYPE_LABEL } from '@/utils/lessonExam'
 
-const props = defineProps<{ correct: number; total: number; wrong: ExamWrongAnswer[]; retry: boolean }>()
+const props = defineProps<{ correct: number; total: number; wrong: ExamWrongAnswer[]; retry: boolean; syncStatus: RecordSyncStatus }>()
 const emit = defineEmits<{ retryWrong: []; restart: []; back: [] }>()
 
 const percent = computed(() => (props.total ? Math.round((props.correct / props.total) * 100) : 0))
@@ -22,6 +23,9 @@ const message = computed(() =>
           {{ correct }}<span class="text-2xl text-gray-400"> / {{ total }}</span>
         </div>
         <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ percent }} 分　{{ message }}</div>
+        <div class="text-xs font-bold" :class="syncStatus === 'error' ? 'text-red-500' : 'text-gray-400 dark:text-gray-500'">
+          {{ syncStatus === 'syncing' ? '☁️ 紀錄同步中…' : syncStatus === 'error' ? '⚠️ 雲端同步失敗（紀錄已存在本機，下次進課程頁會再同步）' : '☁️ 紀錄已儲存' }}
+        </div>
         <div class="flex flex-wrap justify-center gap-3 mt-4">
           <button v-if="wrong.length > 0" @click="emit('retryWrong')"
             class="px-6 py-2.5 rounded-full bg-orange-400 hover:bg-orange-500 text-white font-bold text-sm shadow-xs active:scale-95 transition-all">

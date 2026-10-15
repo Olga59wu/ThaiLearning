@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { LESSONS } from '@/data/lessons'
+import { useLessonRecordsStore } from '@/stores/lessonRecords'
 import { useLessonTheme } from '@/composables/lessons/useLessonTheme'
 import LessonHeader from '@/components/lessons/LessonHeader.vue'
 import LessonCard from '@/components/lessons/LessonCard.vue'
@@ -8,6 +10,10 @@ useLessonTheme()
 
 // 新的課排前面
 const lessons = [...LESSONS].reverse()
+
+// 最近一次考試分數（本機與雲端聯集後顯示）
+const recordsStore = useLessonRecordsStore()
+onMounted(() => recordsStore.syncFromCloud())
 </script>
 
 <template>
@@ -15,8 +21,7 @@ const lessons = [...LESSONS].reverse()
     <LessonHeader title="每週課程" subtitle="每週泰語課的內容、練習與考試" back-to="/" back-label="大廳" />
 
     <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <!-- 最近一次考試分數：考試紀錄完成後接上 -->
-      <LessonCard v-for="lesson in lessons" :key="lesson.no" :lesson="lesson" :latest-score="null" />
+      <LessonCard v-for="lesson in lessons" :key="lesson.no" :lesson="lesson" :latest-score="recordsStore.latestOf(lesson.no) ?? null" />
     </div>
   </div>
 </template>

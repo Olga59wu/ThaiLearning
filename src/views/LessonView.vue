@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed, onMounted, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getLesson } from '@/data/lessons'
 import { useLessonTheme } from '@/composables/lessons/useLessonTheme'
 import { provideLessonAudio } from '@/composables/lessons/useLessonAudio'
 import { provideNumberHandwriting } from '@/composables/lessons/useNumberHandwriting'
+import { useLessonRecordsStore } from '@/stores/lessonRecords'
 import { toThaiDigits } from '@/utils/thaiNumber'
 import HandwritingModal from '@/components/common/HandwritingModal.vue'
 import LessonHeader from '@/components/lessons/LessonHeader.vue'
@@ -23,6 +24,9 @@ useLessonTheme()
 provideLessonAudio()
 // 數字卡片、作業格的 ✍️ 手寫彈窗
 const { hw, isDark, target: hwTarget, strokes: hwStrokes, close: closeHW } = provideNumberHandwriting()
+
+// 考試紀錄：本機與雲端聯集
+onMounted(() => useLessonRecordsStore().syncFromCloud())
 
 const route = useRoute()
 const router = useRouter()

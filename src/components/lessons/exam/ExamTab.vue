@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { LESSONS } from '@/data/lessons'
+import { useLessonRecordsStore } from '@/stores/lessonRecords'
+import { newRecordId } from '@/utils/lessonRecords'
 import type { ExamWrongAnswer, Lesson } from '@/types/lesson'
 import { buildExam, examPlan, QUESTION_TYPE_LABEL, reshuffleQuestions, type ExamQuestion, type ExamScope } from '@/utils/lessonExam'
 import ExamQuestionCard from './ExamQuestionCard.vue'
 import ExamResult from './ExamResult.vue'
+import ExamHistory from './ExamHistory.vue'
 
 // 考試流程：設定（範圍）→ 作答 → 結果（只重考錯題／重新考試）
 const props = defineProps<{ lesson: Lesson }>()
+const recordsStore = useLessonRecordsStore()
+const { syncStatus } = storeToRefs(recordsStore)
+const history = computed(() => recordsStore.recordsOf(props.lesson.no))
 
 type Phase = 'setup' | 'running' | 'result'
 const phase = ref<Phase>('setup')
@@ -45,13 +52,30 @@ const onAnswer = (result: { correct: boolean; given: string | null }) => {
 }
 const onNext = () => {
   if (index.value < questions.value.length - 1) index.value++
-  else phase.value = 'result'
+  else finishExam()
+}
+
+// 考完：顯示結果並存紀錄（本機＋雲端摘要）
+const finishExam = () => {
+  phase.value = 'result'
+  window.scrollTo({ top: 0 })
+  recordsStore.addRecord({
+    id: newRecordId(),
+    lessonNo: props.lesson.no,
+    scope: scope.value,
+    retry: isRetry.value,
+    date: new Date().toISOString(),
+    correct: correctCount.value,
+    total: results.value.length,
+    wrong: wrongAnswers.value,
+  })
 }
 </script>
 
 <template>
+  <div v-if="phase === 'setup'" class="w-full flex flex-col gap-5">
   <!-- 設定 -->
-  <div v-if="phase === 'setup'" class="w-full bg-white dark:bg-slate-800 rounded-3xl shadow-md border border-gray-100 dark:border-slate-700 overflow-hidden">
+  <div class="w-full bg-white dark:bg-slate-800 rounded-3xl shadow-md border border-gray-100 dark:border-slate-700 overflow-hidden">
     <div class="h-1.5 bg-linear-to-r/srgb from-emerald-400 to-teal-500"></div>
     <div class="p-5 md:p-6">
       <h2 class="mb-4 text-lg font-bold text-gray-800 dark:text-white">📝 課前小考</h2>
@@ -87,11 +111,14 @@ const onNext = () => {
     </div>
   </div>
 
+  <ExamHistory :records="history" />
+  </div>
+
   <!-- 作答 -->
   <ExamQuestionCard v-else-if="phase === 'running' && current" :key="`${isRetry}-${current.id}-${index}`"
     :question="current" :index="index" :total="questions.length" @answer="onAnswer" @next="onNext" />
 
   <!-- 結果 -->
-  <ExamResult v-else-if="phase === 'result'" :correct="correctCount" :total="results.length" :wrong="wrongAnswers" :retry="isRetry"
+  <ExamResult v-else-if="phase === 'result'" :correct="correctCount" :total="results.length" :wrong="wrongAnswers" :retry="isRetry" :sync-status="syncStatus"
     @retry-wrong="retryWrong" @restart="start" @back="phase = 'setup'" />
 </template>
