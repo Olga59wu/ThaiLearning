@@ -89,7 +89,7 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 - **`pnpm audio:fetch`**（`scripts/audio-fetch.ts`）：掃描 `ALL_VOCAB_CATEGORIES` 與 `public/audio/TH/`，從 Node 直接請求 Google TTS（同 /downloader 的來源與語速：`translate_tts`、`client=tw-ob`、泰文 `th`、中文 `zh-TW`），每個檔案間隔 1.2 秒、每 20 個多休息 1 秒、失敗重試 2 次；`--dry-run` 只列出缺檔；完成後列出成功／失敗
   - 透過 Vite `ssrLoadModule` 載入網站的資料與 `audioFileName()`，檔名規則與網站一致
   - 自訂單字存在瀏覽器 localStorage，腳本讀不到；要補自訂單字的音檔仍用 `/downloader`
-  - 中文音檔念的是 zh 原文，例如「你好/再見 (女用)」會連「女用」一起念（同現有的「我 (男用)」）
+  - 中文念的文字會清理（檔名不變）：括號與括號內容不念、「/」改成「，」，例如「你好/再見 (女用)」念「你好，再見」。只套用在新抓的檔案；現有的 mp3（例如「我 (男用)」）不重抓
 - `/downloader` 保留（頁面上方提示改用 `pnpm audio:fetch`），依 `public/audio/TH/` 實際的檔案判斷（build／dev 啟動時掃描，`hasAudioFile()`）；泰文、中文都有才算就緒
 - 播放時沒有檔案就直接用 TTS（隨機數字、面額、ครับ 版常用語、規則例子，以及還沒打包的新字）
 
