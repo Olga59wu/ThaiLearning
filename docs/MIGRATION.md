@@ -89,6 +89,9 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - vite-plugin-pwa `injectManifest` + 手寫 `src/sw.ts`
 - 程式本體：Workbox precache（檔名 hash，不手動遞增版號）
 - **音檔：純 cache-first**，快取名稱 `lang-audio-cache-v3`；有快取直接回傳、不發任何網路請求；沒有快取才走網路並在 status 200 時寫入
+- 網路失敗且沒有快取時一律回傳 `Response.error()`（不可把 `undefined` 交給 respondWith，原版 sw.js 的 `cachedResponse || fetchPromise` 會因此丟出「Failed to convert value to 'Response'」）
+- 音檔下載用的代理與 Google TTS（`api.codetabs.com`、`api.allorigins.win`、`translate.google.com`、`translate.googleapis.com`）不經 SW
+- dev（`pnpm dev`）不使用 SW：`main.ts` 在 dev 啟動時解除同網址殘留的 SW 註冊（例如以前在 localhost:5173 跑過的舊網站或 preview 留下的）
   - 註：原版 sw.js 實際上會在回傳快取的同時背景 fetch 更新（fetch 在判斷前就發出），新版刻意改為純 cache-first
 - 其他跨網域 GET：stale-while-revalidate 到 `lang-runtime-cache`；**排除 Firebase 請求**（`*.googleapis.com` 除 `fonts.googleapis.com`、`*.firebaseapp.com`、`*.firebasestorage.app`、`apis.google.com`）
 - SW 在 `main.ts` 以原版寫法手動註冊（只在 production），不使用自動 reload
@@ -166,6 +169,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - 「✨ 只選未打包」改為「✨ 只選缺檔」；載入時預設選取缺檔的字；「重置」只清除紀錄，之後只選缺檔
   - `thai-mp3-history`／`mp3History` 保留，只當紀錄（要抓的檔案都抓到才記入）
   - 單字清單改以 `id` 去重（同 Player／Typing），同字多義兩個意思都列出（`เย็น`「傍晚」、`จอง`「預訂」各缺一個中文音檔）；沒有 id 的舊自訂單字以 th 判斷
+- 頁面上方新增提示「建議改用 `pnpm audio:fetch`」（瀏覽器經代理抓取常失敗：codetabs 失效、allorigins 被 CORS 擋）；Node 腳本 `scripts/audio-fetch.ts` 見 `docs/LESSONS.md` §3
 - Player、Typing、每週課程播放前先查 `hasAudioFile()`，沒有檔案直接用 TTS，不先發一次會失敗的請求；「離線語音」下載也只抓實際存在的檔案
 
 ### /path 的實作與決策

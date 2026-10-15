@@ -282,6 +282,10 @@ onBeforeUnmount(() => {
 
 <template>
   <div id="app" class="max-w-4xl mx-auto">
+    <!-- 新增：瀏覽器經代理抓取常失敗（代理掛掉、CORS），建議改用 Node 腳本 -->
+    <div class="mb-4 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[12px] font-bold text-amber-700">
+      💡 建議改用 <code class="px-1.5 py-0.5 rounded bg-white border border-amber-200 font-mono">pnpm audio:fetch</code>：直接把缺少的音檔寫進 public/audio/TH/，不經代理、不用解壓（加 --dry-run 只列出缺檔）
+    </div>
     <header class="flex justify-between items-center mb-6 px-2">
       <div class="flex items-center gap-3">
         <div class="bg-blue-600 text-white p-2 rounded-xl shadow-md">

@@ -61,10 +61,15 @@ const isFirebaseUrl = (url: URL) =>
   url.hostname.endsWith('.firebasestorage.app') ||
   url.hostname === 'apis.google.com'
 
+// 音檔下載用的代理與 Google TTS（/downloader）：不經 SW 快取，請求失敗就讓它正常失敗
+const BYPASS_HOSTS = ['api.codetabs.com', 'api.allorigins.win', 'translate.google.com', 'translate.googleapis.com']
+const isBypassUrl = (url: URL) => BYPASS_HOSTS.includes(url.hostname)
+
 const isHttpGet = (request: Request) =>
   request.method === 'GET' && request.url.startsWith('http')
 
-// 向網路抓取，status 200 時寫入指定快取
+// 向網路抓取，status 200 時寫入指定快取；網路失敗回傳 undefined（呼叫端一律轉成 Response.error()，
+// 不可把 undefined 交給 respondWith，否則會丟出「Failed to convert value to 'Response'」）
 const fetchAndCache = (req: Request, targetCacheName: string) =>
   fetch(req)
     .then((networkResponse) => {
@@ -104,7 +109,7 @@ const matchAudio: RouteMatchCallback = ({ request, url }) =>
   isHttpGet(request) && isAudioUrl(url)
 
 const matchRuntime: RouteMatchCallback = ({ request, url }) =>
-  isHttpGet(request) && !isAudioUrl(url) && !isFirebaseUrl(url)
+  isHttpGet(request) && !isAudioUrl(url) && !isFirebaseUrl(url) && !isBypassUrl(url)
 
 registerRoute(matchAudio, audioCacheFirst)
 registerRoute(matchRuntime, staleWhileRevalidate(RUNTIME_CACHE_NAME))

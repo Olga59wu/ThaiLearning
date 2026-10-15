@@ -14,6 +14,16 @@ useAuthStore().init()
 app.use(router)
 app.mount('#root')
 
+// 新增：dev 不使用 SW。同一個網址以前註冊過的 SW（例如 preview 或舊網站留下的）會繼續攔截 dev 頁面，啟動時解除註冊
+if ('serviceWorker' in navigator && import.meta.env.DEV) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => {
+      registration.unregister()
+      console.warn('[dev] 已解除殘留的 Service Worker：', registration.scope, '（重新整理後生效）')
+    })
+  })
+}
+
 // Service Worker 註冊（照原版寫法）
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
