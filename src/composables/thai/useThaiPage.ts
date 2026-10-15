@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { sentenceData, thaiData, toneExamples, tonePracticeSeries } from '@/data/thai'
 import { useThaiLearnStore } from '@/stores/thaiLearn'
 import { useTimers } from '@/composables/useTimers'
+import { useHandwriting } from '@/composables/useHandwriting'
 import { shuffleArray } from '@/utils/shuffle'
 import { safeStorage } from '@/utils/storage'
 import type { Sentence, ThaiItem, ThaiItemType, ToneKey } from '@/types/thai'
@@ -142,11 +143,8 @@ export const createThaiPage = () => {
 
   // Handwriting
   const hwItem = ref<ThaiItem | null>(null)
-  const strokeSpeed = ref<number | string>(60)
-  const inkColor = ref('#059669')
-  const canvasContainerRef = ref<HTMLDivElement | null>(null)
-  const hwCanvasRef = ref<HTMLCanvasElement | null>(null)
-  const hwSvgViewBox = ref('0 0 100 100')
+  const hw = useHandwriting({ isDark })
+  const { strokeSpeed, inkColor, svgViewBox: hwSvgViewBox, containerRef: canvasContainerRef, canvasRef: hwCanvasRef } = hw
 
   const syncToCloud = () => store.syncToCloud()
 
@@ -344,80 +342,16 @@ export const createThaiPage = () => {
   }
   const isToneOptSelected = (idx: number) => toneTraining.isLocked && (idx === toneTraining.targetIdx || idx === selectedToneOpt.value)
 
-  // HW Logic
-  let hwCanvas: HTMLCanvasElement | null = null
-  let hwCtx: CanvasRenderingContext2D | null = null
+  // HW Logic（畫布、縮放、清除、筆順動畫在 useHandwriting，與課程考試共用）
   const openHW = (item: ThaiItem) => {
     hwItem.value = item; modals.value.writing = true
     nextTick(() => {
-      hwCanvas = hwCanvasRef.value; const container = canvasContainerRef.value
-      if (!hwCanvas || !container) return
-      const canvas = hwCanvas
-      hwCtx = canvas.getContext('2d')
-      const ctx = hwCtx
-      if (!ctx) return
-      canvas.width = container.offsetWidth; canvas.height = container.offsetHeight
-      ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = inkColor.value
-      let isDrawing = false
-      const getXY = (e: MouseEvent | TouchEvent): [number, number] => {
-        const r = canvas.getBoundingClientRect()
-        const pt = 'touches' in e ? e.touches[0] : e
-        return [pt.clientX - r.left, pt.clientY - r.top]
-      }
-      canvas.onmousedown = canvas.ontouchstart = (e: MouseEvent | TouchEvent) => { e.preventDefault(); isDrawing = true; ctx.beginPath(); ctx.moveTo(...getXY(e)) }
-      canvas.onmousemove = canvas.ontouchmove = (e: MouseEvent | TouchEvent) => { e.preventDefault(); if (isDrawing) { ctx.lineTo(...getXY(e)); ctx.stroke() } }
-      canvas.onmouseup = canvas.ontouchend = canvas.onmouseleave = (e?: Event) => { e?.preventDefault(); isDrawing = false }
-      autoZoomSvg()
+      if (hw.initCanvas()) hw.autoZoomSvg(hwItem.value?.strokes)
     })
   }
-  const setInkColor = (c: string) => {
-    inkColor.value = c === '#1f2937' && isDark.value ? '#f3f4f6' : c
-    if (hwCtx) hwCtx.strokeStyle = inkColor.value
-  }
-  const autoZoomSvg = () => {
-    if (!hwItem.value?.strokes) return
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    hwItem.value.strokes.forEach((stroke) => {
-      const matches = stroke.match(/-?\d+(\.\d+)?/g)
-      if (matches) {
-        for (let i = 0; i < matches.length - 1; i += 2) {
-          const x = parseFloat(matches[i])
-          const y = parseFloat(matches[i + 1])
-          if (!isNaN(x) && !isNaN(y)) {
-            minX = Math.min(minX, x)
-            minY = Math.min(minY, y)
-            maxX = Math.max(maxX, x)
-            maxY = Math.max(maxY, y)
-          }
-        }
-      }
-    })
-    if (minX !== Infinity && maxX > minX) {
-      const w = maxX - minX
-      const h = maxY - minY
-      // Provide 20% padding around the bounding box
-      const padX = Math.max(w, h) * 0.2
-      const padY = Math.max(w, h) * 0.2
-      hwSvgViewBox.value = `${minX - padX} ${minY - padY} ${w + padX * 2} ${h + padY * 2}`
-    } else {
-      hwSvgViewBox.value = '10 30 80 80' // safe fallback
-    }
-  }
-  const clearHW = () => {
-    if (hwCtx && hwCanvas) hwCtx.clearRect(0, 0, hwCanvas.width, hwCanvas.height)
-    canvasContainerRef.value?.querySelectorAll('.stroke-anim-path').forEach((p) => p.classList.remove('active'))
-  }
-  const playHWAnim = () => {
-    clearHW()
-    later(() => {
-      let d = 0; const base = Number(strokeSpeed.value)
-      canvasContainerRef.value?.querySelectorAll<SVGPathElement>('.stroke-anim-path').forEach((p) => {
-        let len = parseFloat(p.style.getPropertyValue('--len')); if (!len) { len = p.getTotalLength(); p.style.setProperty('--len', String(len + 1)) }
-        const dur = Math.max(0.15, len / base); p.style.setProperty('--duration', dur + 's'); p.style.setProperty('--delay', d + 's')
-        p.classList.add('active'); d += dur
-      })
-    }, 20)
-  }
+  const setInkColor = hw.setInkColor
+  const clearHW = hw.clear
+  const playHWAnim = hw.playAnim
 
   const clickLearnCard = (elem: ThaiItem) => {
     speak(elem, true)
