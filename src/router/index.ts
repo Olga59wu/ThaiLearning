@@ -87,6 +87,33 @@ const router = createRouter({
       },
     },
     {
+      path: '/lessons',
+      name: 'lessons',
+      component: () => import('@/views/LessonListView.vue'),
+      meta: {
+        title: '📘 每週課程',
+        favicon: FAVICON.book,
+        viewport: VIEWPORT.noZoom,
+        lang: 'zh-TW',
+        fonts: FONTS.thai,
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/lessons/:no(\\d+)',
+      name: 'lesson',
+      component: () => import('@/views/LessonView.vue'),
+      props: (route) => ({ no: Number(route.params.no) }),
+      meta: {
+        title: '📘 每週課程',
+        favicon: FAVICON.book,
+        viewport: VIEWPORT.noZoom,
+        lang: 'zh-TW',
+        fonts: FONTS.thai,
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/views/NotFoundView.vue'),

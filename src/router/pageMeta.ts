@@ -8,6 +8,7 @@ export const FAVICON = {
   thai: emojiIcon('🇹🇭'),
   rocket: emojiIcon('🚀'),
   pen: emojiIcon('🖋️'),
+  book: emojiIcon('📘'),
 }
 
 export const VIEWPORT = {
