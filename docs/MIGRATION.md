@@ -128,6 +128,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - `syncToCloud` 改看 `cloud.saveThai()` 回傳值，失敗時顯示「同步失敗」圖示（原版錯誤被吞掉，永遠不會出現）
 - `.playing-glow` 規則改為 `:where(html.shell-player) .player-card.playing-glow`（權重 0,2,0 高於 `shadow-xl`），淺色模式也看得到光暈；深色模式規則不變
 - 決定不修：隨機模式洗牌兩次（見 TODO.md）
+- 播放清單、清單彈窗搜尋、目前單字分類、清單 `:key` 改用 `id` 判斷（`wordKey()`，沒有 id 退回 th），同字多義（`เย็น`、`จอง`）兩個意思都會出現（2026-10-15 使用者要求，同 /typing）。上次播放位置 `thai-last-word-th`／雲端 `lastPlayedWord` 仍存 th（格式不變），同字多義時回到第一個意思
 
 ### /typing 的實作與決策
 - `src/composables/typing/useTypingPage.ts`（`createTypingPage()` + provide／inject）、`useTypingSounds.ts`（WebAudio；每次進頁建立 AudioContext、離開時 `close()`，原版存在 `window.audioCtx`）

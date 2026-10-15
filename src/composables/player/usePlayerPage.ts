@@ -14,6 +14,9 @@ import type { VocabCategories, VocabWord } from '@/types/thai'
 
 type Timer = ReturnType<typeof setTimeout>
 
+// 單字的唯一值：用 id（同字多義的 เย็น、จอง 兩個意思都要出現）；沒有 id 的舊資料退回 th
+const wordKey = (w: VocabWord) => w.id || w.th
+
 const VOCAB_DATA = ALL_VOCAB_CATEGORIES
 // 喚醒實體播放器給 CarPlay 抓取用的無聲 wav
 export const SILENT_WAV =
@@ -105,7 +108,7 @@ export const createPlayerPage = (options: { initialCategory?: string } = {}) => 
 
     if (hideKnownWords.value && !selectedCategories.value.includes('已學會')) {
       // 💡 關鍵：如果打勾的是「正在看」且「正在播放」的單字 -> 先不要抽掉，讓音檔念完
-      if (isPlaying.value && item.th === currentWord.value?.th) {
+      if (isPlaying.value && currentWord.value && wordKey(item) === wordKey(currentWord.value)) {
         return
       }
 
@@ -173,7 +176,7 @@ export const createPlayerPage = (options: { initialCategory?: string } = {}) => 
   const currentWordCategory = computed(() => {
     if (!currentWord.value) return ''
     for (const [cat, words] of Object.entries(allCategories.value)) {
-      if (words.some((w) => w.th === currentWord.value!.th)) return cat
+      if (words.some((w) => wordKey(w) === wordKey(currentWord.value!))) return cat
     }
     return '未分類'
   })
@@ -323,11 +326,11 @@ export const createPlayerPage = (options: { initialCategory?: string } = {}) => 
       list = list.filter((word) => !isKnownWord(word))
     }
 
-    // 2. 避免跨分類選取時出現重複單字
+    // 2. 避免跨分類選取時出現重複單字（以 id 判斷，原版用 th 會把同字多義的另一個意思濾掉）
     const seen = new Set<string>()
     list = list.filter((word) => {
-      if (seen.has(word.th)) return false
-      seen.add(word.th)
+      if (seen.has(wordKey(word))) return false
+      seen.add(wordKey(word))
       return true
     })
     playlist.value = list
@@ -688,7 +691,7 @@ export const createPlayerPage = (options: { initialCategory?: string } = {}) => 
 
     // 💡 小技巧：使用 Map 以泰文 (th) 為 key 來去除重複項
     // 因為同一個單字可能同時存在於「原始分類」和你的「自訂單字」中
-    const uniqueWords = Array.from(new Map(allWordsFlattened.map((item) => [item.th, item])).values())
+    const uniqueWords = Array.from(new Map(allWordsFlattened.map((item) => [wordKey(item), item])).values())
 
     // 3. 回傳過濾後的結果
     return uniqueWords.filter((item) => item.th.toLowerCase().includes(q) || item.zh.toLowerCase().includes(q))
@@ -868,6 +871,7 @@ export const createPlayerPage = (options: { initialCategory?: string } = {}) => 
   }
 
   return {
+    wordKey,
     isLoading, syncStatus, isDarkMode,
     isDownloading, downloadProgress, downloadTotal, downloadModal, startDownload, closeDownloadModal, executeDownload,
     allCategories, selectedCategories, toggleCategory, getCatIcon,

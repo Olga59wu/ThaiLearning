@@ -3,7 +3,7 @@ import { usePlayerPageContext } from '@/composables/player/usePlayerPage'
 
 const {
   isModalOpen, searchQuery, modalCategory, allCategories, filteredModalWords,
-  getCatIcon, resetAllProgress, replayCurrent, isKnownWord, toggleKnownWord, isCustomWord, toggleCustomWord,
+  getCatIcon, resetAllProgress, replayCurrent, isKnownWord, toggleKnownWord, isCustomWord, toggleCustomWord, wordKey,
 } = usePlayerPageContext()
 </script>
 
@@ -53,7 +53,7 @@ const {
     </div>
     <!-- 單字列表 -->
     <div class="flex-1 overflow-y-auto p-4 space-y-2">
-      <div v-for="item in filteredModalWords" :key="item.th"
+      <div v-for="item in filteredModalWords" :key="wordKey(item)"
         class="p-4 border-b flex justify-between items-center transition-colors">
 
         <div class="flex-1 cursor-pointer active:bg-blue-50" @click="replayCurrent(item)"
