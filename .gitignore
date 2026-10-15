@@ -25,3 +25,6 @@ dev-dist/
 
 # legacy 的日文音檔（不屬於泰文專案）
 legacy/audio/JP/
+
+# 課本照片（每週課程原始資料，不進 git）
+notes/

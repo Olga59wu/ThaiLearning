@@ -1,3 +1,5 @@
+import type { LessonExamRecord } from '@/types/lesson'
+
 // data/thai.js（thai.html、path 頁使用）
 export type ToneClass = 'Mid' | 'High' | 'Low'
 
@@ -75,5 +77,7 @@ export interface ThaiCloudData {
   lastSelectedCategories?: string[]
   lastPlayedWord?: string | null
   playerLastUpdated?: number
+  /** 每週課程考試紀錄（key 為課次；雲端只存摘要，見 stores/lessonRecords） */
+  lessonExams?: Record<string, LessonExamRecord[]>
   [key: string]: unknown
 }
