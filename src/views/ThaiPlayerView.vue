@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { usePageShell } from '@/composables/usePageShell'
 import { providePlayerPage, SILENT_WAV } from '@/composables/player/usePlayerPage'
 import PlayerHeader from '@/components/player/PlayerHeader.vue'
@@ -14,10 +15,18 @@ usePageShell({
   bodyClass: 'text-slate-800',
 })
 
-const { isLoading, downloadModal, closeDownloadModal, executeDownload, setMainPlayer, setSilentAudio, mount, unmount } =
-  providePlayerPage()
+// 課程頁的「前往隨身聽」帶 ?cat=第1課：只選這個分類（套用後把參數從網址拿掉，重新整理時不再強制）
+const route = useRoute()
+const router = useRouter()
+const initialCategory = typeof route.query.cat === 'string' ? route.query.cat : undefined
 
-onMounted(mount)
+const { isLoading, downloadModal, closeDownloadModal, executeDownload, setMainPlayer, setSilentAudio, mount, unmount } =
+  providePlayerPage({ initialCategory })
+
+onMounted(() => {
+  mount()
+  if (initialCategory) router.replace({ query: {} })
+})
 onBeforeUnmount(unmount)
 </script>
 

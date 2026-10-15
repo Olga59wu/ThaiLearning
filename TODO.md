@@ -53,6 +53,10 @@
 ### 全站
 - [ ] （決定不修）`alert`／`confirm` 照原樣保留（改成自訂彈窗等於新增 UI，超出搬遷範圍）
 
+## 每週課程
+
+- [ ] 學了泰文字母（子音、母音）之後，在課程頁「練習」分頁加回「前往打字練習」入口（2026-10-15 因為還看不懂泰文字先移除；打字練習本身已有「第N課」分類，帶 `?cat=` 的做法可比照隨身聽）
+
 ## 部署
 
 - [ ] 新的 Firebase Hosting site 網域確定後，到 Firebase Console → Authentication → Settings → **Authorized domains** 加入新網域，否則 Google 登入會失敗（`localhost` 預設已授權）

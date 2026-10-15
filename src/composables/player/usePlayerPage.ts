@@ -24,8 +24,9 @@ const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 /**
  * thaiPlayer.html 的頁面邏輯（原版 createApp setup 的內容）。
  * 在 ThaiPlayerView 建立並 provide，子元件以 usePlayerPageContext() 取得。
+ * initialCategory：從課程頁進來時（/player?cat=第1課）只選這個分類
  */
-export const createPlayerPage = () => {
+export const createPlayerPage = (options: { initialCategory?: string } = {}) => {
   const authStore = useAuthStore()
   const cloud = useCloudStore()
   const vocab = useVocabProgressStore()
@@ -763,6 +764,8 @@ export const createPlayerPage = () => {
       if (thai.lastPlayedWord) {
         localStorage.setItem('thai-last-word-th', thai.lastPlayedWord)
       }
+      // 4. 新增：課程頁帶入的分類優先
+      const categoryApplied = applyInitialCategory()
 
       // 5. 關鍵：恢復完資料後立刻重新產生清單並跳轉位置
       updatePlaylist()
@@ -771,11 +774,25 @@ export const createPlayerPage = () => {
       later(() => {
         isSyncingFromCloud.value = false
         isLoading.value = false // ✅ 資料載入並渲染完畢，關閉 Loading
+        if (categoryApplied) syncToCloud() // 等同手動選分類：記住這次的選擇
       }, 200)
     } else {
       // ✅ 雖然登入了，但雲端還沒有任何泰文資料 (可能是第一次玩)
+      if (applyInitialCategory()) {
+        updatePlaylist() // 分類的 watch 會同步到雲端
+        restoreLastPosition()
+      }
       isLoading.value = false
     }
+  }
+
+  // 新增：從課程頁帶入的分類（/player?cat=第1課）。雲端還原之後套用，取代上次選的分類
+  const applyInitialCategory = (): boolean => {
+    const cat = options.initialCategory
+    if (!cat || !allCategories.value[cat]) return false
+    selectedCategories.value = [cat]
+    currentIndex.value = 0
+    return true
   }
 
   // 新增一個輔助函式
@@ -869,8 +886,8 @@ export type PlayerPageContext = ReturnType<typeof createPlayerPage>
 
 const PlayerPageKey: InjectionKey<PlayerPageContext> = Symbol('PlayerPage')
 
-export const providePlayerPage = () => {
-  const ctx = createPlayerPage()
+export const providePlayerPage = (options: { initialCategory?: string } = {}) => {
+  const ctx = createPlayerPage(options)
   provide(PlayerPageKey, ctx)
   return ctx
 }
