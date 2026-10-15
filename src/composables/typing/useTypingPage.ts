@@ -1,7 +1,7 @@
 import { computed, inject, nextTick, provide, ref, watch, type InjectionKey } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ALL_VOCAB_CATEGORIES } from '@/data/vocabCategories'
-import { getAudioUrl } from '@/services/offlineAudio'
+import { getAudioUrl, hasAudioFile } from '@/services/offlineAudio'
 import { useCloudStore } from '@/stores/cloud'
 import { migrateToId, useVocabProgressStore } from '@/stores/vocabProgress'
 import { useTimers } from '@/composables/useTimers'
@@ -163,6 +163,12 @@ export const createTypingPage = () => {
     const audio = mainAudioObj
     window.speechSynthesis.cancel()
     audio.pause()
+
+    // 新增：沒有音檔（例如還沒打包的新字）直接用 TTS，不先發一次會失敗的請求
+    if (!hasAudioFile(text, 'th')) {
+      speakFallbackTTS(text, token)
+      return
+    }
 
     audio.src = getAudioUrl(text, 'th')
     audio.load()

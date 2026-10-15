@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { ALL_VOCAB_CATEGORIES } from '@/data/vocabCategories'
+import { hasAudioFile } from '@/services/offlineAudio'
 import { usePageShell } from '@/composables/usePageShell'
 import { useTimers } from '@/composables/useTimers'
 import { useCloudStore } from '@/stores/cloud'
@@ -31,8 +32,19 @@ const isSyncing = ref(false)
 const isSyncFailed = ref(false) // 最近一次上傳失敗時，右上角顯示失敗狀態
 
 // 已打包名單：localStorage thai-mp3-history／雲端 thai.mp3History（壞音檔名單已拆到 thai-broken-audio）
+// 只當紀錄用；是否就緒改看 public/audio/TH/ 實際的檔案（hasAudioFile，build 時掃描）
 vocab.loadFromStorage()
 const { mp3History: downloadedHistory } = storeToRefs(vocab)
+
+// 泰文、中文音檔是否存在；兩個都有才算就緒
+const hasTh = (w: VocabWord) => hasAudioFile(w.th, 'th')
+const hasZh = (w: VocabWord) => hasAudioFile(w.zh, 'zh')
+const isReady = (w: VocabWord) => hasTh(w) && hasZh(w)
+// 單字的唯一值：用 id（同字多義的 เย็น、จอง 兩個意思的中文音檔不同）；沒有 id 的舊資料退回 th
+const wordKey = (w: VocabWord) => w.id || w.th
+/** 狀態標籤：Ready／缺 TH／缺 ZH／Raw（兩個都缺） */
+const statusOf = (w: VocabWord): 'ready' | 'noTh' | 'noZh' | 'raw' =>
+  isReady(w) ? 'ready' : !hasTh(w) && !hasZh(w) ? 'raw' : !hasTh(w) ? 'noTh' : 'noZh'
 
 // 頁面卸載後停止下載迴圈（原版換頁時瀏覽器會直接中止）
 let disposed = false
@@ -62,7 +74,6 @@ const initializeCloudSync = async () => {
       if (thai.mp3History) {
         downloadedHistory.value = thai.mp3History
         localStorage.setItem('thai-mp3-history', JSON.stringify(downloadedHistory.value))
-        selectPending()
       }
       if (thai.customList) {
         localStorage.setItem('thai-custom-list', JSON.stringify(thai.customList))
@@ -81,14 +92,14 @@ const refreshWordPool = () => {
   all = [...all, ...localCustom]
   const unique: VocabWord[] = []
   const seen = new Set<string>()
+  // 以 id 去重（同字多義兩個意思都列出）；沒有 id 的舊自訂單字，泰文已在清單裡就略過
   all.forEach((w) => {
-    if (!seen.has(w.th)) {
-      seen.add(w.th)
-      unique.push(w)
-    }
+    if (seen.has(wordKey(w)) || (!w.id && unique.some((u) => u.th === w.th))) return
+    seen.add(wordKey(w))
+    unique.push(w)
   })
   wordsToDownload.value = unique
-  selectPending()
+  selectMissing()
 }
 
 // ✨ 強化版下載函式：使用更穩定的代理並加入重試機制
@@ -132,34 +143,42 @@ const startDownload = async () => {
 
   // 下載中已鎖住選取，仍以快照走訪，避免清單變動影響迴圈
   for (const word of [...selectedWords.value]) {
-    // 處理泰文
-    currentWordDisplay.value = `[泰] ${word.th}`
-    const bTh = await fetchMp3Blob(word.th, 'th')
-    if (disposed) return
-    if (bTh) {
-      audioFolder.file(`th_${word.th.replace(/\//g, '_')}.mp3`, bTh)
-      successCount++
-    } else {
-      failCount++
+    // 只抓缺少的檔案；兩個都有（手動選取要重抓）時兩個都抓
+    const { th: needTh, zh: needZh } = filesToFetch(word)
+    let bTh: Blob | null = null
+    let bZh: Blob | null = null
+    if (needTh) {
+      // 處理泰文
+      currentWordDisplay.value = `[泰] ${word.th}`
+      bTh = await fetchMp3Blob(word.th, 'th')
+      if (disposed) return
+      if (bTh) {
+        audioFolder.file(`th_${word.th.replace(/\//g, '_')}.mp3`, bTh)
+        successCount++
+      } else {
+        failCount++
+      }
+      currentIndex.value++
+      // 💡 修正：增加延遲，每抓一個音檔休息 1.2 秒，避免被封鎖
+      await wait(1200)
     }
-    currentIndex.value++
-    // 💡 修正：增加延遲，每抓一個音檔休息 1.2 秒，避免被封鎖
-    await wait(1200)
-    // 處理中文
-    currentWordDisplay.value = `[中] ${word.zh}`
-    const bZh = await fetchMp3Blob(word.zh, 'zh-TW')
-    if (disposed) return
-    if (bZh) {
-      audioFolder.file(`zh_${word.zh.replace(/\//g, '_')}.mp3`, bZh)
-      successCount++
-    } else {
-      failCount++
+    if (needZh) {
+      // 處理中文
+      currentWordDisplay.value = `[中] ${word.zh}`
+      bZh = await fetchMp3Blob(word.zh, 'zh-TW')
+      if (disposed) return
+      if (bZh) {
+        audioFolder.file(`zh_${word.zh.replace(/\//g, '_')}.mp3`, bZh)
+        successCount++
+      } else {
+        failCount++
+      }
+      currentIndex.value++
+      // 💡 修正：增加延遲，每抓一個音檔休息 1.2 秒，避免被封鎖
+      await wait(1200)
     }
-    currentIndex.value++
-    // 💡 修正：增加延遲，每抓一個音檔休息 1.2 秒，避免被封鎖
-    await wait(1200)
-    // 泰文與中文都抓到才算已打包
-    if (bTh && bZh) completedWords.push(word.th)
+    // 要抓的檔案都抓到才記入已打包名單（紀錄用）
+    if ((!needTh || bTh) && (!needZh || bZh)) completedWords.push(word.th)
     // 每 10 個單字強迫休息一下，防止被 Google 封鎖
     if (currentIndex.value % 20 === 0) await wait(1000)
   }
@@ -189,14 +208,22 @@ const startDownload = async () => {
 
   isDownloading.value = false
   isFinished.value = true
-  selectPending()
+  selectMissing()
 }
 
-const totalWords = computed(() => selectedWords.value.length * 2)
-// 待抓：目前庫存中尚未打包的字
-const pendingCount = computed(
-  () => wordsToDownload.value.filter((word) => !downloadedHistory.value.includes(word.th)).length,
+/** 要抓哪些檔案：缺哪個抓哪個；都不缺（手動選取重抓）就兩個都抓 */
+const filesToFetch = (w: VocabWord) => (isReady(w) ? { th: true, zh: true } : { th: !hasTh(w), zh: !hasZh(w) })
+
+// 進度以實際要抓的檔案數計算
+const totalWords = computed(() =>
+  selectedWords.value.reduce((sum, w) => {
+    const f = filesToFetch(w)
+    return sum + (f.th ? 1 : 0) + (f.zh ? 1 : 0)
+  }, 0),
 )
+// 已就緒：泰文、中文音檔都存在；待抓：缺任一個
+const readyCount = computed(() => wordsToDownload.value.filter(isReady).length)
+const pendingCount = computed(() => wordsToDownload.value.length - readyCount.value)
 const progressPercent = computed(() =>
   totalWords.value === 0 ? 0 : Math.round((currentIndex.value / totalWords.value) * 100),
 )
@@ -208,35 +235,38 @@ const selectNone = () => {
   if (isDownloading.value) return
   selectedWords.value = []
 }
-const selectPending = () => {
-  selectedWords.value = wordsToDownload.value.filter((word) => !downloadedHistory.value.includes(word.th))
+// 只選實際缺檔的字
+const selectMissing = () => {
+  selectedWords.value = wordsToDownload.value.filter((word) => !isReady(word))
 }
 const selectMechanical = () => {
   if (isDownloading.value) return
-  selectPending()
+  selectMissing()
 }
 const toggleRow = (word: VocabWord) => {
   if (isDownloading.value) return
-  const idx = selectedWords.value.findIndex((w) => w.th === word.th)
+  const idx = selectedWords.value.findIndex((w) => wordKey(w) === wordKey(word))
   if (idx > -1) selectedWords.value.splice(idx, 1)
   else selectedWords.value.push(word)
 }
 
+// 只清除已打包紀錄（不影響就緒判斷），之後只選實際缺檔的字
 const resetHistory = () => {
   if (confirm('重置紀錄？')) {
     downloadedHistory.value = []
     localStorage.removeItem('thai-mp3-history')
     syncToCloud()
-    selectAll()
+    selectMissing()
   }
 }
 
+// 已就緒的字要重抓：加入選取（並從已打包紀錄移除）
 const forgetWord = (w: VocabWord) => {
   if (isDownloading.value) return
   downloadedHistory.value = downloadedHistory.value.filter((th) => th !== w.th)
   localStorage.setItem('thai-mp3-history', JSON.stringify(downloadedHistory.value))
   syncToCloud()
-  if (!selectedWords.value.some((sw) => sw.th === w.th)) selectedWords.value.push(w)
+  if (!selectedWords.value.some((sw) => wordKey(sw) === wordKey(w))) selectedWords.value.push(w)
 }
 
 onMounted(() => {
@@ -267,7 +297,7 @@ onBeforeUnmount(() => {
 
     <div class="grid grid-cols-3 gap-4 mb-6">
       <div class="compact-panel p-4 rounded-2xl"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">庫存</p><div class="text-2xl font-black text-slate-700">{{ wordsToDownload.length }}</div></div>
-      <div class="compact-panel p-4 rounded-2xl border-emerald-100 bg-emerald-50/30"><p class="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">已就緒</p><div class="text-2xl font-black text-emerald-600">{{ downloadedHistory.length }}</div></div>
+      <div class="compact-panel p-4 rounded-2xl border-emerald-100 bg-emerald-50/30"><p class="text-[10px] font-bold text-emerald-600/70 uppercase mb-1">已就緒</p><div class="text-2xl font-black text-emerald-600">{{ readyCount }}</div></div>
       <div class="compact-panel p-4 rounded-2xl border-blue-100 bg-blue-50/30"><p class="text-[10px] font-bold text-blue-600/70 uppercase mb-1">待抓</p><div class="text-2xl font-black text-blue-600">{{ pendingCount }}</div></div>
     </div>
 
@@ -275,24 +305,25 @@ onBeforeUnmount(() => {
       <div class="px-6 py-3 bg-slate-50/50 border-b flex justify-between items-center">
         <div class="flex gap-4">
           <button @click="selectAll" :disabled="isDownloading" class="text-[11px] font-bold text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed">全選</button>
-          <button @click="selectMechanical" :disabled="isDownloading" class="text-[11px] font-bold text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">✨ 只選未打包</button>
+          <button @click="selectMechanical" :disabled="isDownloading" class="text-[11px] font-bold text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">✨ 只選缺檔</button>
           <button @click="selectNone" :disabled="isDownloading" class="text-[11px] font-bold text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed">不選</button>
         </div>
         <div class="text-[10px] font-black text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded-md">已選: {{ selectedWords.length }}</div>
       </div>
 
       <div class="h-[450px] overflow-y-auto custom-scroll">
-        <div v-for="word in wordsToDownload" :key="word.th" class="word-item flex items-center gap-4 px-6 py-3" :class="[{'selected': selectedWords.some(w => w.th === word.th)}, isDownloading ? 'cursor-not-allowed' : 'cursor-pointer']" @click="toggleRow(word)">
-          <input type="checkbox" :checked="selectedWords.some(w => w.th === word.th)" :disabled="isDownloading" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-0" :class="isDownloading ? 'cursor-not-allowed' : 'cursor-pointer'">
+        <div v-for="word in wordsToDownload" :key="wordKey(word)" class="word-item flex items-center gap-4 px-6 py-3" :class="[{'selected': selectedWords.some(w => wordKey(w) === wordKey(word))}, isDownloading ? 'cursor-not-allowed' : 'cursor-pointer']" @click="toggleRow(word)">
+          <input type="checkbox" :checked="selectedWords.some(w => wordKey(w) === wordKey(word))" :disabled="isDownloading" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-0" :class="isDownloading ? 'cursor-not-allowed' : 'cursor-pointer'">
           <div class="flex-1 flex items-center justify-between min-w-0">
             <div class="flex items-baseline gap-3 min-w-0">
               <span class="text-lg font-bold text-slate-700 tracking-tight truncate">{{ word.th }}</span>
               <span class="text-[11px] text-slate-400 font-medium truncate">{{ word.zh }}</span>
             </div>
             <div class="flex items-center gap-3">
-              <span v-if="downloadedHistory.includes(word.th)" class="text-[8px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 uppercase">Ready</span>
-              <span v-else class="text-[8px] font-bold px-2 py-0.5 rounded bg-orange-100 text-orange-600 uppercase">Raw</span>
-              <button v-if="downloadedHistory.includes(word.th)" @click.stop="forgetWord(word)" :disabled="isDownloading" class="p-1.5 text-slate-300 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-300"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+              <span v-if="statusOf(word) === 'ready'" class="text-[8px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 uppercase">Ready</span>
+              <span v-else-if="statusOf(word) === 'raw'" class="text-[8px] font-bold px-2 py-0.5 rounded bg-orange-100 text-orange-600 uppercase">Raw</span>
+              <span v-else class="text-[8px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-700">{{ statusOf(word) === 'noTh' ? '缺 TH' : '缺 ZH' }}</span>
+              <button v-if="statusOf(word) === 'ready'" @click.stop="forgetWord(word)" :disabled="isDownloading" title="重新抓取" class="p-1.5 text-slate-300 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-300"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
             </div>
           </div>
         </div>

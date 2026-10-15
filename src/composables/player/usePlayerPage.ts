@@ -1,7 +1,7 @@
 import { computed, inject, provide, ref, shallowRef, watch, type InjectionKey } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ALL_VOCAB_CATEGORIES, LESSON_CATEGORY_ICON, lessonNoOfCategory } from '@/data/vocabCategories'
-import { getAudioUrl } from '@/services/offlineAudio'
+import { getAudioUrl, hasAudioFile } from '@/services/offlineAudio'
 import { useAuthStore } from '@/stores/auth'
 import { useCloudStore } from '@/stores/cloud'
 import { usePlayerSettingsStore } from '@/stores/playerSettings'
@@ -429,6 +429,12 @@ export const createPlayerPage = (options: { initialCategory?: string } = {}) => 
     if (type === 'th' && brokenAudio.value.includes(text)) {
       console.log(`[播放器] 檢測到壞音檔紀錄，直接使用 TTS: ${text}`)
       speakFallbackTTS(text, 'th-TH', onEnd)
+      return
+    }
+
+    // 新增：沒有音檔（例如還沒打包的新字）直接用 TTS，不先發一次會失敗的請求
+    if (!hasAudioFile(text, type)) {
+      speakFallbackTTS(text, type === 'th' ? 'th-TH' : 'zh-TW', onEnd)
       return
     }
 

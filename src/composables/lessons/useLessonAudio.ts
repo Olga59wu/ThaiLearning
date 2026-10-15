@@ -1,6 +1,6 @@
 import { inject, onBeforeUnmount, provide, type InjectionKey } from 'vue'
 import { useTimers } from '@/composables/useTimers'
-import { getAudioUrl } from '@/services/offlineAudio'
+import { getAudioUrl, hasAudioFile } from '@/services/offlineAudio'
 
 /**
  * 課程頁發音：先播 audio/TH/th_{文字}.mp3，沒有音檔（或播放失敗）退回 TTS。
@@ -24,12 +24,12 @@ export const useLessonAudio = () => {
     }, 70)
   }
 
-  /** ttsOnly：確定沒有 mp3 的句子（例如隨機數字）直接用 TTS */
+  /** 沒有音檔（或 ttsOnly）直接用 TTS，不發請求 */
   const play = async (text: string, ttsOnly = false) => {
     const token = ++playToken
     window.speechSynthesis?.cancel()
     audio.pause()
-    if (ttsOnly) {
+    if (ttsOnly || !hasAudioFile(text, 'th')) {
       speakTTS(text, token)
       return
     }

@@ -160,6 +160,13 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - 泰文與中文都抓到才記入 `completedWords`；`saveAs` 之後才寫入已打包名單、localStorage 並上傳
   - `saveProgressToCloud()` 改為回傳 `boolean`（其他呼叫端忽略回傳值，不影響）；`cloud.saveThai()` 一併回傳；失敗時 `isSyncFailed` → 紅點 + 「Sync Failed」，下次上傳成功即恢復
   - 「✨ 只選機械音」改名「✨ 只選未打包」
+- **2026-10-15 改為依實際檔案判斷**（使用者要求；新網域的已打包名單是空的，原本會把 325 個已有音檔的字全部顯示 Raw）：
+  - `build-plugins/audioManifest.ts`：Vite 虛擬模組 `virtual:audio-manifest`，build 與 dev 啟動時掃描 `public/audio/TH/`（dev 新增／刪除檔案會更新並重新整理）；`services/offlineAudio.ts` 的 `hasAudioFile(text, 'th'|'zh')` 查詢
+  - 泰文、中文兩個檔案都存在才算「已就緒」，只缺一個顯示「缺 TH」／「缺 ZH」；「待抓」＝缺任一個；打包時只抓缺少的檔案（手動選取已就緒的字則兩個都重抓）
+  - 「✨ 只選未打包」改為「✨ 只選缺檔」；載入時預設選取缺檔的字；「重置」只清除紀錄，之後只選缺檔
+  - `thai-mp3-history`／`mp3History` 保留，只當紀錄（要抓的檔案都抓到才記入）
+  - 單字清單改以 `id` 去重（同 Player／Typing），同字多義兩個意思都列出（`เย็น`「傍晚」、`จอง`「預訂」各缺一個中文音檔）；沒有 id 的舊自訂單字以 th 判斷
+- Player、Typing、每週課程播放前先查 `hasAudioFile()`，沒有檔案直接用 TTS，不先發一次會失敗的請求；「離線語音」下載也只抓實際存在的檔案
 
 ### /path 的實作與決策
 - 邏輯直接寫在 `PathEditorView.vue`（一對一翻譯原版 script）；選字表拆成 `components/path/CharPickerModal.vue`（父層 `v-if` 控制，每次打開從「泰語輔音」開始，同原版 `openCharPicker`）
@@ -182,7 +189,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 7 頁全部搬完並經使用者對照確認；§2 決策、§3 架構、§5 盤點項目逐項核對皆已實作
 - 刻意差異（已決定）：音檔純 cache-first、Workbox precache、新網域本機資料歸零、無舊網址導向、Firebase 10.7.1 CDN → 13.x npm、JSZip 3.10.1 → 3.10.x npm、各頁已修正的原版 bug
 - 技術上無法 100% 等同但視覺一致：Tailwind v3 → v4（§4.3～4.5 的處理）、SPA 換頁（手動清理、字型連結動態替換，首次進頁可能短暫顯示後備字體）、Typing 的 AudioContext 每頁建立
-- 「離線語音」下載 652 個網址中 2 個不存在（`zh_傍晚`、`zh_預訂`），console 會有 2 筆警告，同原版
+- 「離線語音」下載 652 個網址中 2 個不存在（`zh_傍晚`、`zh_預訂`），console 會有 2 筆警告，同原版（2026-10-15 起只下載實際存在的檔案，不再有警告）
 - TODO.md 的原版怪異行為已全部決定（修：/path 匯入保留內容、/thai 錯題標籤／雲端寫回／語速型別、/player 光暈；其餘不修）
 - 剩下：SW／離線實測、部署（見 TODO.md「部署」）
 

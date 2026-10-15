@@ -1,11 +1,20 @@
+import audioFiles from 'virtual:audio-manifest'
 import { ALL_VOCAB_CATEGORIES } from '@/data/vocabCategories'
 
+/** 音檔檔名：{th|zh}_{文字}.mp3（斜線換成底線，同原版） */
+export const audioFileName = (text: string, type: 'th' | 'zh' = 'th'): string =>
+  `${type === 'th' ? 'th' : 'zh'}_${text.replace(/\//g, '_')}.mp3`
+
 // 原版 ./audio/TH/{th|zh}_{文字}.mp3（斜線換成底線）
-export const getAudioUrl = (text: string, type: 'th' | 'zh' = 'th'): string => {
-  const langCode = type === 'th' ? 'th' : 'zh'
-  const safeText = text.replace(/\//g, '_')
-  return `${import.meta.env.BASE_URL}audio/TH/${langCode}_${safeText}.mp3`
-}
+export const getAudioUrl = (text: string, type: 'th' | 'zh' = 'th'): string =>
+  `${import.meta.env.BASE_URL}audio/TH/${audioFileName(text, type)}`
+
+// public/audio/TH/ 實際存在的音檔（build 時掃描，見 build-plugins/audioManifest.ts）
+const AUDIO_FILES = new Set(audioFiles)
+
+/** 這個字的音檔是否存在；不存在就直接用 TTS，不發請求 */
+export const hasAudioFile = (text: string, type: 'th' | 'zh' = 'th'): boolean =>
+  AUDIO_FILES.has(audioFileName(text, type).normalize('NFC'))
 
 // 🎧 一鍵下載所有離線音檔 (掃描泰文與中文發音)
 // 逐一 fetch，由 Service Worker 寫入 lang-audio-cache-v3
@@ -19,12 +28,12 @@ export const downloadOfflineAudio = async (
   // 走訪所有分類與單字
   Object.values(ALL_VOCAB_CATEGORIES).forEach((category) => {
     category.forEach((word) => {
-      // 1. 收集泰文發音
-      if (word.th) {
+      // 1. 收集泰文發音（只收實際存在的檔案，不再對缺檔發請求）
+      if (word.th && hasAudioFile(word.th, 'th')) {
         audioUrls.push(getAudioUrl(word.th, 'th'))
       }
       // 2. 收集中文發音
-      if (word.zh) {
+      if (word.zh && hasAudioFile(word.zh, 'zh')) {
         audioUrls.push(getAudioUrl(word.zh, 'zh'))
       }
     })

@@ -14,7 +14,7 @@
 | 3 | Claude | **列出看不清楚或不確定的地方問使用者，不要猜**（特別是聲調、手寫字） |
 | 4 | Claude | `pnpm test`、`pnpm build` 通過後 commit |
 | 5 | 使用者 | 檢查內容：`pnpm dev` → `/lessons/XX`，對照課本確認拼音、聲調、中文 |
-| 6 | 使用者 | 補音檔：`/downloader` →「✨ 只選未打包」→ 打包 → 把 zip 裡的 `audio/TH/` 解壓到 `public/audio/TH/` |
+| 6 | 使用者 | 補音檔：`/downloader` →「✨ 只選缺檔」→ 打包 → 把 zip 裡的 `audio/TH/` 解壓到 `public/audio/TH/`（dev server 會自動重新整理，「待抓」歸零） |
 | 7 | Claude | commit 音檔 |
 | 8 | 使用者 | 部署：`pnpm build && firebase deploy --only hosting:thai` |
 
@@ -86,8 +86,8 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 
 ## 3. 音檔
 - 「第N課」分類裡的字（`inCategory` 的單字、常用語原形、`variants`）會出現在 `/downloader` 的「待抓」，打包後放 `public/audio/TH/`
-- 不在分類裡的（隨機數字、面額、ครับ 版常用語、規則例子）直接用 TTS
-- 沒有 mp3 之前，全部自動退回 TTS
+- `/downloader` 依 `public/audio/TH/` 實際的檔案判斷（build／dev 啟動時掃描，`hasAudioFile()`）；泰文、中文都有才算就緒
+- 播放時沒有檔案就直接用 TTS（隨機數字、面額、ครับ 版常用語、規則例子，以及還沒打包的新字）
 
 ## 4. 考試紀錄
 - 本機 `localStorage` `thai-lesson-exams`：完整紀錄（含錯題），每課最多 20 筆
