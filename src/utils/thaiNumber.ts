@@ -1,0 +1,127 @@
+import type { Syllable } from '@/types/lesson'
+import { joinSyllables } from '@/utils/tone'
+
+// 數字轉泰文唸法（第 1 課 泰文數字）
+// 規則：
+// - 個位數 1，前面有任何非 0 位數 → เอ็ด（11、21、101、1,000,001）
+// - 十位數 2 → ยี่สิบ；十位數 1 → 只唸 สิบ（不唸 หนึ่งสิบ）
+// - 百位以上的 1 要唸 หนึ่ง（หนึ่งร้อย、หนึ่งพัน）
+// - 中間的 0 不唸；只有單獨的 0 唸 ศูนย์
+// - 百萬以上以 ล้าน 為單位往上疊（สิบล้าน、ร้อยล้าน、พันล้าน）
+
+const syl = (th: string, roman: string, tone: Syllable['tone']): Syllable => ({ th, roman, tone })
+
+// 音節的拼音與聲調照課本
+const DIGIT: readonly Syllable[] = [
+  syl('ศูนย์', 'sun', 'rising'),
+  syl('หนึ่ง', 'neung', 'low'),
+  syl('สอง', 'song', 'rising'),
+  syl('สาม', 'sam', 'rising'),
+  syl('สี่', 'si', 'low'),
+  syl('ห้า', 'ha', 'falling'),
+  syl('หก', 'hok', 'low'),
+  syl('เจ็ด', 'jed', 'low'),
+  syl('แปด', 'paed', 'low'),
+  syl('เก้า', 'kao', 'falling'),
+]
+const SIB = syl('สิบ', 'sib', 'low')
+const YI = syl('ยี่', 'yi', 'falling')
+const ED = syl('เอ็ด', 'ed', 'low')
+const LAN = syl('ล้าน', 'lan', 'high')
+// 百萬以下的單位：個位以外，由大到小（แสน 十萬 → ร้อย 百）
+const UNITS: readonly [number, Syllable][] = [
+  [100000, syl('แสน', 'saen', 'rising')],
+  [10000, syl('หมื่น', 'meun', 'low')],
+  [1000, syl('พัน', 'phan', 'mid')],
+  [100, syl('ร้อย', 'roi', 'high')],
+]
+
+const THAI_DIGITS = '๐๑๒๓๔๕๖๗๘๙'
+
+/** 讀法選項：全部 true 為正確唸法；關掉其中一個用來產生常見錯誤 */
+interface ReadOptions {
+  /** 個位 1 唸 เอ็ด（關掉 → สิบหนึ่ง） */
+  ed: boolean
+  /** 十位 2 唸 ยี่（關掉 → สองสิบ） */
+  yi: boolean
+  /** 十位 1 只唸 สิบ（關掉 → หนึ่งสิบ） */
+  plainSib: boolean
+}
+const CORRECT: ReadOptions = { ed: true, yi: true, plainSib: true }
+
+const assertNumber = (n: number) => {
+  if (!Number.isSafeInteger(n) || n < 0) throw new RangeError(`不支援的數字：${n}`)
+}
+
+/** 百萬以下（0～999,999）；hasHigher：前面還有 ล้าน 的部分 */
+const readBelowMillion = (n: number, hasHigher: boolean, opt: ReadOptions): Syllable[] => {
+  const out: Syllable[] = []
+  let rest = n
+  for (const [value, unit] of UNITS) {
+    const d = Math.floor(rest / value)
+    rest %= value
+    if (d > 0) out.push(DIGIT[d]!, unit)
+  }
+  const tens = Math.floor(rest / 10)
+  const ones = rest % 10
+  if (tens === 1) {
+    if (!opt.plainSib) out.push(DIGIT[1]!)
+    out.push(SIB)
+  } else if (tens === 2) {
+    out.push(opt.yi ? YI : DIGIT[2]!, SIB)
+  } else if (tens > 2) {
+    out.push(DIGIT[tens]!, SIB)
+  }
+  if (ones === 1 && opt.ed && (hasHigher || n >= 10)) out.push(ED)
+  else if (ones > 0) out.push(DIGIT[ones]!)
+  return out
+}
+
+const read = (n: number, opt: ReadOptions): Syllable[] => {
+  if (n === 0) return [DIGIT[0]!]
+  const high = Math.floor(n / 1000000)
+  const low = n % 1000000
+  const out: Syllable[] = high > 0 ? [...read(high, opt), LAN] : []
+  return [...out, ...readBelowMillion(low, high > 0, opt)]
+}
+
+/** 數字 → 泰文唸法的音節（含課本拼音與聲調） */
+export const numberToSyllables = (n: number): Syllable[] => {
+  assertNumber(n)
+  return read(n, CORRECT)
+}
+
+/** 數字 → 泰文唸法，例如 21 → ยี่สิบเอ็ด */
+export const numberToThai = (n: number): string => joinSyllables(numberToSyllables(n))
+
+/** 阿拉伯數字 → 泰文數字，例如 23 → ๒๓ */
+export const toThaiDigits = (n: number): string => {
+  assertNumber(n)
+  return String(n).replace(/\d/g, (d) => THAI_DIGITS[Number(d)]!)
+}
+
+/** 泰文數字 → 阿拉伯數字字串（也接受混合輸入），例如 ๒๓ → 23 */
+export const fromThaiDigits = (s: string): string =>
+  s.replace(/[๐-๙]/g, (c) => String(THAI_DIGITS.indexOf(c)))
+
+/**
+ * 唸法的錯誤選項：先放常見錯誤（สิบหนึ่ง、สองสิบ、หนึ่งสิบ、單獨唸 เอ็ด），
+ * 不足再補鄰近數字的正確唸法。回傳不含正確答案、不重複，最多 count 個。
+ */
+export const readingDistractors = (n: number, count = 3): string[] => {
+  assertNumber(n)
+  const correct = numberToThai(n)
+  const result: string[] = []
+  const add = (s: string) => {
+    if (s !== correct && !result.includes(s) && result.length < count) result.push(s)
+  }
+  add(joinSyllables(read(n, { ...CORRECT, ed: false })))
+  add(joinSyllables(read(n, { ...CORRECT, yi: false })))
+  add(joinSyllables(read(n, { ...CORRECT, plainSib: false })))
+  if (n === 1) add(ED.th)
+  const neighbors = [n + 1, n - 1, n + 10, n - 10, n + 2, n - 2, n + 100, n + 20, n + 3]
+  for (const m of neighbors) {
+    if (m >= 0 && Number.isSafeInteger(m)) add(numberToThai(m))
+  }
+  return result
+}
