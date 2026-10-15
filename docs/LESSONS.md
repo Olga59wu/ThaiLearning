@@ -16,7 +16,7 @@
 | 5 | 使用者 | 檢查內容：`pnpm dev` → `/lessons/XX`，對照課本確認拼音、聲調、中文 |
 | 6 | Claude | 補音檔：`pnpm audio:fetch --dry-run` 列出缺檔給使用者確認 → `pnpm audio:fetch` 直接寫進 `public/audio/TH/`（失敗的再執行一次會重抓） |
 | 7 | Claude | 使用者試聽沒問題後 commit 音檔 |
-| 8 | 使用者 | 部署：`pnpm build && firebase deploy --only hosting:thai` |
+| 8 | 使用者 | 部署：`pnpm build && firebase deploy --only hosting:thai`（網址 https://thai-learning-og.web.app；新增課程不需要部署 `firestore:rules`） |
 
 補充：
 - 新增檔案就好，`registry.ts` 會自動收集 `lesson-*.ts`；大廳卡片的「最新一課」標籤也會自動更新

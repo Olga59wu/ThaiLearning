@@ -5,7 +5,7 @@
 
 ---
 
-## 0. 目前進度（2026-10-14）
+## 0. 目前進度（2026-10-15）
 
 | 項目 | 狀態 | commit |
 |---|---|---|
@@ -37,7 +37,7 @@
 | 記錄 `optimizeDeps.entries`、`pnpm-workspace.yaml` 用途；`.gitignore` 加入 `legacy/audio/JP/` | ✅ | `1c50b36` |
 | SW／離線功能實測 | ✅ 使用者實測通過 | |
 | 部署設定檔（`firebase.json`、`.firebaserc`、`firestore.rules`） | ✅ site ID `thai-learning-og` | `d962aa0` |
-| **部署（建立 site、Authorized domains、deploy）** | **下一步（使用者手動）**，見 TODO.md | |
+| 部署（建立 site `thai-learning-og`、Authorized domains、`firestore:rules`、`hosting:thai`） | ✅ 2026-10-14 使用者完成，https://thai-learning-og.web.app；舊網站驗證過沒有被規則擋到 | |
 | 新功能：每週課程（`/lessons`），流程與格式見 `docs/LESSONS.md` | ✅ 第 1 課；考試待使用者實測 | `b08fef0`～`6f35064` |
 
 順序：**player → typing → downloader → path** → 第 5 步對照檢查（已完成）→ SW／離線實測 → 部署。
@@ -83,7 +83,8 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - 舊網站**不是從 `legacy/` 部署**，而是從另一個原本的專案資料夾部署；`legacy/` 只是參考副本，維持唯讀
   - 白名單改動時要同時改三處：`src/config.ts`、`firestore.rules`、**舊網站原本專案的 `js/config.js`**（不在這個 repo，需使用者手動修改並重新部署舊網站）；`legacy/js/config.js` 不用改
 - Firebase 設定沿用寫死方式（`src/config.ts`）
-- 部署時要把新網域加入 Firebase Auth Authorized domains（已記在 TODO.md）
+- 部署時要把新網域加入 Firebase Auth Authorized domains（2026-10-14 已加入 `thai-learning-og.web.app`、`thai-learning-og.firebaseapp.com`）
+- 部署指令：`pnpm build && firebase deploy --only hosting:thai`（規則有改時另外 `firebase deploy --only firestore:rules`，新舊網站共用）
 
 ### PWA / Service Worker
 - vite-plugin-pwa `injectManifest` + 手寫 `src/sw.ts`
@@ -195,7 +196,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 技術上無法 100% 等同但視覺一致：Tailwind v3 → v4（§4.3～4.5 的處理）、SPA 換頁（手動清理、字型連結動態替換，首次進頁可能短暫顯示後備字體）、Typing 的 AudioContext 每頁建立
 - 「離線語音」下載 652 個網址中 2 個不存在（`zh_傍晚`、`zh_預訂`），console 會有 2 筆警告，同原版（2026-10-15 起只下載實際存在的檔案，不再有警告）
 - TODO.md 的原版怪異行為已全部決定（修：/path 匯入保留內容、/thai 錯題標籤／雲端寫回／語速型別、/player 光暈；其餘不修）
-- 剩下：SW／離線實測、部署（見 TODO.md「部署」）
+- 剩下：SW／離線實測、部署（皆已於 2026-10-14 完成）
 
 ### 給 /typing 的接手提示（已完成）
 - 共用：`useOfflineAudioDownload()` + `<OfflineAudioModal :modal success-message="現在打字練習時，發音會更加流暢無延遲！" @close @confirm>`（Typing 原版彈窗本來就在 `#app` 第一層）
