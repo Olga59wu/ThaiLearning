@@ -23,6 +23,10 @@ interface WordBase {
   meaning?: string
   /** 數字字詞的值（測試時和 numberToThai 比對） */
   num?: number
+  /** 數字單位的位值（10、100…），內容頁顯示用 */
+  placeValue?: number
+  /** 課本上的補充（例如位數大寫 佰） */
+  note?: string
   /** 是否放進「📘 第N課」分類，預設 true */
   inCategory?: boolean
 }
@@ -52,6 +56,8 @@ export interface ResolvedWord {
   syllables: Syllable[]
   meaning: string
   num?: number
+  placeValue?: number
+  note?: string
   ref?: DataRef
   inCategory: boolean
 }
@@ -65,8 +71,8 @@ export interface LessonPhrase {
   meaning: string
   /** 考試畫面隨機帶一個 */
   particles: Particle[]
-  /** 有放進分類的語尾版本與其 id */
-  variantIds?: Partial<Record<Particle, string>>
+  /** 有放進分類的語尾版本（固定 id，zh 為分類顯示用） */
+  variants?: { particle: Particle; id: string; zh: string }[]
   /** 意思重疊的 phrase id，不可同時出現在選項 */
   confusableWith?: string[]
 }
@@ -97,8 +103,6 @@ export interface Denomination {
   value: number
   unit: 'บาท' | 'สตางค์'
   kind: 'coin' | 'note'
-  /** 印刷說明，例如鈔票人像 */
-  note?: string
 }
 
 /** 規則：說明與例子（例子會用數字函式產生唸法） */
