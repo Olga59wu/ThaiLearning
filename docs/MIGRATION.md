@@ -118,6 +118,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 錯題複習：`quiz.filter` 記錄出題來源（`startQuiz` 時設定），`filter === 'mistakes'` 時 Mode 標籤顯示「錯題複習」並隱藏範圍按鈕（`currentMode` 不變，否則 QuizSection 會被卸載）
 - 雲端載入的 `correctCounts`／`favorites`／`mistakeList` 寫回 localStorage（`ThaiView.vue` onMounted）
 - 語速滑桿 `v-model.number`；store 讀入 `preferredRate` 時 `Number()` 轉換（相容舊的字串資料）
+- `sentenceData` 的 `ไม่เป็นไร` soundText 原版是 `ไม่-เปัน-ไร`（เปัน 錯字），2026-10-15 使用者確認改為 `ไม่-เป็น-ไร`（只改 `src/data/thai.ts`，`legacy/` 不動）
 
 ### /player 的決策與已修正 bug
 - 壞音檔名單啟動時從 localStorage `thai-broken-audio` 讀取（原版不讀；使用者確認保留）；雲端有 `brokenAudio` 時覆蓋並寫回 localStorage（改由 `vocabProgress.applyCloudData()` 處理，見 /typing）

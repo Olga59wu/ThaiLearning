@@ -1648,7 +1648,7 @@ export const sentenceData: Sentence[] = [
   {
     cat: 'Basic',
     thai: 'ไม่เป็นไร',
-    soundText: 'ไม่-เปัน-ไร',
+    soundText: 'ไม่-เป็น-ไร',
     meaning: '沒關係',
     reading: 'Mai-pen-rai',
   },
