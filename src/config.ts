@@ -1,3 +1,5 @@
+import { latestLesson } from '@/data/lessons/registry'
+
 // Firebase 設定（沿用原版 legacy/js/config.js，寫死）
 export const firebaseConfig = {
   apiKey: 'AIzaSyA1LC4UkefoGzZDhM62c-vgdBW7BrM_Qps',
@@ -35,6 +37,14 @@ export interface LanguageModule {
   tags: { text: string; class: string }[]
 }
 
+const latest = latestLesson()
+const latestLessonTag = latest
+  ? {
+      text: `第${latest.no}課 ${latest.title}`,
+      class: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300',
+    }
+  : null
+
 // 大廳語言卡片（只保留泰文）
 export const languageModules: LanguageModule[] = [
   {
@@ -58,6 +68,28 @@ export const languageModules: LanguageModule[] = [
       },
       {
         text: '手寫練習',
+        class: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+      },
+    ],
+  },
+  // 新增：每週課程（標籤顯示最新一課）
+  {
+    id: 'lessons',
+    abbr: '📘',
+    title: '每週課程',
+    link: '/lessons',
+    desc: '每週泰語課的上課內容、練習與考試，下次上課前複習用。',
+    colorClass: 'bg-indigo-500',
+    shadowClass: 'hover:shadow-indigo-200/50 dark:hover:shadow-indigo-900/30',
+    bgCircleClass: 'bg-indigo-50 dark:bg-indigo-900/20',
+    iconBgClass: 'bg-indigo-100 dark:bg-indigo-900/50',
+    hoverTextClass:
+      'group-hover:text-indigo-600 dark:group-hover:text-indigo-400',
+    actionColorClass: 'text-indigo-500',
+    tags: [
+      ...(latestLessonTag ? [latestLessonTag] : []),
+      {
+        text: '課前小考',
         class: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
       },
     ],

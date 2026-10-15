@@ -1,16 +1,10 @@
-// 每週課程 registry：自動收集 lesson-XX.ts，新增課程只要加檔案
+// 每週課程：解析連結字詞、整理分類（課程清單在 registry.ts）
 import { FULL_VOCAB } from '@/data/thaiVocab'
 import type { VocabCategories, VocabWord } from '@/types/thai'
 import type { Lesson, LessonBlock, LessonPhrase, LessonWord, ResolvedWord } from '@/types/lesson'
+import { LESSONS } from './registry'
 
-const modules = import.meta.glob<{ default: Lesson }>('./lesson-*.ts', { eager: true })
-
-/** 全部課程，依課次排序 */
-export const LESSONS: readonly Lesson[] = Object.values(modules)
-  .map((m) => m.default)
-  .sort((a, b) => a.no - b.no)
-
-export const getLesson = (no: number): Lesson | undefined => LESSONS.find((l) => l.no === no)
+export { getLesson, latestLesson, LESSONS } from './registry'
 
 /** RefWord 帶入 thaiVocab 的 th／zh；找不到 id 直接丟錯（測試會抓到） */
 export const resolveWord = (w: LessonWord): ResolvedWord => {
