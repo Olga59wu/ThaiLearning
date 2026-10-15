@@ -227,8 +227,9 @@ src/
 ├─ views/{Home,Thai,ThaiPlayer,ThaiTyping,ThaiDownloader,PathEditor,NotFound}View.vue
 ├─ components/
 │  ├─ common/OfflineAudioModal.vue ✅  // Player/Typing 共用下載確認/成功彈窗（成功訊息以 successMessage prop 帶入）
+│  │         HandwritingModal.vue、HandwritingPad.vue  // 手寫彈窗（/thai 與每週課程共用，props 傳入；原 thai/HandwritingModal.vue，DOM 不變）
 │  ├─ thai/  ✅ ThaiHeader, LearnSection, ToneTrainingSection, QuizSection, SentenceSection,
-│  │           MemoryGameSection, ToneCalcModal, HelpModal, HandwritingModal
+│  │           MemoryGameSection, ToneCalcModal, HelpModal（HandwritingModal 已移到 common/）
 │  ├─ player/ ✅ PlayerHeader, CategoryBar, PlayerCard, PlayerControls, WordListModal
 │  ├─ typing/ ✅ TypingHeader, TypingCard, TypingInputBar
 │  └─ path/ ✅ CharPickerModal

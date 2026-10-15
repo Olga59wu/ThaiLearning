@@ -5,6 +5,7 @@ import { numberToSyllables, numberToThai, toThaiDigits } from '@/utils/thaiNumbe
 import BlockSection from './BlockSection.vue'
 import ThaiReading from '../ThaiReading.vue'
 import { useLessonAudioContext } from '@/composables/lessons/useLessonAudio'
+import WriteButton from '../WriteButton.vue'
 
 const props = defineProps<{ block: Extract<LessonBlock, { type: 'homework' }> }>()
 const { play } = useLessonAudioContext()
@@ -27,10 +28,10 @@ const toggle = (n: number) => {
 
 <template>
   <BlockSection :title="block.title" icon="✏️">
-    <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">{{ block.task }}（點格子看答案）</p>
+    <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">{{ block.task }}（點格子看答案，✍️ 練寫）</p>
     <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
-      <button v-for="n in numbers" :key="n" type="button" @click="toggle(n)"
-        class="flex flex-col items-center justify-center gap-1 min-h-20 p-2 rounded-xl border transition-all active:scale-95"
+      <div v-for="n in numbers" :key="n" role="button" tabindex="0" @click="toggle(n)" @keydown.enter="toggle(n)"
+        class="relative flex flex-col items-center justify-center gap-1 min-h-20 p-2 pt-5 rounded-xl border cursor-pointer transition-all active:scale-95"
         :class="revealed.has(n)
           ? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-900/20 dark:border-emerald-700'
           : 'bg-white border-gray-200 hover:border-emerald-300 dark:bg-slate-800 dark:border-slate-600'">
@@ -39,7 +40,8 @@ const toggle = (n: number) => {
           <span class="text-xs font-mono text-gray-400">{{ n }}</span>
           <ThaiReading :syllables="numberToSyllables(n)" :th="numberToThai(n)" size="sm" />
         </template>
-      </button>
+        <div class="absolute top-0 left-0"><WriteButton :num="n" /></div>
+      </div>
     </div>
   </BlockSection>
 </template>

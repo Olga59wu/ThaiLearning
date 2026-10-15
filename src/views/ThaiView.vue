@@ -13,7 +13,7 @@ import SentenceSection from '@/components/thai/SentenceSection.vue'
 import MemoryGameSection from '@/components/thai/MemoryGameSection.vue'
 import ToneCalcModal from '@/components/thai/ToneCalcModal.vue'
 import HelpModal from '@/components/thai/HelpModal.vue'
-import HandwritingModal from '@/components/thai/HandwritingModal.vue'
+import HandwritingModal from '@/components/common/HandwritingModal.vue'
 
 usePageShell({
   htmlClass: 'shell-common shell-learning',
@@ -23,7 +23,7 @@ usePageShell({
 
 const {
   currentMode, modeOptions, modals, toast, isDark, speechRate, correctCounts, favorites, mistakeList,
-  switchMode, initVoices, handleKeydown,
+  switchMode, initVoices, handleKeydown, hw, hwItem,
 } = provideThaiPage()
 
 // 原版 watch(isDark, { immediate: true })：切換 <html class="dark"> 並存檔
@@ -86,7 +86,8 @@ onBeforeUnmount(() => {
     <!-- Modals -->
     <ToneCalcModal v-if="modals.calc" />
     <HelpModal v-if="modals.help" />
-    <HandwritingModal v-if="modals.writing" />
+    <HandwritingModal v-if="modals.writing" :hw="hw" :is-dark="isDark" @close="modals.writing = false"
+      :title="hwItem?.thaiLabel || hwItem?.soundText || hwItem?.name || ''" :strokes="hwItem?.strokes" :fallback-char="hwItem?.char" />
 
     <div class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white px-6 py-3 rounded-full transition-opacity duration-300 pointer-events-none text-sm font-medium z-50 shadow-2xl flex items-center gap-2" :class="toast.show ? 'opacity-100' : 'opacity-0'">
       <svg class="h-4 w-4 text-emerald-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.618.786l-5-4A1 1 0 013 12V8a1 1 0 01.382-.786l5-4zM13.923 13.383a1 1 0 01-1.414-1.414 2.5 2.5 0 000-3.536 1 1 0 111.414-1.414 4.5 4.5 0 010 6.364z" clip-rule="evenodd" /></svg>

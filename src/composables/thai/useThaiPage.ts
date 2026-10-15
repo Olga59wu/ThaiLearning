@@ -144,7 +144,6 @@ export const createThaiPage = () => {
   // Handwriting
   const hwItem = ref<ThaiItem | null>(null)
   const hw = useHandwriting({ isDark })
-  const { strokeSpeed, inkColor, svgViewBox: hwSvgViewBox, containerRef: canvasContainerRef, canvasRef: hwCanvasRef } = hw
 
   const syncToCloud = () => store.syncToCloud()
 
@@ -342,16 +341,13 @@ export const createThaiPage = () => {
   }
   const isToneOptSelected = (idx: number) => toneTraining.isLocked && (idx === toneTraining.targetIdx || idx === selectedToneOpt.value)
 
-  // HW Logic（畫布、縮放、清除、筆順動畫在 useHandwriting，與課程考試共用）
+  // HW Logic（畫布、筆色、縮放、清除、筆順動畫在 useHandwriting；彈窗是共用的 HandwritingModal）
   const openHW = (item: ThaiItem) => {
     hwItem.value = item; modals.value.writing = true
     nextTick(() => {
       if (hw.initCanvas()) hw.autoZoomSvg(hwItem.value?.strokes)
     })
   }
-  const setInkColor = hw.setInkColor
-  const clearHW = hw.clear
-  const playHWAnim = hw.playAnim
 
   const clickLearnCard = (elem: ThaiItem) => {
     speak(elem, true)
@@ -383,7 +379,7 @@ export const createThaiPage = () => {
     sentenceCats, sentence, setSentenceCat, nextSentence,
     memory, initMemoryGame, flipMemoryCard,
     toneTraining, toneHeaders, toneGraphs, toneColors, currentTonePracticeChars, animatingToneIdx, playToneSequence, triggerToneButtonAnimation, toneChallengeOpts, selectedToneOpt, startNewToneChallenge, enterToneChallenge, checkToneGuess, getToneBtnStyle, isToneOptSelected,
-    hwItem, strokeSpeed, inkColor, hwSvgViewBox, canvasContainerRef, hwCanvasRef, openHW, setInkColor, clearHW, playHWAnim,
+    hwItem, hw, openHW,
     speak, switchMode, toggleDarkMode, togglePinyin, resetAllData, toggleStar,
     initVoices, handleKeydown,
   }

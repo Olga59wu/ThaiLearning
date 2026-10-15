@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import type { NumberPool, Syllable } from '@/types/lesson'
 import { isVocabText } from '@/data/vocabCategories'
 import { useLessonAudioContext } from '@/composables/lessons/useLessonAudio'
@@ -7,21 +8,32 @@ import { fromThaiDigits, numberToSyllables, numberToThai, readingDistractorSylla
 import { joinSyllables } from '@/utils/tone'
 import { pickRandom, poolNumbers } from '@/utils/numberPool'
 import { shuffleArray } from '@/utils/shuffle'
+import { useThaiLearnStore } from '@/stores/thaiLearn'
+import { useHandwriting } from '@/composables/useHandwriting'
+import { composeNumberStrokes } from '@/utils/digitStrokes'
 import ThaiReading from '../ThaiReading.vue'
+import HandwritingPad from '@/components/common/HandwritingPad.vue'
 
 // 數字練習（不計分、不存紀錄）：
 // - choice：看阿拉伯數字 → 選拼音唸法（錯誤選項為常見錯誤唸法）
 // - digits：看泰文數字 → 輸入阿拉伯數字
 // - listen：聽發音 → 輸入阿拉伯數字
+// - handwrite：看阿拉伯數字（或聽發音）→ 在畫布寫泰文數字 → 看答案播放筆順 → 自己按 ✓／✗
 const props = defineProps<{ pool: NumberPool }>()
 const { play } = useLessonAudioContext()
 
-type Mode = 'choice' | 'digits' | 'listen'
+type Mode = 'choice' | 'digits' | 'listen' | 'handwrite'
 const MODES: { id: Mode; label: string }[] = [
   { id: 'choice', label: '選唸法' },
   { id: 'digits', label: '看泰文數字' },
   { id: 'listen', label: '聽音' },
+  { id: 'handwrite', label: '手寫' },
 ]
+// 手寫題目：看阿拉伯數字或聽發音
+type HandwritePrompt = 'number' | 'listen'
+const hwPrompt = ref<HandwritePrompt>('number')
+const { isDark } = storeToRefs(useThaiLearnStore())
+const hw = useHandwriting({ isDark })
 const mode = ref<Mode>('choice')
 const numbers = computed(() => poolNumbers(props.pool))
 
@@ -38,6 +50,8 @@ const answer = computed(() => numberToThai(current.value))
 const syllables = computed(() => numberToSyllables(current.value))
 
 const speak = () => play(answer.value, !isVocabText(answer.value))
+const hwStrokes = computed(() => composeNumberStrokes(current.value))
+const isListening = computed(() => mode.value === 'listen' || (mode.value === 'handwrite' && hwPrompt.value === 'listen'))
 
 const nextQuestion = () => {
   current.value = pickRandom(numbers.value, current.value)
@@ -49,8 +63,9 @@ const nextQuestion = () => {
   input.value = ''
   answered.value = false
   isCorrect.value = false
-  if (mode.value === 'listen') speak()
-  if (mode.value !== 'choice') nextTick(() => inputEl.value?.focus())
+  if (isListening.value) speak()
+  if (mode.value === 'digits' || mode.value === 'listen') nextTick(() => inputEl.value?.focus())
+  if (mode.value === 'handwrite') hw.clear()
 }
 
 const finish = (correct: boolean) => {
@@ -80,6 +95,28 @@ const submitNumber = () => {
 
 const setMode = (m: Mode) => {
   mode.value = m
+  nextQuestion()
+  // 手寫畫布掛上後設定大小與繪圖
+  if (m === 'handwrite') nextTick(() => hw.initCanvas())
+}
+
+const setHwPrompt = (p: HandwritePrompt) => {
+  hwPrompt.value = p
+  nextQuestion()
+}
+
+// 手寫：看答案 → 顯示字形並播放筆順；之後自己評分
+const revealHandwrite = async () => {
+  answered.value = true
+  await nextTick()
+  hw.autoZoomSvg(hwStrokes.value)
+  await nextTick()
+  hw.playAnim()
+  if (!isListening.value) speak()
+}
+const gradeHandwrite = (correct: boolean) => {
+  stats.value.total++
+  if (correct) stats.value.correct++
   nextQuestion()
 }
 
@@ -115,6 +152,24 @@ nextQuestion()
           <div class="text-6xl font-black text-gray-800 dark:text-white">{{ current.toLocaleString('en-US') }}</div>
           <div class="mt-1 text-sm text-gray-400 dark:text-gray-500">選出正確唸法</div>
         </template>
+        <template v-else-if="mode === 'handwrite'">
+          <div class="flex gap-1 p-1 mb-4 bg-gray-100 dark:bg-slate-700 rounded-xl">
+            <button v-for="p in (['number', 'listen'] as const)" :key="p" @click="setHwPrompt(p)"
+              class="px-3 py-1 text-xs font-bold rounded-lg transition-all"
+              :class="hwPrompt === p ? 'bg-white dark:bg-slate-600 text-emerald-600 dark:text-emerald-300 shadow-xs' : 'text-gray-500 dark:text-gray-400'">
+              {{ p === 'number' ? '看數字' : '聽發音' }}
+            </button>
+          </div>
+          <div v-if="hwPrompt === 'number'" class="text-6xl font-black text-gray-800 dark:text-white">{{ current.toLocaleString('en-US') }}</div>
+          <button v-else @click="speak" title="再聽一次"
+            class="flex items-center justify-center w-20 h-20 text-white transition-all rounded-full shadow-lg bg-emerald-500 hover:bg-emerald-600 active:scale-95 ring-4 ring-emerald-100 dark:ring-emerald-900/30">
+            <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+          </button>
+          <div class="mt-2 text-sm text-gray-400 dark:text-gray-500">寫出泰文數字</div>
+        </template>
         <template v-else-if="mode === 'digits'">
           <div class="text-6xl thai-font text-emerald-600 dark:text-emerald-400">{{ toThaiDigits(current) }}</div>
           <div class="mt-1 text-sm text-gray-400 dark:text-gray-500">輸入阿拉伯數字</div>
@@ -139,6 +194,15 @@ nextQuestion()
           <ThaiReading :syllables="opt.syllables" :th="opt.th" />
         </button>
       </div>
+      <div v-else-if="mode === 'handwrite'" class="flex flex-col items-center gap-4">
+        <div class="w-full max-w-sm flex flex-col rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-600">
+          <HandwritingPad :hw="hw" :is-dark="isDark" :strokes="hwStrokes" :show-guide="answered" />
+        </div>
+        <button v-if="!answered" @click="revealHandwrite"
+          class="px-8 py-2.5 rounded-full bg-orange-400 hover:bg-orange-500 text-white font-bold text-sm shadow-xs active:scale-95 transition-all">
+          看答案
+        </button>
+      </div>
       <form v-else class="flex gap-2 max-w-sm mx-auto" @submit.prevent="submitNumber">
         <input ref="inputEl" v-model="input" :readonly="answered" inputmode="numeric" autocomplete="off" placeholder="例如 23"
           class="flex-1 min-w-0 px-4 py-3 text-2xl font-bold text-center border-2 rounded-2xl outline-hidden bg-white dark:bg-slate-700 dark:text-white"
@@ -150,8 +214,9 @@ nextQuestion()
 
       <!-- 答案 -->
       <div v-if="answered" class="flex flex-col items-center gap-3 mt-6 p-4 rounded-2xl"
-        :class="isCorrect ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20'">
-        <div class="font-bold" :class="isCorrect ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+        :class="mode === 'handwrite' ? 'bg-gray-50 dark:bg-slate-700/50' : isCorrect ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20'">
+        <div v-if="mode === 'handwrite'" class="font-bold text-gray-500 dark:text-gray-400">正確答案</div>
+        <div v-else class="font-bold" :class="isCorrect ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
           {{ isCorrect ? '⭕ 答對了！' : '❌ 正確答案' }}
         </div>
         <div class="flex items-baseline gap-3">
@@ -161,6 +226,11 @@ nextQuestion()
         <div class="flex items-center gap-3">
           <ThaiReading :syllables="syllables" :th="answer" size="lg" />
           <button @click="speak" title="播放發音" class="text-emerald-600 dark:text-emerald-400 hover:scale-110 transition-transform">🔊</button>
+        </div>
+        <div v-if="mode === 'handwrite'" class="flex items-center gap-3">
+          <span class="text-sm text-gray-500 dark:text-gray-400">寫對了嗎？</span>
+          <button @click="gradeHandwrite(true)" class="w-12 h-12 text-xl font-black text-white rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all">✓</button>
+          <button @click="gradeHandwrite(false)" class="w-12 h-12 text-xl font-black text-white rounded-full bg-red-400 hover:bg-red-500 active:scale-95 transition-all">✗</button>
         </div>
         <button v-if="mode === 'choice'" @click="nextQuestion"
           class="px-8 py-2.5 rounded-full bg-gray-800 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-200 text-white font-bold text-sm active:scale-95 transition-all">

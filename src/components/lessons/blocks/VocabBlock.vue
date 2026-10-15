@@ -6,6 +6,7 @@ import { toThaiDigits } from '@/utils/thaiNumber'
 import BlockSection from './BlockSection.vue'
 import ThaiReading from '../ThaiReading.vue'
 import SpeakButton from '../SpeakButton.vue'
+import WriteButton from '../WriteButton.vue'
 
 const props = defineProps<{ block: Extract<LessonBlock, { type: 'vocab' }> }>()
 const words = computed(() => props.block.words.map(resolveWord))
@@ -16,7 +17,8 @@ const words = computed(() => props.block.words.map(resolveWord))
     <!-- 數字：卡片格 -->
     <div v-if="block.layout === 'numbers'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
       <div v-for="w in words" :key="w.id"
-        class="relative flex flex-col items-center gap-2 p-3 pt-4 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600">
+        class="relative flex flex-col items-center gap-2 p-3 pt-9 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600">
+        <div v-if="w.num !== undefined" class="absolute top-1 left-1"><WriteButton :num="w.num" /></div>
         <div class="absolute top-2 right-2"><SpeakButton :text="w.th" /></div>
         <div class="flex items-baseline gap-2">
           <span class="text-2xl font-black text-gray-800 dark:text-white">{{ w.num }}</span>

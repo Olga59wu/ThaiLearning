@@ -1,11 +1,15 @@
 import { ref, type Ref } from 'vue'
 import { useTimers } from '@/composables/useTimers'
 
-/**
- * 筆順路徑的外框（含 20% 留白），給 SVG viewBox 用；解析不到座標時回傳 null。
- * （原 /thai autoZoomSvg 的計算）
- */
-export const strokesViewBox = (strokes: readonly string[]): string | null => {
+export interface StrokesBBox {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+/** 筆順路徑所有座標的外框；解析不到座標時回傳 null */
+export const strokesBBox = (strokes: readonly string[]): StrokesBBox | null => {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
   strokes.forEach((stroke) => {
     const matches = stroke.match(/-?\d+(\.\d+)?/g)
@@ -22,13 +26,22 @@ export const strokesViewBox = (strokes: readonly string[]): string | null => {
       }
     }
   })
-  if (minX !== Infinity && maxX > minX) {
-    const w = maxX - minX
-    const h = maxY - minY
+  return minX !== Infinity ? { minX, minY, maxX, maxY } : null
+}
+
+/**
+ * 筆順路徑的外框（含 20% 留白），給 SVG viewBox 用；解析不到座標時回傳 null。
+ * （原 /thai autoZoomSvg 的計算）
+ */
+export const strokesViewBox = (strokes: readonly string[]): string | null => {
+  const box = strokesBBox(strokes)
+  if (box && box.maxX > box.minX) {
+    const w = box.maxX - box.minX
+    const h = box.maxY - box.minY
     // Provide 20% padding around the bounding box
     const padX = Math.max(w, h) * 0.2
     const padY = Math.max(w, h) * 0.2
-    return `${minX - padX} ${minY - padY} ${w + padX * 2} ${h + padY * 2}`
+    return `${box.minX - padX} ${box.minY - padY} ${w + padX * 2} ${h + padY * 2}`
   }
   return null
 }

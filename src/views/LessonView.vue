@@ -4,6 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { getLesson } from '@/data/lessons'
 import { useLessonTheme } from '@/composables/lessons/useLessonTheme'
 import { provideLessonAudio } from '@/composables/lessons/useLessonAudio'
+import { provideNumberHandwriting } from '@/composables/lessons/useNumberHandwriting'
+import { toThaiDigits } from '@/utils/thaiNumber'
+import HandwritingModal from '@/components/common/HandwritingModal.vue'
 import LessonHeader from '@/components/lessons/LessonHeader.vue'
 import VocabBlock from '@/components/lessons/blocks/VocabBlock.vue'
 import CurrencyBlock from '@/components/lessons/blocks/CurrencyBlock.vue'
@@ -17,6 +20,8 @@ const props = defineProps<{ no: number }>()
 
 useLessonTheme()
 provideLessonAudio()
+// 數字卡片、作業格的 ✍️ 手寫彈窗
+const { hw, isDark, target: hwTarget, strokes: hwStrokes, close: closeHW } = provideNumberHandwriting()
 
 const route = useRoute()
 const router = useRouter()
@@ -71,5 +76,9 @@ const setTab = (t: Tab) => router.replace({ query: { ...route.query, tab: t === 
     <div v-else class="w-full p-10 text-center text-gray-400 dark:text-gray-500 bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-gray-200 dark:border-slate-600">
       🚧 製作中
     </div>
+
+    <!-- 數字手寫彈窗 -->
+    <HandwritingModal v-if="hwTarget !== null" :hw="hw" :is-dark="isDark" @close="closeHW"
+      :title="`${toThaiDigits(hwTarget)}（${hwTarget}）`" :strokes="hwStrokes" :fallback-char="toThaiDigits(hwTarget)" />
   </div>
 </template>
