@@ -125,6 +125,12 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 語速滑桿 `v-model.number`；store 讀入 `preferredRate` 時 `Number()` 轉換（相容舊的字串資料）
 - `sentenceData` 的 `ไม่เป็นไร` soundText 原版是 `ไม่-เปัน-ไร`（เปัน 錯字），2026-10-15 使用者確認改為 `ไม่-เป็น-ไร`（只改 `src/data/thai.ts`，`legacy/` 不動）
 
+### /thai 刻意和原版不同的調整
+- 學習模式卡片左上角的筆圖示（手寫練習）只在 `type` 為 `consonant`／`vowel`／`toneMark`／`numbers` 時顯示；水果、動物、顏色、日期、家人不顯示（2026-10-16 使用者決定）。原版所有分類都有筆圖示
+  - 以 `item.type` 判斷（`LearnSection.vue` 的 `HANDWRITING_TYPES`），不用分類名稱字串
+  - 筆圖示是 `absolute` 定位，拿掉不影響星號位置、卡片高度與間距
+  - 上方提示文字在這 5 個分類只顯示「點擊卡片發音」，隱藏「，點擊筆圖示可手寫練習」
+
 ### /player 的決策與已修正 bug
 - 壞音檔名單啟動時從 localStorage `thai-broken-audio` 讀取（原版不讀；使用者確認保留）；雲端有 `brokenAudio` 時覆蓋並寫回 localStorage（改由 `vocabProgress.applyCloudData()` 處理，見 /typing）
 - 「離線語音」確認／成功彈窗放在 View 外層（原版誤包在單字清單彈窗內）

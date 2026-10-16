@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import type { ThaiItemType } from '@/types/thai'
 import { useThaiPageContext } from '@/composables/thai/useThaiPage'
 
 const {
   learnCategories, currentFilter, currentToneFilter, showCommonOnly, filteredLearnData, animatingCards,
   favorites, showPinyin, clickLearnCard, openHW, toggleStar,
 } = useThaiPageContext()
+
+// 只有這些 type 提供手寫練習（刻意和原版不同：水果、動物、顏色、日期、家人不顯示筆圖示）
+const HANDWRITING_TYPES: readonly string[] = ['consonant', 'vowel', 'toneMark', 'numbers'] satisfies ThaiItemType[]
+const hasHandwriting = (type: string) => HANDWRITING_TYPES.includes(type)
 </script>
 
 <template>
@@ -49,7 +54,7 @@ const {
       <span
         class="text-xs text-emerald-500 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300">💡
         提示</span>
-      <span class="text-xs text-gray-500 dark:text-gray-400">點擊卡片發音，點擊筆圖示可手寫練習</span>
+      <span class="text-xs text-gray-500 dark:text-gray-400">點擊卡片發音<template v-if="hasHandwriting(currentFilter)">，點擊筆圖示可手寫練習</template></span>
     </div>
 
     <div v-if="filteredLearnData.length === 0" class="w-full text-center text-gray-400 py-10">暫無資料</div>
@@ -67,7 +72,7 @@ const {
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
         </div>
 
-        <button @click.stop="openHW(item)" class="absolute top-2 left-2 p-1.5 transition-all hover:scale-110 z-20 text-gray-300 dark:text-gray-600 hover:text-emerald-500 dark:hover:text-emerald-400" title="手寫練習">
+        <button v-if="hasHandwriting(item.type)" @click.stop="openHW(item)" class="absolute top-2 left-2 p-1.5 transition-all hover:scale-110 z-20 text-gray-300 dark:text-gray-600 hover:text-emerald-500 dark:hover:text-emerald-400" title="手寫練習">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
