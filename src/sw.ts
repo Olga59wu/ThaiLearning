@@ -21,7 +21,10 @@ self.addEventListener('install', () => {
 clientsClaim()
 
 // 程式本體：Workbox precache（檔名含 hash，不需手動遞增版號）
-precacheAndRoute(self.__WB_MANIFEST)
+// 圖示路徑帶 ?v=N 版本參數（破除瀏覽器／手機的舊圖快取），比對 precache 時忽略 v
+precacheAndRoute(self.__WB_MANIFEST, {
+  ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^v$/],
+})
 cleanupOutdatedCaches()
 
 // SPA：離線時所有頁面導航都回傳 index.html

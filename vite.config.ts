@@ -29,8 +29,9 @@ export default defineConfig({
         background_color: '#f8fafc',
         theme_color: '#4f46e5',
         icons: [
-          { src: 'icon-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icon-512x512.png', sizes: '512x512', type: 'image/png' },
+          // ?v=N：換圖但檔名不變時遞增，讓瀏覽器／手機更新圖示（同步改 index.html 的 apple-touch-icon）
+          { src: 'icon-192x192.png?v=2', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512x512.png?v=2', sizes: '512x512', type: 'image/png' },
         ],
       },
       injectManifest: {
