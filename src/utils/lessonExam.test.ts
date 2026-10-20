@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { LESSONS } from '@/data/lessons'
+import { LESSONS, lessonVowels } from '@/data/lessons'
+import { vowelStrokes } from '@/data/lessons/vowels'
 import {
   buildExam,
   cumulativeCount,
@@ -139,6 +140,12 @@ describe('normalizeNumberInput', () => {
 
 // ---- 第 2 課：母音、人稱代名詞 ----
 const lesson2Plan = () => examPlan(LESSONS, 2, 'lesson')
+// 手寫母音只出有筆順的：題數＝min(設定, 有筆順的母音數)，在 /path 畫好新的母音筆順時測試不用跟著改
+const strokedVowelCount = lessonVowels(LESSONS.find((l) => l.no === 2)!).filter((v) => vowelStrokes(v) !== undefined).length
+const HANDWRITE_LESSON = Math.min(2, strokedVowelCount)
+const HANDWRITE_CUMULATIVE = Math.min(cumulativeCount(2), strokedVowelCount)
+/** 題數為 0 的題型不會出現在 plan 裡 */
+const withHandwrite = (types: Record<string, number>, count: number) => (count > 0 ? { ...types, vowelHandwrite: count } : types)
 const vowelNo = (no: number) => lesson2Plan().vowels.find((v) => v.no === no)!
 
 describe('examPlan（第 2 課）', () => {
@@ -149,9 +156,9 @@ describe('examPlan（第 2 課）', () => {
     expect(plan.phrases).toHaveLength(4)
     expect(plan.numbers).toHaveLength(0)
   })
-  it('還沒有母音筆順時不出手寫母音題；其他題型照設定', () => {
+  it('手寫母音題數不超過有筆順的母音數（沒有筆順就不出）；其他題型照設定', () => {
     const types = Object.fromEntries(lesson2Plan().questions.map((q) => [q.type, q.count]))
-    expect(types).toEqual({ vowelSound: 5, vowelListen: 4, vowelLength: 3, pronounChoice: 4, phraseMeaning: 4 })
+    expect(types).toEqual(withHandwrite({ vowelSound: 5, vowelListen: 4, vowelLength: 3, pronounChoice: 4, phraseMeaning: 4 }, HANDWRITE_LESSON))
   })
   it('累積考：每課每種題型的題數減半（無條件進位、至少 1 題），各課從自己的題庫出題', () => {
     expect([1, 2, 3, 4, 5].map(cumulativeCount)).toEqual([1, 1, 2, 2, 3])
@@ -159,15 +166,15 @@ describe('examPlan（第 2 課）', () => {
     const sectionOf = (no: number) => Object.fromEntries(plan.sections.find((s) => s.lessonNo === no)!.questions.map((q) => [q.type, q.count]))
     // 第 1 課：4、3、3、4、3、3、4 → 各 2 題
     expect(sectionOf(1)).toEqual({ digitChoice: 2, digitInput: 2, digitHandwrite: 2, readingChoice: 2, listenNumber: 2, unitMeaning: 2, phraseMeaning: 2 })
-    // 第 2 課：5、4、3、（手寫沒有筆順 → 0）、4、4
-    expect(sectionOf(2)).toEqual({ vowelSound: 3, vowelListen: 2, vowelLength: 2, pronounChoice: 2, phraseMeaning: 2 })
+    // 第 2 課：5、4、3、2（手寫：不超過有筆順的母音數）、4、4
+    expect(sectionOf(2)).toEqual(withHandwrite({ vowelSound: 3, vowelListen: 2, vowelLength: 2, pronounChoice: 2, phraseMeaning: 2 }, HANDWRITE_CUMULATIVE))
     const total = plan.questions.reduce((s, q) => s + q.count, 0)
-    expect(total).toBe(25)
+    expect(total).toBe(25 + HANDWRITE_CUMULATIVE)
     // 設定畫面：同題型加總
     expect(plan.questions.find((q) => q.type === 'phraseMeaning')!.count).toBe(4)
     for (let t = 0; t < 30; t++) {
       const exam = buildExam(plan)
-      expect(exam).toHaveLength(25)
+      expect(exam).toHaveLength(25 + HANDWRITE_CUMULATIVE)
       // 常用語：第 1 課、第 2 課各 2 題
       const phrases = exam.filter((q) => q.type === 'phraseMeaning')
       const l1Meanings = new Set(lesson1Plan().phrases.map((p) => p.meaning))
@@ -176,7 +183,7 @@ describe('examPlan（第 2 課）', () => {
   })
   it('本課考試維持原題數', () => {
     expect(examPlan(LESSONS, 1, 'lesson').questions.reduce((s, q) => s + q.count, 0)).toBe(24)
-    expect(examPlan(LESSONS, 2, 'lesson').questions.reduce((s, q) => s + q.count, 0)).toBe(20)
+    expect(examPlan(LESSONS, 2, 'lesson').questions.reduce((s, q) => s + q.count, 0)).toBe(20 + HANDWRITE_LESSON)
   })
   it('累積考包含第 1、2 課的題型與題庫', () => {
     const plan = examPlan(LESSONS, 2, 'cumulative')
@@ -255,8 +262,8 @@ describe('buildExam（第 2 課，重複出題 30 次）', () => {
   const plan = lesson2Plan()
   const total = plan.questions.reduce((s, q) => s + q.count, 0)
 
-  it('題數符合設定（20 題），同題型題目不重複', () => {
-    expect(total).toBe(20)
+  it('題數符合設定（20 題＋手寫母音），同題型題目不重複', () => {
+    expect(total).toBe(20 + HANDWRITE_LESSON)
     for (let t = 0; t < 30; t++) {
       const exam = buildExam(plan)
       expect(exam).toHaveLength(total)
@@ -270,9 +277,14 @@ describe('buildExam（第 2 課，重複出題 30 次）', () => {
     }
   })
 
-  it('選項不重複、恰好 1 個正確；看長短只有 2 個選項，其他 4 個', () => {
+  it('選項不重複、恰好 1 個正確；看長短只有 2 個選項，其他 4 個（手寫題沒有選項）', () => {
     for (let t = 0; t < 30; t++) {
       buildExam(plan).forEach((q) => {
+        if (q.type === 'vowelHandwrite') {
+          expect(q.options, q.id).toBeUndefined()
+          expect(q.strokes, q.id).toBeDefined()
+          return
+        }
         expect(q.options, q.id).toBeDefined()
         expect(q.options).toHaveLength(q.type === 'vowelLength' ? 2 : OPTION_COUNT)
         expect(new Set(q.options!.map((o) => o.key)).size).toBe(q.options!.length)
