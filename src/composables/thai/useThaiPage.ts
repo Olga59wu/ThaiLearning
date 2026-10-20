@@ -24,6 +24,9 @@ type SpeakTarget = string | { soundText?: string; char?: string } | null | undef
 interface MemoryCard {
   name: string
   content: string
+  /** 元音的字卡：改用 VowelText 畫 writeBase（อ 淺色；刻意和原版不同），content 不顯示 */
+  vowelText?: string
+  vowelFontSize?: number
   item: ThaiItem
   flipped: boolean
   matched: boolean
@@ -268,7 +271,8 @@ export const createThaiPage = () => {
     const cards: Omit<MemoryCard, 'flipped' | 'matched' | 'shake'>[] = []
     pool.forEach((i) => {
       const fs = i.char.length > 2 ? 'text-xl' : 'text-3xl'
-      cards.push({ name: i.name, content: `<div class="${fs} font-bold thai-font text-center leading-tight px-1 text-emerald-600 dark:text-emerald-400">${i.char}</div>`, item: i })
+      cards.push({ name: i.name, content: `<div class="${fs} font-bold thai-font text-center leading-tight px-1 text-emerald-600 dark:text-emerald-400">${i.char}</div>`, item: i,
+        ...(i.type === 'vowel' && i.writeBase ? { vowelText: i.writeBase, vowelFontSize: fs === 'text-xl' ? 20 : 30 } : {}) })
       cards.push({ name: i.name, content: `<div class="text-sm font-bold text-center text-gray-600 dark:text-gray-300">${i.meaning}<br><span class="text-xl">${i.img || ''}</span></div>`, item: i })
     })
     memory.cards = shuffleArray(cards).map((c) => ({ ...c, flipped: false, matched: false, shake: false }))

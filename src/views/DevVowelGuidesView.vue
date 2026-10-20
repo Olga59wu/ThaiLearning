@@ -15,7 +15,7 @@ import HandwritingModal from '@/components/common/HandwritingModal.vue'
 // 1. 第 2 課 32 個母音的手寫底圖，有筆順的疊上橘色路徑，自動檢查筆畫是否完整在框內
 // 2. thaiData 有筆順的字在 /path（500px 框）的縮放比例：必須都是 100%，否則已畫好的筆順會和底字對不上
 // 3. ?modal=เอือะ：直接打開該母音的手寫彈窗，檢查有沒有捲軸
-// 4. /thai 元音卡片的字形預覽（VowelText，同卡片的 text-3xl 粗體）
+// 4. /thai 元音卡片、測驗、翻牌記憶的字形預覽（VowelText）
 const { isDark, toggleDark } = useLessonTheme()
 const route = useRoute()
 
@@ -127,6 +127,15 @@ onMounted(async () => {
         <div class="font-bold thai-font mb-2 text-center text-3xl"><VowelText v-if="t.writeBase" :text="t.writeBase" :is-dark="isDark" :font-size="30" :line-height="36 / 30" bold /></div>
         <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 thai-font">{{ t.thaiLabel }}</div>
         <div class="text-[10px] font-mono text-gray-400">{{ t.strokes ? '有筆順' : '無筆順' }}</div>
+      </div>
+    </div>
+
+    <h2 class="mt-6 text-lg font-bold text-gray-800 dark:text-white">/thai 測驗、翻牌記憶的字級預覽</h2>
+    <div class="flex flex-wrap items-end gap-6 p-4 rounded-2xl bg-white dark:bg-slate-800">
+      <div v-for="t in ['เอือะ', 'อุ', 'ไอ']" :key="t" class="flex items-end gap-4">
+        <div class="text-9xl font-bold thai-font leading-none border border-dashed border-sky-200"><VowelText :text="t" :is-dark="isDark" :font-size="128" :line-height="1" bold /></div>
+        <div class="text-5xl font-bold thai-font leading-none border border-dashed border-sky-200"><VowelText :text="t" :is-dark="isDark" :font-size="48" :line-height="1" bold /></div>
+        <div class="text-xl font-bold thai-font leading-tight border border-dashed border-sky-200"><VowelText :text="t" :is-dark="isDark" :font-size="20" :line-height="1.25" bold /></div>
       </div>
     </div>
 

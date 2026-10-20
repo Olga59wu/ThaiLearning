@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { useThaiPageContext } from '@/composables/thai/useThaiPage'
+import { useThaiLearnStore } from '@/stores/thaiLearn'
+import VowelText from '@/components/common/VowelText.vue'
 
 const { memory, initMemoryGame, flipMemoryCard } = useThaiPageContext()
+const { isDark } = storeToRefs(useThaiLearnStore())
 </script>
 
 <template>
@@ -23,8 +27,11 @@ const { memory, initMemoryGame, flipMemoryCard } = useThaiPageContext()
               <div class="flex flex-col items-center opacity-40"><span class="text-3xl filter grayscale transition-all">🇹🇭</span></div>
             </div>
             <div v-else class="absolute inset-0 flex items-center justify-center bg-white dark:bg-slate-800 rounded-2xl border-2 shadow-md p-1"
-              :class="card.matched ? 'border-emerald-500 bg-emerald-100 dark:bg-emerald-900/50' : (card.shake ? 'border-red-400' : 'border-emerald-500')"
-              v-html="card.content"></div>
+              :class="card.matched ? 'border-emerald-500 bg-emerald-100 dark:bg-emerald-900/50' : (card.shake ? 'border-red-400' : 'border-emerald-500')">
+              <!-- 元音字卡：writeBase（อ 淺色），其他照原版 v-html -->
+              <div v-if="card.vowelText" class="font-bold thai-font text-center leading-tight px-1"><VowelText :text="card.vowelText" :is-dark="isDark" :font-size="card.vowelFontSize ?? 30" :line-height="1.25" bold /></div>
+              <div v-else class="contents" v-html="card.content"></div>
+            </div>
           </div>
         </div>
 

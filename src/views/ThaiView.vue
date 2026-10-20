@@ -86,7 +86,7 @@ onBeforeUnmount(() => {
     <!-- Modals -->
     <ToneCalcModal v-if="modals.calc" />
     <HelpModal v-if="modals.help" />
-    <HandwritingModal v-if="modals.writing" :hw="hw" :is-dark="isDark" @close="modals.writing = false"
+    <HandwritingModal v-if="modals.writing" :hw="hw" :is-dark="isDark" fit-viewport @close="modals.writing = false"
       :title="hwItem?.thaiLabel || hwItem?.soundText || hwItem?.name || ''" :strokes="hwItem?.strokes" :fallback-char="hwItem?.char" :guide-text="hwGuideText" />
 
     <div class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white px-6 py-3 rounded-full transition-opacity duration-300 pointer-events-none text-sm font-medium z-50 shadow-2xl flex items-center gap-2" :class="toast.show ? 'opacity-100' : 'opacity-0'">

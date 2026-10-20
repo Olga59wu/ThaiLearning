@@ -1,10 +1,18 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { useThaiPageContext } from '@/composables/thai/useThaiPage'
+import { useThaiLearnStore } from '@/stores/thaiLearn'
+import type { ThaiItem } from '@/types/thai'
+import VowelText from '@/components/common/VowelText.vue'
 
 const {
   currentMode, quiz, quizModeLabel, mistakeList, favorites,
   speak, setQuizScope, startQuiz, nextQuizQuestion, handleQuizAnswer, getQuizOptClass,
 } = useThaiPageContext()
+
+// 元音顯示 writeBase（อ 淺色；刻意和原版不同，原版顯示 ◌ 寫法）；字級同原本的 class（text-9xl 128px、text-5xl 48px、text-3xl 30px，行高皆為 1）
+const { isDark } = storeToRefs(useThaiLearnStore())
+const vowelText = (item: ThaiItem | null | undefined) => (item?.type === 'vowel' ? item.writeBase : undefined)
 </script>
 
 <template>
@@ -73,7 +81,7 @@ const {
         <div class="inline-block p-2 rounded-full bg-blue-50 dark:bg-blue-900/20 mb-4">
           <span class="text-blue-500 text-xs font-bold px-2">👁️ 請問發音</span>
         </div>
-        <div class="text-9xl font-bold text-gray-800 dark:text-white mb-2 transition-all cursor-default thai-font drop-shadow-xs">{{ quiz.currentItem?.char }}</div>
+        <div class="text-9xl font-bold text-gray-800 dark:text-white mb-2 transition-all cursor-default thai-font drop-shadow-xs"><VowelText v-if="vowelText(quiz.currentItem)" :text="vowelText(quiz.currentItem)!" :is-dark="isDark" :font-size="128" :line-height="1" bold /><template v-else>{{ quiz.currentItem?.char }}</template></div>
         <div class="text-sm text-gray-400 font-medium">請選擇下方正確的發音</div>
       </div>
 
@@ -86,11 +94,11 @@ const {
 
           <template v-if="currentMode === 'quiz_hear'">
             <div v-if="quiz.answered" class="flex flex-col items-center justify-center w-full h-full p-1 pointer-events-none">
-              <div class="mb-1 text-3xl font-bold leading-none text-gray-800 thai-font dark:text-white">{{ opt.char }}</div>
+              <div class="mb-1 text-3xl font-bold leading-none text-gray-800 thai-font dark:text-white"><VowelText v-if="vowelText(opt)" :text="vowelText(opt)!" :is-dark="isDark" :font-size="30" :line-height="1" bold /><template v-else>{{ opt.char }}</template></div>
               <div class="text-sm font-bold leading-tight text-center text-emerald-700 dark:text-emerald-400 thai-font">{{ opt.thaiLabel }}</div>
               <div class="text-xs text-center text-gray-500 scale-95 dark:text-gray-400">{{ opt.meaning }}</div>
             </div>
-            <div v-else class="flex items-center justify-center w-full text-5xl font-bold text-gray-800 pointer-events-none thai-font dark:text-white group-hover:text-emerald-600 transition-colors">{{ opt.char }}</div>
+            <div v-else class="flex items-center justify-center w-full text-5xl font-bold text-gray-800 pointer-events-none thai-font dark:text-white group-hover:text-emerald-600 transition-colors"><VowelText v-if="vowelText(opt)" :text="vowelText(opt)!" :is-dark="isDark" :font-size="48" :line-height="1" bold /><template v-else>{{ opt.char }}</template></div>
           </template>
           <template v-else>
             <div @click.stop="speak({soundText: opt.soundText})" class="z-10 flex items-center justify-center w-1/3 transition-colors border-r border-gray-100 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 dark:border-slate-600 text-emerald-600 dark:text-emerald-400" title="試聽">
