@@ -25,6 +25,8 @@ export const FONTS = {
   sarabun: `${FONT_BASE}family=Sarabun:wght@400;700&display=swap`,
   downloader: `${FONT_BASE}family=Sarabun:wght@400;500;600;700;800&family=Inter:wght@400;600;700&display=swap`,
   notFound: `${FONT_BASE}family=Noto+Sans+TC:wght@400;500;700&display=swap`,
+  // 課程頁：同 thai，另加鉛筆筆記用的手寫字型（霞鶩文楷 TC）
+  lessons: `${FONT_BASE}family=Sarabun:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=LXGW+WenKai+TC:wght@400&display=swap`,
 }
 
 const upsertHeadEl = <K extends keyof HTMLElementTagNameMap>(

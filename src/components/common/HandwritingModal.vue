@@ -9,6 +9,7 @@ defineProps<{
   title: string
   strokes?: string[]
   fallbackChar?: string
+  guideText?: string
 }>()
 const emit = defineEmits<{ close: [] }>()
 </script>
@@ -26,7 +27,7 @@ const emit = defineEmits<{ close: [] }>()
         </button>
       </div>
 
-      <HandwritingPad :hw="hw" :is-dark="isDark" :strokes="strokes" :fallback-char="fallbackChar" />
+      <HandwritingPad :hw="hw" :is-dark="isDark" :strokes="strokes" :fallback-char="fallbackChar" :guide-text="guideText" />
     </div>
   </div>
 </template>

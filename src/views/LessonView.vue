@@ -5,6 +5,7 @@ import { getLesson } from '@/data/lessons'
 import { useLessonTheme } from '@/composables/lessons/useLessonTheme'
 import { provideLessonAudio } from '@/composables/lessons/useLessonAudio'
 import { provideNumberHandwriting } from '@/composables/lessons/useNumberHandwriting'
+import { provideVowelHandwriting } from '@/composables/lessons/useVowelHandwriting'
 import { useLessonRecordsStore } from '@/stores/lessonRecords'
 import { toThaiDigits } from '@/utils/thaiNumber'
 import HandwritingModal from '@/components/common/HandwritingModal.vue'
@@ -15,6 +16,9 @@ import RulesBlock from '@/components/lessons/blocks/RulesBlock.vue'
 import PhrasesBlock from '@/components/lessons/blocks/PhrasesBlock.vue'
 import NotesBlock from '@/components/lessons/blocks/NotesBlock.vue'
 import HomeworkBlock from '@/components/lessons/blocks/HomeworkBlock.vue'
+import VowelsBlock from '@/components/lessons/blocks/VowelsBlock.vue'
+import PronounsBlock from '@/components/lessons/blocks/PronounsBlock.vue'
+import UsageBlock from '@/components/lessons/blocks/UsageBlock.vue'
 import PracticeTab from '@/components/lessons/practice/PracticeTab.vue'
 import ExamTab from '@/components/lessons/exam/ExamTab.vue'
 
@@ -24,6 +28,9 @@ useLessonTheme()
 provideLessonAudio()
 // 數字卡片、作業格的 ✍️ 手寫彈窗
 const { hw, isDark, target: hwTarget, strokes: hwStrokes, close: closeHW } = provideNumberHandwriting()
+// 母音卡片的 ✍️ 手寫彈窗（底圖搭配 อ）
+const vowelHW = provideVowelHandwriting()
+const { target: vowelTarget, strokes: vowelStrokes, guideText: vowelGuideText } = vowelHW
 
 // 考試紀錄：本機與雲端聯集
 onMounted(() => useLessonRecordsStore().syncFromCloud())
@@ -72,6 +79,9 @@ const setTab = (t: Tab) => router.replace({ query: { ...route.query, tab: t === 
         <PhrasesBlock v-else-if="block.type === 'phrases'" :block="block" />
         <NotesBlock v-else-if="block.type === 'notes'" :block="block" />
         <HomeworkBlock v-else-if="block.type === 'homework'" :block="block" />
+        <VowelsBlock v-else-if="block.type === 'vowels'" :block="block" />
+        <PronounsBlock v-else-if="block.type === 'pronouns'" :block="block" />
+        <UsageBlock v-else-if="block.type === 'usage'" :block="block" />
       </template>
     </div>
 
@@ -82,5 +92,9 @@ const setTab = (t: Tab) => router.replace({ query: { ...route.query, tab: t === 
     <!-- 數字手寫彈窗 -->
     <HandwritingModal v-if="hwTarget !== null" :hw="hw" :is-dark="isDark" @close="closeHW"
       :title="`${toThaiDigits(hwTarget)}（${hwTarget}）`" :strokes="hwStrokes" :fallback-char="toThaiDigits(hwTarget)" />
+
+    <!-- 母音手寫彈窗 -->
+    <HandwritingModal v-if="vowelTarget !== null" :hw="vowelHW.hw" :is-dark="isDark" @close="vowelHW.close"
+      :title="`${vowelTarget.form}（${vowelTarget.withO}）`" :strokes="vowelStrokes" :guide-text="vowelGuideText" />
   </div>
 </template>

@@ -6,6 +6,7 @@ import type { LessonBlock } from '@/types/lesson'
 import BlockSection from './BlockSection.vue'
 import ThaiReading from '../ThaiReading.vue'
 import SpeakButton from '../SpeakButton.vue'
+import PencilNotes from '../PencilNotes.vue'
 
 const props = defineProps<{ block: Extract<LessonBlock, { type: 'phrases' }> }>()
 
@@ -16,6 +17,7 @@ const phrases = computed(() =>
     return {
       id: p.id,
       meaning: p.meaning,
+      pencil: p.pencil,
       lines: p.particles.map((particle) => ({
         particle,
         th: base.th + particle,
@@ -32,7 +34,10 @@ const phrases = computed(() =>
   <BlockSection :title="block.title" icon="💬">
     <div class="flex flex-col gap-3">
       <div v-for="p in phrases" :key="p.id" class="p-4 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600">
-        <div class="mb-3 font-bold text-emerald-600 dark:text-emerald-400">{{ p.meaning }}</div>
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ p.meaning }}</span>
+          <PencilNotes :notes="p.pencil" />
+        </div>
         <div class="flex flex-col gap-3">
           <div v-for="line in p.lines" :key="line.particle" class="flex items-center gap-3">
             <SpeakButton :text="line.th" :tts-only="!line.hasAudio" />

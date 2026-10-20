@@ -136,9 +136,9 @@ export interface PronounCell {
 /** 用法：一個字＋例子（例如 複數 พวก＋人稱代名詞） */
 export interface UsageItem {
   /** 例如「複數」 */
-  label: string
+  label?: string
   word: LessonWord
-  /** 例如「＋人稱代名詞」 */
+  /** 字後面的說明，例如「＋人稱代名詞」、「的用法」 */
   pattern?: string
   examples: LessonWord[]
   pencil?: PencilNote[]

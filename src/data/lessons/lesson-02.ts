@@ -155,7 +155,7 @@ const lesson: Lesson = {
           ],
         },
         {
-          label: '的用法',
+          pattern: '的用法',
           word: { kind: 'ref', ref: { vocabId: 'th-0012' }, meaning: '您', syllables: sy('คุณ khun —') },
           pencil: [{ page: 257, text: '名詞 → 恩惠' }],
           examples: [

@@ -109,7 +109,7 @@ const router = createRouter({
         favicon: FAVICON.book,
         viewport: VIEWPORT.noZoom,
         lang: 'zh-TW',
-        fonts: FONTS.thai,
+        fonts: FONTS.lessons,
         requiresAuth: true,
       },
     },
@@ -127,6 +127,16 @@ const router = createRouter({
     },
   ],
 })
+
+// 開發用：母音手寫底圖原型（只在 pnpm dev 註冊，build 不會包含）
+if (import.meta.env.DEV) {
+  router.addRoute({
+    path: '/dev/vowel-guides',
+    name: 'dev-vowel-guides',
+    component: () => import('@/views/DevVowelGuidesView.vue'),
+    meta: { title: '母音底圖原型', viewport: VIEWPORT.basic, lang: 'zh-TW', fonts: FONTS.lessons, requiresAuth: true },
+  })
+}
 
 router.beforeEach(async (to) => {
   if (!to.meta.requiresAuth && !to.meta.requiresAdmin) return true
