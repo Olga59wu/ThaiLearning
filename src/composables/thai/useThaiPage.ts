@@ -1,6 +1,7 @@
 import { computed, inject, nextTick, provide, reactive, ref, shallowRef, type InjectionKey } from 'vue'
 import { storeToRefs } from 'pinia'
 import { sentenceData, thaiData, toneExamples, tonePracticeSeries } from '@/data/thai'
+import { thaiWriteBase } from '@/data/thaiWriteBase'
 import { useThaiLearnStore } from '@/stores/thaiLearn'
 import { useTimers } from '@/composables/useTimers'
 import { useHandwriting } from '@/composables/useHandwriting'
@@ -272,7 +273,7 @@ export const createThaiPage = () => {
     pool.forEach((i) => {
       const fs = i.char.length > 2 ? 'text-xl' : 'text-3xl'
       cards.push({ name: i.name, content: `<div class="${fs} font-bold thai-font text-center leading-tight px-1 text-emerald-600 dark:text-emerald-400">${i.char}</div>`, item: i,
-        ...(i.type === 'vowel' && i.writeBase ? { vowelText: i.writeBase, vowelFontSize: fs === 'text-xl' ? 20 : 30 } : {}) })
+        ...(thaiWriteBase(i) ? { vowelText: thaiWriteBase(i), vowelFontSize: fs === 'text-xl' ? 20 : 30 } : {}) })
       cards.push({ name: i.name, content: `<div class="text-sm font-bold text-center text-gray-600 dark:text-gray-300">${i.meaning}<br><span class="text-xl">${i.img || ''}</span></div>`, item: i })
     })
     memory.cards = shuffleArray(cards).map((c) => ({ ...c, flipped: false, matched: false, shake: false }))
@@ -347,7 +348,7 @@ export const createThaiPage = () => {
 
   // HW Logic（畫布、筆色、縮放、清除、筆順動畫在 useHandwriting；彈窗是共用的 HandwritingModal）
   // 元音：底圖用 writeBase（อ 淺色，同課程頁 VowelGuide），筆順疊在底圖上、不縮放到筆畫範圍（刻意和原版不同）
-  const hwGuideText = computed(() => (hwItem.value?.type === 'vowel' ? hwItem.value.writeBase : undefined))
+  const hwGuideText = computed(() => thaiWriteBase(hwItem.value))
   const openHW = (item: ThaiItem) => {
     hwItem.value = item; modals.value.writing = true
     nextTick(() => {

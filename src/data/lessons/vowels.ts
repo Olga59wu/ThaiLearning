@@ -1,5 +1,6 @@
 // 母音連結 thaiData（寫法、筆順、位置說明）；獨立一個檔，避免隨身聽／打字（vocabCategories）跟著載入 thaiData
 import { thaiData } from '@/data/thai'
+import { thaiWriteBaseOfChar } from '@/data/thaiWriteBase'
 import type { ThaiItem } from '@/types/thai'
 import type { LessonVowel } from '@/types/lesson'
 import { LESSONS } from './registry'
@@ -28,5 +29,5 @@ export const LESSON_ONLY_VOWELS: { lessonNo: number; vowel: LessonVowel }[] = LE
 
 /** /thai、/path 用：thaiData 母音或課程限定母音的寫法；不是母音就回傳 undefined */
 export const writeBaseOfChar = (char: string): string | undefined =>
-  thaiData.find((t) => t.type === 'vowel' && t.char === char)?.writeBase ??
+  thaiWriteBaseOfChar(char) ??
   LESSON_ONLY_VOWELS.find(({ vowel }) => vowel.form === char)?.vowel.writeBase

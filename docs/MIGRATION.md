@@ -134,6 +134,8 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - thaiData 母音新增 `writeBase`（例如 `◌ะ` → `อะ`、`◌ือ` → `อื`、`ฤ` → `ฤ`），是唯一來源；每週課程的母音從 thaiData 讀取（不在 thaiData 的 ฦ、ฦๅ 寫在 lesson-02）
   - `char`（`◌ะ` 等）**不改**：它是收藏、錯題、課程 ref 的識別碼
   - 所有顯示元音字形的地方都改顯示 `writeBase`，อ 淺色、母音正常顏色（`components/common/VowelText.vue`，canvas 畫，配色同手寫底圖 `fillVowelText`；字級同原本的 class）：學習卡片（含收藏）、看字選音的題目、聽音辨字的選項（作答前後）、翻牌記憶的字卡（`MemoryCard.vowelText`，其他字卡照原版 `v-html`）；錯題複習、收藏範圍都走同一個測驗畫面。只改顯示，判斷與紀錄仍用 `char`／`soundText`
+  - 寫法一律用 `char` 查 thaiData（`data/thaiWriteBase.ts` 的 `thaiWriteBase()`），**不讀物件身上的 `writeBase`**：錯題清單（localStorage `thai_mistakes`／雲端 `mistakeList`）存的是整個題目物件，加 writeBase 之前存的舊錯題沒有這個欄位，曾因此在錯題複習顯示 ◌ 寫法（2026-10-20 修正）
+  - 行內文字（VowelText）的母音顏色同原本文字（`text-gray-800`／`dark:text-white`，`VOWEL_TEXT_COLORS`），小字的上方母音也看得清楚；手寫底圖（VowelGuide）維持 gray-500。翻牌記憶的元音字卡原本是 emerald 色，現在也是 gray-800
   - 元音手寫彈窗：底圖用 `VowelGuide`（同課程頁），筆順疊在底圖上、viewBox 固定 `0 0 100 100`，**不再 autoZoom 到筆畫範圍**；只畫動畫筆跡，不畫淺灰筆順底線。輔音、數字等其他分類不變
   - 手寫彈窗（所有分類）加上 `fit-viewport`：畫布邊長不超過 `calc(90vh - 12rem)`，正方形加標題列、按鈕列不超出彈窗、不出現捲軸（同課程頁）
   - 原本 5 個元音筆順（ะ、า、ิ、ี、ุ）是對著 ◌ 畫的，和 อ 底圖對不上，已從 thai.ts 移除（`3d6a085` 之前的版本還有），等使用者在 /path 重畫；重畫前 /thai、課程頁都不顯示元音筆順動畫，課程考試的手寫題也不出

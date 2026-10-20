@@ -4,6 +4,7 @@ import { useThaiPageContext } from '@/composables/thai/useThaiPage'
 import { useThaiLearnStore } from '@/stores/thaiLearn'
 import type { ThaiItem } from '@/types/thai'
 import VowelText from '@/components/common/VowelText.vue'
+import { thaiWriteBase } from '@/data/thaiWriteBase'
 
 const {
   currentMode, quiz, quizModeLabel, mistakeList, favorites,
@@ -12,7 +13,8 @@ const {
 
 // 元音顯示 writeBase（อ 淺色；刻意和原版不同，原版顯示 ◌ 寫法）；字級同原本的 class（text-9xl 128px、text-5xl 48px、text-3xl 30px，行高皆為 1）
 const { isDark } = storeToRefs(useThaiLearnStore())
-const vowelText = (item: ThaiItem | null | undefined) => (item?.type === 'vowel' ? item.writeBase : undefined)
+// 用 char 查 thaiData（錯題可能是加 writeBase 之前存的舊物件）
+const vowelText = (item: ThaiItem | null | undefined) => thaiWriteBase(item)
 </script>
 
 <template>

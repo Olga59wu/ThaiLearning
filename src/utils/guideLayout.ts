@@ -117,9 +117,16 @@ export const guideTextLayoutFor = async (
 
 // ---- 母音寫法的配色：อ（子音位置）淺色、母音正常顏色 ----
 // /thai 元音卡片、手寫底圖（課程頁、/thai）、/path 底字共用
+// 手寫底圖（VowelGuide）：母音 gray-500，描寫時不搶筆跡
 export const VOWEL_COLORS = {
   light: { consonant: '#e5e7eb', vowel: '#6b7280' }, // gray-200／gray-500
   dark: { consonant: '#334155', vowel: '#94a3b8' }, // slate-700／slate-400
+}
+
+// 行內文字（VowelText：/thai 卡片、測驗、翻牌記憶）：母音同原本文字的 text-gray-800 / dark:text-white，小字的細筆畫也看得清楚
+export const VOWEL_TEXT_COLORS: typeof VOWEL_COLORS = {
+  light: { consonant: '#e5e7eb', vowel: '#1f2937' }, // gray-200／gray-800
+  dark: { consonant: '#334155', vowel: '#ffffff' }, // slate-700／white
 }
 
 /**
@@ -127,8 +134,15 @@ export const VOWEL_COLORS = {
  * 泰文的上下母音和 อ 是同一個字形組合，分 span 上色會斷掉，所以用 canvas。
  * 第一個 อ 是子音位置（ออ、เออ 的第二個 อ 是母音的一部分，不改色）；沒有 อ 的（ฤ）整個是正常顏色。
  */
-export const fillVowelText = (ctx: CanvasRenderingContext2D, text: string, x: number, baseline: number, isDark: boolean) => {
-  const colors = isDark ? VOWEL_COLORS.dark : VOWEL_COLORS.light
+export const fillVowelText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  baseline: number,
+  isDark: boolean,
+  palette: typeof VOWEL_COLORS = VOWEL_COLORS,
+) => {
+  const colors = isDark ? palette.dark : palette.light
   ctx.fillStyle = colors.vowel
   ctx.fillText(text, x, baseline)
   const index = text.indexOf('อ')

@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { defineAsyncComponent, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { DEV_SKIP_AUTH } from '@/dev/skipAuth'
+
+// 開發用跳過登入的提示條（production build 會移除）
+const DevAuthBanner = import.meta.env.DEV && DEV_SKIP_AUTH ? defineAsyncComponent(() => import('@/dev/DevAuthBanner.vue')) : null
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -20,4 +24,5 @@ watch(
 
 <template>
   <RouterView />
+  <component :is="DevAuthBanner" v-if="DevAuthBanner" />
 </template>

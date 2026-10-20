@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useThaiPageContext } from '@/composables/thai/useThaiPage'
 import { useThaiLearnStore } from '@/stores/thaiLearn'
 import VowelText from '@/components/common/VowelText.vue'
+import { thaiWriteBase } from '@/data/thaiWriteBase'
 
 const {
   learnCategories, currentFilter, currentToneFilter, showCommonOnly, filteredLearnData, animatingCards,
@@ -105,7 +106,7 @@ const VOWEL_LINE_HEIGHT = 36 / 30
               <span v-if="item.toneClass" :class="item.toneClass === 'Mid' ? 'bg-green-100 text-green-600 border-green-200' : item.toneClass === 'High' ? 'bg-red-100 text-red-600 border-red-200' : 'bg-blue-100 text-blue-600 border-blue-200'" class="text-[10px] px-1.5 py-0.5 rounded border">{{ item.toneClass === 'Mid' ? '中' : item.toneClass === 'High' ? '高' : '低' }}</span>
               <span v-if="item.duration" :class="item.duration === 'Long' ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-orange-100 text-orange-600 border-orange-200'" class="text-[10px] px-1.5 py-0.5 rounded border">{{ item.duration === 'Long' ? '長' : '短' }}</span>
             </div>
-            <div class="font-bold text-gray-800 dark:text-white thai-font mb-2 text-center" :class="(item.type === 'vowel' || (item.char && item.char.length > 3)) ? 'text-3xl' : 'text-5xl'"><VowelText v-if="item.type === 'vowel' && item.writeBase" :text="item.writeBase" :is-dark="isDark" :font-size="VOWEL_FONT_SIZE" :line-height="VOWEL_LINE_HEIGHT" bold /><template v-else>{{ item.char }}</template></div>
+            <div class="font-bold text-gray-800 dark:text-white thai-font mb-2 text-center" :class="(item.type === 'vowel' || (item.char && item.char.length > 3)) ? 'text-3xl' : 'text-5xl'"><VowelText v-if="thaiWriteBase(item)" :text="thaiWriteBase(item)!" :is-dark="isDark" :font-size="VOWEL_FONT_SIZE" :line-height="VOWEL_LINE_HEIGHT" bold /><template v-else>{{ item.char }}</template></div>
             <div class="mb-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 thai-font text-center min-h-[1.25rem]">{{ item.thaiLabel || '' }}</div>
             <div v-show="showPinyin" class="text-xs text-gray-400 dark:text-gray-500 font-medium text-center pinyin-text uppercase tracking-wider">{{ item.name || item.reading || '' }}</div>
           </div>

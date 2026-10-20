@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth'
 import { auth, provider } from '@/services/firebase'
 import { adminEmails, allowedEmails } from '@/config'
+import { DEV_SKIP_AUTH } from '@/dev/skipAuth'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = shallowRef<User | null>(null)
@@ -17,7 +18,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isLoggedIn = computed(() => user.value !== null)
   const isAdmin = computed(
-    () => !!user.value?.email && adminEmails.includes(user.value.email),
+    () =>
+      (import.meta.env.DEV && DEV_SKIP_AUTH && user.value !== null) ||
+      (!!user.value?.email && adminEmails.includes(user.value.email)),
   )
 
   let resolveReady: () => void = () => {}
@@ -30,6 +33,17 @@ export const useAuthStore = defineStore('auth', () => {
   const init = () => {
     if (started) return
     started = true
+
+    // 開發用跳過登入：假使用者，白名單、管理員都視為通過（production build 會移除這段）
+    if (import.meta.env.DEV && DEV_SKIP_AUTH) {
+      import('@/dev/devSession').then(({ DEV_USER }) => {
+        user.value = DEV_USER
+        isLoading.value = false
+        errorMessage.value = ''
+        resolveReady()
+      })
+      return
+    }
 
     onAuthStateChanged(auth, (u) => {
       isLoading.value = false
@@ -61,7 +75,14 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  const logout = () => signOut(auth)
+  const logout = () => {
+    // 開發用跳過登入：沒有 Firebase 登入狀態，只清掉假使用者
+    if (import.meta.env.DEV && DEV_SKIP_AUTH) {
+      user.value = null
+      return Promise.resolve()
+    }
+    return signOut(auth)
+  }
 
   return { user, isLoading, errorMessage, isLoggedIn, isAdmin, ready, init, login, logout }
 })

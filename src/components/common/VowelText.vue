@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { fillVowelText, GUIDE_FONT_FAMILY } from '@/utils/guideLayout'
+import { fillVowelText, GUIDE_FONT_FAMILY, VOWEL_TEXT_COLORS } from '@/utils/guideLayout'
 
 /**
- * 行內的母音寫法（例如 /thai 元音卡片的 อะ）：อ 淺色、母音正常顏色，配色同手寫底圖（fillVowelText）。
+ * 行內的母音寫法（例如 /thai 元音卡片的 อะ）：อ 淺色、母音同原本文字的顏色（VOWEL_TEXT_COLORS）。
  * 佔位大小同一般文字（寬＝字寬、高＝行高）；凸出行框的上下母音依實際筆畫範圍多留空間，以負 margin 抵銷（同 HTML 文字的 overflow）。
  */
 const props = withDefaults(defineProps<{ text: string; isDark: boolean; fontSize: number; bold?: boolean; lineHeight?: number }>(), {
@@ -55,7 +55,7 @@ const draw = async () => {
   ctx.font = font // 改 canvas 尺寸會重設 context 狀態
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
-  fillVowelText(ctx, props.text, pad.left, pad.top + lineBaseline, props.isDark)
+  fillVowelText(ctx, props.text, pad.left, pad.top + lineBaseline, props.isDark, VOWEL_TEXT_COLORS)
 }
 
 watch(() => [props.text, props.isDark, props.fontSize, props.bold], draw)
