@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { useHandwriting } from '@/composables/useHandwriting'
+import { GUIDE_STROKES_VIEWBOX } from '@/utils/strokeFrame'
 import VowelGuide from './VowelGuide.vue'
 
 // 手寫畫布＋控制列（原 /thai HandwritingModal 的內容區與底部列，DOM 與 class 不變）
 // showGuide：是否顯示底圖與筆順（課程練習在「看答案」前隱藏）
-// guideText：課程母音的底圖（例如 อะ，อ 淺色）；有設定時筆順用 /path 的原始座標（viewBox 0 0 100 100，不縮放），
+// guideText：課程母音的底圖（例如 อะ，อ 淺色）；有設定時筆順用 /path 的底字框（GUIDE_STROKES_VIEWBOX，不依筆畫縮放），
 //   只畫動畫筆跡，不畫淺灰筆順底線（底圖的母音已經是正常顏色）
 const props = withDefaults(
   defineProps<{
@@ -32,7 +33,7 @@ const setCanvasEl = (el: unknown) => { props.hw.canvasRef.value = el as HTMLCanv
     <div class="relative flex items-center justify-center w-full overflow-hidden bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-gray-200 dark:border-slate-600 cursor-crosshair touch-none aspect-square mx-auto" id="canvas-container" :ref="setContainerEl" :style="fitViewport ? { maxWidth: 'min(100%, calc(90vh - 12rem))' } : undefined">
       <template v-if="showGuide && guideText">
         <VowelGuide :text="guideText" :is-dark="isDark" class="absolute inset-0 z-0" />
-        <svg v-if="strokes && strokes.length > 0" :key="strokes.join('|')" class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+        <svg v-if="strokes && strokes.length > 0" :key="strokes.join('|')" class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none" :viewBox="GUIDE_STROKES_VIEWBOX" preserveAspectRatio="xMidYMid meet">
           <g><path v-for="(d, i) in strokes" :key="'a'+i" :d="d" class="stroke-anim-path" /></g>
         </svg>
       </template>

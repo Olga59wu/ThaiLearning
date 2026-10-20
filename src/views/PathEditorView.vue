@@ -5,7 +5,8 @@ import type { ThaiItem } from '@/types/thai'
 import CharPickerModal from '@/components/path/CharPickerModal.vue'
 import { usePageShell } from '@/composables/usePageShell'
 import { useTimers } from '@/composables/useTimers'
-import { GUIDE_FONT_RATIO, guideTextLayoutFor } from '@/utils/guideLayout'
+import { GUIDE_FONT_RATIO, PATH_GUIDE_COLORS, guideTextLayoutFor } from '@/utils/guideLayout'
+import { PATH_CANVAS_SIZE, canvasToStroke, strokeToCanvas } from '@/utils/strokeFrame'
 import { LESSON_ONLY_VOWELS, writeBaseOfChar } from '@/data/lessons/vowels'
 import VowelGuide from '@/components/common/VowelGuide.vue'
 
@@ -54,9 +55,7 @@ let strokes: Point[][] = [[]]
 let tension = 0.5
 let currentCharObj: CharObj | null = null
 
-const CANVAS_SIZE = 500
-const TARGET_SIZE = 100
-const SCALE_FACTOR = TARGET_SIZE / CANVAS_SIZE
+const CANVAS_SIZE = PATH_CANVAS_SIZE
 const HIT_RADIUS = 15
 
 let isDragging = false
@@ -273,14 +272,8 @@ const parseSVGPath = (pathData: string): Point[] => {
     }
   }
 
-  // 調整對齊位移量，讓 Strokes 向上 (減少 Y) 並向右 (增加 X) 移動
-  const offsetX = -2 // 調整水平位置 (單位 0-100)
-  const offsetY = 18 // 調整垂直位置 (向上移 18 單位)
-
-  return newPoints.map((p) => ({
-    x: (p.x - offsetX) / SCALE_FACTOR,
-    y: (p.y - offsetY) / SCALE_FACTOR,
-  }))
+  // 筆順座標 → 畫布 px（位移與換算規則在 utils/strokeFrame，母音底圖的筆順也用同一個框）
+  return newPoints.map(strokeToCanvas)
 }
 
 // --- 演算法 ---
@@ -316,18 +309,8 @@ const getSmoothedPathString = (pts: Point[], smoothFactor: number) => {
   return d
 }
 
-// 加入相同的 offsetY 補償，確保存檔後的座標是正確的
-const round = (val: number, isX = false) => {
-  // 必須與 parseSVGPath 中的數值完全對應
-  const offsetX = -2
-  const offsetY = 18
-
-  if (isX) {
-    return Math.round((val * SCALE_FACTOR + offsetX) * 10) / 10
-  } else {
-    return Math.round((val * SCALE_FACTOR + offsetY) * 10) / 10
-  }
-}
+// 畫布 px → 筆順座標（與 parseSVGPath 的換算互為反向，見 utils/strokeFrame）
+const round = (val: number, isX = false) => canvasToStroke(val, isX)
 
 const getSmoothedPathStringPreview = (pts: Point[], smoothFactor: number) => {
   if (pts.length < 2) return ''
@@ -640,7 +623,8 @@ onMounted(() => {
 
       <div class="relative w-[500px] h-[500px] bg-white shadow-xs rounded-lg overflow-hidden border border-slate-200">
         <!-- 原版 drawGuide() 每次以 inline style 設定置中（初始化時就會執行） -->
-        <VowelGuide v-if="vowelGuideText" :text="vowelGuideText" :is-dark="false" class="absolute inset-0 z-0" />
+        <!-- 母音底圖固定 500px（同畫布座標；外框 1px 邊線會讓 inset-0 只有 498px），顏色比彈窗淡，筆畫和控制點才看得清楚 -->
+        <VowelGuide v-if="vowelGuideText" :text="vowelGuideText" :is-dark="false" :palette="PATH_GUIDE_COLORS" class="absolute top-0 left-0 z-0" :style="{ width: `${CANVAS_SIZE}px`, height: `${CANVAS_SIZE}px` }" />
         <div id="guide-text" v-else class="absolute inset-0 flex items-center justify-center text-[340px] leading-none text-gray-100 thai-font pointer-events-none z-0" style="display: flex; align-items: center; justify-content: center;" :style="guideStyle">{{ guideChar }}</div>
 
         <svg id="preview-svg" class="absolute inset-0 w-full h-full z-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">

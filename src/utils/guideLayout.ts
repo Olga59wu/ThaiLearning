@@ -123,6 +123,12 @@ export const VOWEL_COLORS = {
   dark: { consonant: '#334155', vowel: '#94a3b8' }, // slate-700／slate-400
 }
 
+// /path 底字（只有 /path）：母音 gray-300、อ 更淡，綠色筆畫和控制點疊在上面才看得清楚
+export const PATH_GUIDE_COLORS: typeof VOWEL_COLORS = {
+  light: { consonant: '#f3f4f6', vowel: '#d1d5db' }, // gray-100／gray-300
+  dark: { consonant: '#1e293b', vowel: '#475569' }, // slate-800／slate-600
+}
+
 // 行內文字（VowelText：/thai 卡片、測驗、翻牌記憶、課程頁、考試）：母音同原本文字的 text-gray-800 / dark:text-white，小字的細筆畫也看得清楚
 export const VOWEL_TEXT_COLORS: typeof VOWEL_COLORS = {
   light: { consonant: '#e5e7eb', vowel: '#1f2937' }, // gray-200／gray-800

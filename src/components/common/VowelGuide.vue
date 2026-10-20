@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { fillVowelText, layoutGuideText, loadGuideFont, type GuideLayout } from '@/utils/guideLayout'
+import { fillVowelText, layoutGuideText, loadGuideFont, VOWEL_COLORS, type GuideLayout } from '@/utils/guideLayout'
 
 /**
  * 母音手寫底圖（例如 อะ）：อ 淺色、母音正常顏色。
  * 字級與位置用 utils/guideLayout（與 /path 底字同一套規則：68%，放不下就等比例縮小），筆順座標 0～100 才能對齊。
  * 上色用 fillVowelText（與 /thai 元音卡片相同配色）。
  */
-const props = defineProps<{ text: string; isDark: boolean }>()
+// palette：配色（預設 VOWEL_COLORS；/path 用較淡的 PATH_GUIDE_COLORS）
+const props = defineProps<{ text: string; isDark: boolean; palette?: typeof VOWEL_COLORS }>()
 const emit = defineEmits<{ layout: [layout: GuideLayout, boxSize: number] }>()
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -34,11 +35,11 @@ const draw = async () => {
   ctx.textBaseline = 'alphabetic'
 
   const layout = layoutGuideText(ctx, props.text, size)
-  fillVowelText(ctx, props.text, layout.x, layout.baseline, props.isDark)
+  fillVowelText(ctx, props.text, layout.x, layout.baseline, props.isDark, props.palette)
   emit('layout', layout, size)
 }
 
-watch(() => [props.text, props.isDark], draw)
+watch(() => [props.text, props.isDark, props.palette], draw)
 
 onMounted(() => {
   draw()

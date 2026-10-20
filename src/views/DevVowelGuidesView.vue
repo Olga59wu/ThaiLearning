@@ -7,6 +7,7 @@ import { vowelLabel, vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
 import { useLessonTheme } from '@/composables/lessons/useLessonTheme'
 import { useHandwriting } from '@/composables/useHandwriting'
 import { layoutGuideText, loadGuideFont, GUIDE_MARGIN_RATIO, type GuideLayout } from '@/utils/guideLayout'
+import { GUIDE_STROKES_VIEWBOX } from '@/utils/strokeFrame'
 import VowelGuide from '@/components/common/VowelGuide.vue'
 import VowelText from '@/components/common/VowelText.vue'
 import HandwritingModal from '@/components/common/HandwritingModal.vue'
@@ -83,7 +84,7 @@ onMounted(async () => {
       <button @click="toggleDark" class="px-3 py-1.5 text-sm rounded-full bg-white dark:bg-slate-700 dark:text-white shadow-xs">{{ isDark ? '☀️' : '🌙' }}</button>
     </div>
     <p class="text-sm text-gray-500 dark:text-gray-400">
-      底圖規則同 /path（utils/guideLayout：字高 68%，放不下就縮小，左右留 8%）；橘色是 thaiData 的筆順（座標 0～100，不縮放）。
+      底圖規則同 /path（utils/guideLayout：字高 68%，放不下就縮小，左右留 8%）；橘色是 thaiData 的筆順（/path 的底字框，utils/strokeFrame，不縮放）。
     </p>
     <p id="vowel-summary" class="font-bold" :class="allVowelsOk ? 'text-emerald-600' : 'text-red-600'">
       32 個母音：{{ allVowelsOk ? '全部完整在框內（含 8% 邊距）' : '有母音超出框或邊距（見 ⚠️）' }}
@@ -96,7 +97,7 @@ onMounted(async () => {
           <div class="absolute inset-y-0 border-l border-dashed border-sky-200 dark:border-sky-900" :style="{ left: `${MARGIN}%` }"></div>
           <div class="absolute inset-y-0 border-l border-dashed border-sky-200 dark:border-sky-900" :style="{ left: `${100 - MARGIN}%` }"></div>
           <VowelGuide :text="base" :is-dark="isDark" class="absolute inset-0" @layout="(l, box) => onLayout(v.id, l, box)" />
-          <svg v-if="strokes" class="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+          <svg v-if="strokes" class="absolute inset-0 w-full h-full" :viewBox="GUIDE_STROKES_VIEWBOX">
             <path v-for="(d, i) in strokes" :key="i" :d="d" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" opacity="0.8" />
           </svg>
         </div>
