@@ -103,7 +103,7 @@ const vowelText = (item: ThaiItem | null | undefined) => thaiWriteBase(item)
             <div v-else class="flex items-center justify-center w-full text-5xl font-bold text-gray-800 pointer-events-none thai-font dark:text-white group-hover:text-emerald-600 transition-colors"><VowelText v-if="vowelText(opt)" :text="vowelText(opt)!" :is-dark="isDark" :font-size="48" :line-height="1" bold /><template v-else>{{ opt.char }}</template></div>
           </template>
           <template v-else>
-            <div @click.stop="speak({soundText: opt.soundText})" class="z-10 flex items-center justify-center w-1/3 transition-colors border-r border-gray-100 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 dark:border-slate-600 text-emerald-600 dark:text-emerald-400" title="試聽">
+            <div @click.stop="speak(opt)" class="z-10 flex items-center justify-center w-1/3 transition-colors border-r border-gray-100 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 dark:border-slate-600 text-emerald-600 dark:text-emerald-400" title="試聽">
               <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
             </div>
             <div class="flex flex-col items-center justify-center w-2/3 p-1">

@@ -29,6 +29,8 @@ export interface ThaiItem {
   vowelLength?: 'Long' | 'Short'
   /** 母音的寫法：用 อ 表示子音位置（例如 ◌ะ → อะ），/thai 卡片、手寫底圖、/path 底字、課程頁共用；char 維持 ◌ 寫法（收藏、錯題、課程 ref 的識別碼） */
   writeBase?: string
+  /** 母音的念法（課本 p40「สระ＋母音發音」，例如 สระอะ；獨立母音直接念 รึ、รือ）：/thai、課程頁、考試共用，音檔也用它（th_สระอะ.mp3） */
+  speakText?: string
   finalType?: string
   strokes?: string[]
 }

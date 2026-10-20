@@ -320,3 +320,17 @@ describe('buildExam（第 2 課，重複出題 30 次）', () => {
     }
   })
 })
+
+describe('第 2 課考試的文字不含「-」加附加符號（iPhone 會補 ◌）', () => {
+  // 掛在「-」或空白上的上下母音、聲調符號（ั ิ ี ึ ื ุ ู ฺ ็ ่ ้ ๊ ๋ ์ ํ）
+  const DASH_MARK = /[-\s ][ัิ-ฺ็-๎]/
+  it('題目、答案、選項文字', () => {
+    for (let t = 0; t < 20; t++) {
+      buildExam(examPlan(LESSONS, 2, 'lesson')).forEach((q) => {
+        expect(q.promptLabel, q.id).not.toMatch(DASH_MARK)
+        expect(q.answerLabel, q.id).not.toMatch(DASH_MARK)
+        q.options?.forEach((o) => expect(o.text ?? '', q.id).not.toMatch(DASH_MARK))
+      })
+    }
+  })
+})

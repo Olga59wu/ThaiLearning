@@ -679,6 +679,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 A (後)',
     reading: 'a',
     writeBase: 'อะ',
+    speakText: 'สระอะ',
     duration: 'Short',
   },
   {
@@ -690,6 +691,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 AA (後)',
     reading: 'aa',
     writeBase: 'อา',
+    speakText: 'สระอา',
     duration: 'Long',
   },
   {
@@ -701,6 +703,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 I (上)',
     reading: 'i',
     writeBase: 'อิ',
+    speakText: 'สระอิ',
     duration: 'Short',
   },
   {
@@ -712,6 +715,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 II (上)',
     reading: 'ii',
     writeBase: 'อี',
+    speakText: 'สระอี',
     duration: 'Long',
   },
   {
@@ -723,6 +727,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 UE (上)',
     reading: 'ue',
     writeBase: 'อึ',
+    speakText: 'สระอึ',
     duration: 'Short',
   },
   {
@@ -734,6 +739,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 UUE (上)',
     reading: 'uue',
     writeBase: 'อื',
+    speakText: 'สระอือ',
     duration: 'Long',
   },
   {
@@ -745,6 +751,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 U (下)',
     reading: 'u',
     writeBase: 'อุ',
+    speakText: 'สระอุ',
     duration: 'Short',
   },
   {
@@ -756,6 +763,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 UU (下)',
     reading: 'uu',
     writeBase: 'อู',
+    speakText: 'สระอู',
     duration: 'Long',
   },
   {
@@ -767,6 +775,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 E (夾)',
     reading: 'e',
     writeBase: 'เอะ',
+    speakText: 'สระเอะ',
     duration: 'Short',
   },
   {
@@ -778,6 +787,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 EE (前)',
     reading: 'ee',
     writeBase: 'เอ',
+    speakText: 'สระเอ',
     duration: 'Long',
   },
   {
@@ -789,6 +799,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 AE (夾)',
     reading: 'ae',
     writeBase: 'แอะ',
+    speakText: 'สระแอะ',
     duration: 'Short',
   },
   {
@@ -800,6 +811,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 AAE (前)',
     reading: 'aae',
     writeBase: 'แอ',
+    speakText: 'สระแอ',
     duration: 'Long',
   },
   {
@@ -811,6 +823,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 O (夾)',
     reading: 'o',
     writeBase: 'โอะ',
+    speakText: 'สระโอะ',
     duration: 'Short',
   },
   {
@@ -822,6 +835,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 OO (前)',
     reading: 'oo',
     writeBase: 'โอ',
+    speakText: 'สระโอ',
     duration: 'Long',
   },
   {
@@ -833,6 +847,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '特殊音 AM (後)',
     reading: 'am',
     writeBase: 'อำ',
+    speakText: 'สระอำ',
     duration: 'Short',
   },
   {
@@ -844,6 +859,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '特殊音 AI (前/木卷)',
     reading: 'ai',
     writeBase: 'ไอ',
+    speakText: 'สระไอ',
     duration: 'Short',
   },
   {
@@ -855,6 +871,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '特殊音 AI (前/心卷)',
     reading: 'ai',
     writeBase: 'ใอ',
+    speakText: 'สระใอ',
     duration: 'Short',
   },
   {
@@ -866,6 +883,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '特殊音 AO (夾)',
     reading: 'ao',
     writeBase: 'เอา',
+    speakText: 'สระเอา',
     duration: 'Short',
   },
   {
@@ -877,6 +895,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 OE (夾)',
     reading: 'oe',
     writeBase: 'เออะ',
+    speakText: 'สระเออะ',
     duration: 'Short',
   },
   {
@@ -888,6 +907,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 OEE (夾)',
     reading: 'oee',
     writeBase: 'เออ',
+    speakText: 'สระเออ',
     duration: 'Long',
   },
   {
@@ -899,6 +919,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 AW (夾)',
     reading: 'aw',
     writeBase: 'เอาะ',
+    speakText: 'สระเอาะ',
     duration: 'Short',
   },
   {
@@ -910,6 +931,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 AWW (後)',
     reading: 'aww',
     writeBase: 'ออ',
+    speakText: 'สระออ',
     duration: 'Long',
   },
   {
@@ -921,6 +943,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 IA (夾)',
     reading: 'ia',
     writeBase: 'เอียะ',
+    speakText: 'สระเอียะ',
     duration: 'Short',
   },
   {
@@ -932,6 +955,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 IIA (夾)',
     reading: 'iia',
     writeBase: 'เอีย',
+    speakText: 'สระเอีย',
     duration: 'Long',
   },
   {
@@ -943,6 +967,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 UEA (夾)',
     reading: 'uea',
     writeBase: 'เอือะ',
+    speakText: 'สระเอือะ',
     duration: 'Short',
   },
   {
@@ -954,6 +979,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 UUEA (夾)',
     reading: 'uuea',
     writeBase: 'เอือ',
+    speakText: 'สระเอือ',
     duration: 'Long',
   },
   {
@@ -965,6 +991,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '短音 UA (後)',
     reading: 'ua',
     writeBase: 'อัวะ',
+    speakText: 'สระอัวะ',
     duration: 'Short',
   },
   {
@@ -976,6 +1003,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '長音 UUA (後)',
     reading: 'uua',
     writeBase: 'อัว',
+    speakText: 'สระอัว',
     duration: 'Long',
   },
   {
@@ -987,6 +1015,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '彈舌音 Rue (前)',
     reading: 'rue',
     writeBase: 'ฤ',
+    speakText: 'รึ',
     duration: 'Short',
   },
   {
@@ -998,6 +1027,7 @@ export const thaiData: ThaiItem[] = [
     meaning: '彈舌音 Rue 長 (前)',
     reading: 'rue',
     writeBase: 'ฤๅ',
+    speakText: 'รือ',
     duration: 'Long',
   },
 

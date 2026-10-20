@@ -1,7 +1,9 @@
 import { computed, inject, nextTick, provide, reactive, ref, shallowRef, type InjectionKey } from 'vue'
 import { storeToRefs } from 'pinia'
 import { sentenceData, thaiData, toneExamples, tonePracticeSeries } from '@/data/thai'
-import { thaiWriteBase } from '@/data/thaiWriteBase'
+import { thaiVowelSpeak, thaiWriteBase } from '@/data/thaiWriteBase'
+import { getAudioUrl, hasAudioFile } from '@/services/offlineAudio'
+import { cancelTTS, speakNow, ttsDelay } from '@/utils/tts'
 import { useThaiLearnStore } from '@/stores/thaiLearn'
 import { useTimers } from '@/composables/useTimers'
 import { useHandwriting } from '@/composables/useHandwriting'
@@ -20,7 +22,7 @@ export type ThaiMode =
   | 'mistakes'
 
 type LearnFilter = ThaiItemType
-type SpeakTarget = string | { soundText?: string; char?: string } | null | undefined
+type SpeakTarget = string | { soundText?: string; char?: string; type?: string } | null | undefined
 
 interface MemoryCard {
   name: string
@@ -151,24 +153,47 @@ export const createThaiPage = () => {
 
   const syncToCloud = () => store.syncToCloud()
 
+  // 元音的 mp3（th_สระอะ.mp3）：刻意和原版不同，原版一律 TTS
+  const vowelAudio = typeof Audio === 'undefined' ? null : new Audio()
+  const stopSpeaking = () => {
+    vowelAudio?.pause()
+    cancelTTS()
+  }
+
+  const speakTTS = (soundText: string) => {
+    const utterance = new SpeechSynthesisUtterance(soundText)
+    // 原版存在 window.currentUtterance，避免被 GC 中斷播放
+    ;(window as unknown as { currentUtterance: SpeechSynthesisUtterance }).currentUtterance = utterance
+    utterance.lang = 'th-TH'
+    if (voices.value[selectedVoiceIndex.value]) utterance.voice = voices.value[selectedVoiceIndex.value]
+    utterance.rate = speechRate.value
+    // 不用等就同步 speak（iOS 第一次 speak 必須在點擊事件內）；剛 cancel 過才延遲（iOS cancel 後馬上 speak 會被吃掉，見 utils/tts.ts）
+    const wait = ttsDelay()
+    if (wait === 0) speakNow(utterance)
+    else later(() => speakNow(utterance), wait)
+  }
+
   const speak = (item: SpeakTarget, showToast = true) => {
     if (!item) return
-    window.speechSynthesis.cancel()
-    later(() => {
-      const soundText = (typeof item === 'string' ? item : item.soundText || item.char) || ''
-      const utterance = new SpeechSynthesisUtterance(soundText)
-      // 原版存在 window.currentUtterance，避免被 GC 中斷播放
-      ;(window as unknown as { currentUtterance: SpeechSynthesisUtterance }).currentUtterance = utterance
-      utterance.lang = 'th-TH'
-      if (voices.value[selectedVoiceIndex.value]) utterance.voice = voices.value[selectedVoiceIndex.value]
-      utterance.rate = speechRate.value
-      if (showToast) {
-        toast.value = { show: true, message: `播放: ${soundText}` }
-        cancel(toastTimeout)
-        toastTimeout = later(() => { toast.value.show = false }, 1500)
-      }
-      window.speechSynthesis.speak(utterance)
-    }, 10)
+    stopSpeaking()
+    // 元音一律念 สระ＋母音（thaiData 的 speakText，用 char 查；獨立母音 รึ、รือ）
+    const vowelSpeak = typeof item === 'string' ? undefined : thaiVowelSpeak(item)
+    const soundText = vowelSpeak ?? ((typeof item === 'string' ? item : item.soundText || item.char) || '')
+    if (showToast) {
+      toast.value = { show: true, message: `播放: ${soundText}` }
+      cancel(toastTimeout)
+      toastTimeout = later(() => { toast.value.show = false }, 1500)
+    }
+    if (vowelSpeak && vowelAudio && hasAudioFile(vowelSpeak)) {
+      vowelAudio.src = getAudioUrl(vowelSpeak, 'th')
+      vowelAudio.playbackRate = speechRate.value
+      vowelAudio.play().catch((e: Error) => {
+        // 被下一次播放中斷（AbortError）不退回 TTS
+        if (e.name !== 'AbortError') speakTTS(soundText)
+      })
+      return
+    }
+    speakTTS(soundText)
   }
 
   const playSample = () => speak({ soundText: 'สวัสดี' }, false)
@@ -386,7 +411,7 @@ export const createThaiPage = () => {
     sentenceCats, sentence, setSentenceCat, nextSentence,
     memory, initMemoryGame, flipMemoryCard,
     toneTraining, toneHeaders, toneGraphs, toneColors, currentTonePracticeChars, animatingToneIdx, playToneSequence, triggerToneButtonAnimation, toneChallengeOpts, selectedToneOpt, startNewToneChallenge, enterToneChallenge, checkToneGuess, getToneBtnStyle, isToneOptSelected,
-    hwItem, hwGuideText, hw, openHW,
+    hwItem, hwGuideText, hw, openHW, stopSpeaking,
     speak, switchMode, toggleDarkMode, togglePinyin, resetAllData, toggleStar,
     initVoices, handleKeydown,
   }

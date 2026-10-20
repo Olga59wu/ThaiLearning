@@ -2,6 +2,7 @@
 // 找出 ALL_VOCAB_CATEGORIES（原單字庫＋每週課程）缺少的 th_／zh_ 音檔，直接從 Google TTS 抓取並寫進 public/audio/TH/
 // - 發音來源、語速同 /downloader（translate_tts，client=tw-ob，泰文 th、中文 zh-TW，預設語速）；Node 直接請求，不經代理、不產生 zip
 // - 每個檔案間隔 1.2 秒、每 20 個多休息 1 秒、失敗重試 2 次（同 /downloader）
+// - 另外抓母音的念法（只有泰文，例如 th_สระอะ.mp3）：src/data/lessons/vowels.ts 的 VOWEL_AUDIO_TEXTS（母音不在分類裡）
 // - 自訂單字存在瀏覽器 localStorage，腳本讀不到，不在範圍內
 // - 中文念的文字（檔名不變）：課程字詞有 zhSpeak 就念它（例如「我 (男用，謙卑)」念「我，男生謙卑」）；
 //   沒有才清理：括號與括號內容不念、「/」改成「，」。例如「你好/再見 (女用)」念「你好，再見」
@@ -47,7 +48,13 @@ const loadSiteModules = async () => {
       audioFileName: (text: string, type: Lang) => string
     }
     const lessons = (await server.ssrLoadModule('/src/data/lessons/index.ts')) as { LESSON_ZH_SPEAK: Record<string, string> }
-    return { categories: categories.ALL_VOCAB_CATEGORIES, audioFileName: audio.audioFileName, zhSpeak: lessons.LESSON_ZH_SPEAK }
+    const vowels = (await server.ssrLoadModule('/src/data/lessons/vowels.ts')) as { VOWEL_AUDIO_TEXTS: string[] }
+    return {
+      categories: categories.ALL_VOCAB_CATEGORIES,
+      audioFileName: audio.audioFileName,
+      zhSpeak: lessons.LESSON_ZH_SPEAK,
+      vowelTexts: vowels.VOWEL_AUDIO_TEXTS,
+    }
   } finally {
     await server.close()
   }
@@ -58,6 +65,7 @@ const findMissing = (
   categories: Record<string, VocabWord[]>,
   audioFileName: (t: string, l: Lang) => string,
   zhSpeak: Record<string, string>,
+  vowelTexts: string[],
 ): MissingFile[] => {
   const existing = new Set(existsSync(AUDIO_DIR) ? readdirSync(AUDIO_DIR).map((f) => f.normalize('NFC')) : [])
   const missing = new Map<string, MissingFile>()
@@ -76,6 +84,12 @@ const findMissing = (
       }
       missing.set(file, entry)
     })
+  })
+  // 母音的念法：只有泰文
+  vowelTexts.forEach((text) => {
+    const file = audioFileName(text, 'th').normalize('NFC')
+    if (existing.has(file) || missing.has(file)) return
+    missing.set(file, { file, text, lang: 'th', words: ['母音'] })
   })
   return [...missing.values()]
 }
@@ -113,8 +127,8 @@ const fetchMp3 = async (text: string, lang: Lang): Promise<{ data?: Buffer; erro
 }
 
 const main = async () => {
-  const { categories, audioFileName, zhSpeak } = await loadSiteModules()
-  const missing = findMissing(categories, audioFileName, zhSpeak)
+  const { categories, audioFileName, zhSpeak, vowelTexts } = await loadSiteModules()
+  const missing = findMissing(categories, audioFileName, zhSpeak, vowelTexts)
   // 實際念的文字：zhSpeak 優先，沒有才清理
   const spokenOf = (m: MissingFile) => m.speak ?? spokenText(m.text, m.lang)
   const wordCount = new Set(Object.values(categories).flat().map((w) => w.id)).size

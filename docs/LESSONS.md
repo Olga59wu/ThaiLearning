@@ -99,6 +99,7 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 - 「第N課」分類裡的字（`inCategory` 的單字、常用語原形、`variants`）會出現在 `/downloader` 的「待抓」，打包後放 `public/audio/TH/`
 - **`pnpm audio:fetch`**（`scripts/audio-fetch.ts`）：掃描 `ALL_VOCAB_CATEGORIES` 與 `public/audio/TH/`，從 Node 直接請求 Google TTS（同 /downloader 的來源與語速：`translate_tts`、`client=tw-ob`、泰文 `th`、中文 `zh-TW`），每個檔案間隔 1.2 秒、每 20 個多休息 1 秒、失敗重試 2 次；`--dry-run` 只列出缺檔；完成後列出成功／失敗
   - 透過 Vite `ssrLoadModule` 載入網站的資料與 `audioFileName()`，檔名規則與網站一致
+  - 另外抓**母音的念法**（只有泰文，例如 `th_สระอะ.mp3`）：`src/data/lessons/vowels.ts` 的 `VOWEL_AUDIO_TEXTS`（thaiData 母音的 `speakText`＋課程限定母音），母音不在分類裡（隨身聽不播）
   - 自訂單字存在瀏覽器 localStorage，腳本讀不到；要補自訂單字的音檔仍用 `/downloader`
   - 中文念的文字（檔名不變）：字詞有 `zhSpeak` 就念它；沒有才清理：括號與括號內容不念、「/」改成「，」，例如「你好/再見 (女用)」念「你好，再見」。只套用在新抓的檔案；現有的 mp3（例如「我 (男用)」）不重抓
 - `/downloader` 保留（頁面上方提示改用 `pnpm audio:fetch`），依 `public/audio/TH/` 實際的檔案判斷（build／dev 啟動時掃描，`hasAudioFile()`）；泰文、中文都有才算就緒
@@ -107,3 +108,14 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 ## 4. 考試紀錄
 - 本機 `localStorage` `thai-lesson-exams`：完整紀錄（含錯題），每課最多 20 筆
 - 雲端 `users/{uid}.thai.lessonExams`：摘要（每課只有最近一次帶錯題），與舊網站共用 `firestore.rules`，規則不用改
+
+## 5. 母音（第 2 課起）
+- **寫法、念法、筆順只有一個來源**：thaiData 的母音（`src/data/thai.ts`，`type: 'vowel'`）
+  - `writeBase`：用 อ 表示子音位置的寫法（`◌ะ` → `อะ`、`◌ือ` → `อื`、`ฤ` → `ฤ`）。/thai 卡片、手寫底圖、/path 底字、課程頁共用
+  - `speakText`：念法，照課本 p40「สระ＋母音發音」（`สระอะ`）；獨立母音不加 สระ（`รึ`、`รือ`）。/thai、課程頁、考試都念它，音檔是 `th_สระอะ.mp3`
+  - `strokes`：筆順，對著 writeBase 畫（/path「泰語元音」tab 的底字就是 writeBase）
+  - `char`（`◌ะ`）不改：它是收藏、錯題、課程 ref 的識別碼
+- 不在 thaiData 的母音（ฦ、ฦๅ）寫在課程檔的 `LessonVowel`（`writeBase`、`strokes`；念法用 `withO`）。/path 的「泰語元音」tab 也會列出來，輸出開頭會標示要寫進哪個課程檔
+- 查詢一律用 `src/data/lessons/vowels.ts`（`vowelWriteBase`、`vowelSpeakText`、`vowelStrokes`）或 `src/data/thaiWriteBase.ts`（/thai：用 char 查，舊錯題物件沒有這些欄位）
+- **畫面上不要直接寫「-」加上下母音（例如 `-ิ`）**：iPhone Safari 會在前面補虛線圈 ◌。課本字形用 `components/lessons/VowelForm.vue`（canvas：用 writeBase 排版，อ 換成橫線）；結果頁等純文字改用 writeBase（`อิ`）。測試會檢查考試文字
+- 手寫底圖的版面規則（字高 68%、放不下縮小、超出邊距平移）在 `src/utils/guideLayout.ts`，/path、課程頁、/thai 共用；`/dev/vowel-guides`（只有 `pnpm dev`）可以一次檢查 32 個底圖與筆順對齊

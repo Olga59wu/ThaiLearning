@@ -5,7 +5,7 @@
 //   { viewport: [寬, 高, 縮放] }  { goto: 網址, waitAfter: 毫秒 }  { eval: 程式碼（可 return） }
 //   { log: 運算式, label }  { wait: 毫秒 }  { shot: 檔名.png }
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const [stepsFile, outDir] = process.argv.slice(2)
@@ -13,7 +13,7 @@ if (!stepsFile || !outDir) {
   console.error('用法：node scripts/dev-browser/run.mjs <步驟檔.mjs> <輸出資料夾>')
   process.exit(1)
 }
-const steps = (await import(pathToFileURL(join(process.cwd(), stepsFile)).href)).default
+const steps = (await import(pathToFileURL(resolve(stepsFile)).href)).default
 mkdirSync(outDir, { recursive: true })
 const PORT = 9333
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

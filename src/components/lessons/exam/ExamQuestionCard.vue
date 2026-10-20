@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { isVocabText } from '@/data/vocabCategories'
 import { useLessonAudioContext } from '@/composables/lessons/useLessonAudio'
 import { useHandwriting } from '@/composables/useHandwriting'
 import { useThaiLearnStore } from '@/stores/thaiLearn'
@@ -12,6 +11,7 @@ import { TONE_MARK, toneOrdinalLabel } from '@/utils/tone'
 import ThaiReading from '../ThaiReading.vue'
 import ToneSyllables from '../ToneSyllables.vue'
 import HandwritingPad from '@/components/common/HandwritingPad.vue'
+import VowelForm from '../VowelForm.vue'
 
 // 一道考題（換題時父層以 :key 重建，狀態自動歸零）
 const props = defineProps<{ question: ExamQuestion; index: number; total: number }>()
@@ -45,7 +45,8 @@ const vowelReading = computed(() =>
 // 數字：組合筆順（autoZoom）；母音：thaiData 的筆順疊在底圖上（不縮放）
 const strokes = computed(() => q.value.strokes ?? (q.value.num === undefined ? undefined : composeNumberStrokes(q.value.num)))
 
-const speakText = (th: string) => play(th, !isVocabText(th))
+// play() 會先查有沒有 mp3（母音 th_สระอะ.mp3、分類單字），沒有才用 TTS
+const speakText = (th: string) => play(th)
 const speakPrompt = () => {
   const text = q.value.reading?.th ?? q.value.speakText
   if (text) speakText(text)
@@ -136,7 +137,7 @@ onMounted(() => {
         </button>
         <!-- 母音字形（不受「泰文字」開關影響）＋搭配 อ -->
         <div v-else-if="(q.type === 'vowelSound' || q.type === 'vowelLength') && q.vowel" class="flex flex-col items-center gap-1">
-          <div class="text-7xl leading-tight thai-font text-gray-800 dark:text-white">{{ q.vowel.form }}</div>
+          <div class="text-7xl leading-tight thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="72" :line-height="1.25" /></div>
           <div class="text-2xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.withO }}</div>
         </div>
         <!-- 手寫母音：看發音（拼音＋注音＋聲調＋長短）寫字形 -->
@@ -178,7 +179,7 @@ onMounted(() => {
             <span v-if="opt.zhuyin" class="text-base text-gray-500 dark:text-gray-400 leading-none">（{{ opt.zhuyin }}）</span>
           </span>
           <ThaiReading v-else-if="opt.syllables" :syllables="opt.syllables" :th="opt.th!" />
-          <span v-else-if="opt.vowelForm" class="text-4xl font-normal thai-font">{{ opt.vowelForm }}</span>
+          <span v-else-if="opt.vowelWriteBase" class="text-4xl font-normal thai-font"><VowelForm :write-base="opt.vowelWriteBase" :font-size="36" :line-height="40 / 36" /></span>
           <span v-else :class="opt.thaiDigits ? 'text-4xl thai-font font-normal' : q.type === 'listenNumber' ? 'text-3xl font-black' : 'text-lg'">{{ opt.text }}</span>
         </button>
       </div>
@@ -208,7 +209,7 @@ onMounted(() => {
             <ThaiReading v-if="numReading" :syllables="numReading.syllables" :th="numReading.th" size="sm" />
           </div>
           <div v-else-if="q.vowel" class="flex items-baseline gap-3">
-            <span class="text-4xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.form }}</span>
+            <span class="text-4xl thai-font text-emerald-600 dark:text-emerald-400"><VowelForm :write-base="q.vowel.writeBase" :font-size="36" :line-height="40 / 36" /></span>
             <span class="text-2xl thai-font text-gray-500 dark:text-gray-400">{{ q.vowel.withO }}</span>
           </div>
           <div class="flex items-center gap-3">
@@ -232,7 +233,7 @@ onMounted(() => {
         </div>
         <!-- 母音：字形＋搭配 อ＋發音＋長短 -->
         <div v-else-if="q.vowel && vowelReading" class="flex flex-wrap items-center justify-center gap-3">
-          <span class="text-3xl thai-font text-gray-800 dark:text-white">{{ q.vowel.form }}</span>
+          <span class="text-3xl thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="30" :line-height="36 / 30" /></span>
           <span class="text-2xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.withO }}</span>
           <ToneSyllables :syllables="vowelReading" />
           <span v-if="q.vowel.zhuyin" class="font-bold text-gray-500 dark:text-gray-400">（{{ q.vowel.zhuyin }}）</span>

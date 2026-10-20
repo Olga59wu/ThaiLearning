@@ -5,7 +5,7 @@ import { ALL_VOCAB_CATEGORIES, lessonNoOfCategory } from '@/data/vocabCategories
 import {
   blocksOf, LESSON_VOCAB_CATEGORIES, LESSON_ZH_SPEAK, LESSONS, lessonPhrases, lessonPronounCells, lessonRawWords, lessonUnits, lessonVowels, lessonWords, resolveWord,
 } from '@/data/lessons'
-import { vowelPosition, vowelThaiItem, vowelWriteBase } from '@/data/lessons/vowels'
+import { VOWEL_AUDIO_TEXTS, vowelPosition, vowelSpeakText, vowelThaiItem, vowelWriteBase } from '@/data/lessons/vowels'
 import { sy } from '@/data/lessons/helpers'
 import { numberToSyllables, numberToThai, numberWordSyllables } from '@/utils/thaiNumber'
 import type { ExamQuestionType, LessonWord, Tone, VowelGroup } from '@/types/lesson'
@@ -180,6 +180,19 @@ describe('第 2 課', () => {
     expect(vowelWriteBase(vowels.find((v) => v.no === 31)!)).toBe('ฦ')
   })
 
+  it('念法（speakText）：一般母音 สระ＋母音、獨立母音直接念；音檔清單 32 個', () => {
+    expect(vowelSpeakText(vowels.find((v) => v.no === 1)!)).toBe('สระอะ')
+    expect(vowelSpeakText(vowels.find((v) => v.no === 6)!)).toBe('สระอือ')
+    expect(vowelSpeakText(vowels.find((v) => v.no === 29)!)).toBe('รึ')
+    expect(vowelSpeakText(vowels.find((v) => v.no === 32)!)).toBe('ลือ')
+    vowels.forEach((v) => {
+      const s = vowelSpeakText(v)
+      if (v.group === 'independent') expect(s).toBe(v.withO)
+      else expect(s, v.form).toBe('สระ' + v.withO)
+    })
+    expect(VOWEL_AUDIO_TEXTS).toHaveLength(32)
+  })
+
   it('有連結的母音都有位置說明', () => {
     vowels.forEach((v) => {
       if (v.thaiChar) expect(vowelPosition(v), v.thaiChar).toBeTruthy()
@@ -199,7 +212,7 @@ describe('第 2 課', () => {
   it('中文念讀（zhSpeak）：人稱代名詞保留括號內的重點，id 都在分類裡', () => {
     expect(LESSON_ZH_SPEAK['l02-0001']).toBe('我，男生謙卑')
     expect(LESSON_ZH_SPEAK['l02-0005']).toBe('您，尊稱')
-    expect(Object.keys(LESSON_ZH_SPEAK)).toHaveLength(9)
+    expect(Object.keys(LESSON_ZH_SPEAK)).toHaveLength(11)
     const ids = new Set(lessonVocab(l2).map((v) => v.id))
     Object.keys(LESSON_ZH_SPEAK).forEach((id) => expect(ids.has(id), id).toBe(true))
   })

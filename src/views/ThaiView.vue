@@ -23,7 +23,7 @@ usePageShell({
 
 const {
   currentMode, modeOptions, modals, toast, isDark, speechRate, correctCounts, favorites, mistakeList,
-  switchMode, initVoices, handleKeydown, hw, hwItem, hwGuideText,
+  switchMode, initVoices, handleKeydown, hw, hwItem, hwGuideText, stopSpeaking,
 } = provideThaiPage()
 
 // 原版 watch(isDark, { immediate: true })：切換 <html class="dark"> 並存檔
@@ -61,6 +61,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeydown)
   window.speechSynthesis.onvoiceschanged = null
   window.speechSynthesis.cancel()
+  stopSpeaking() // 元音的 mp3
   document.documentElement.classList.remove('dark')
 })
 </script>

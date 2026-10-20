@@ -139,7 +139,7 @@ const lesson: Lesson = {
       items: [
         {
           label: '複數',
-          word: { kind: 'new', id: 'l02-0101', th: 'พวก', zh: '們 (複數)', syllables: sy('พวก puak ˋ') },
+          word: { kind: 'new', id: 'l02-0101', th: 'พวก', zh: '們 (複數)', zhSpeak: '們，複數', syllables: sy('พวก puak ˋ') },
           pattern: '＋人稱代名詞',
           examples: [
             { kind: 'new', id: 'l02-0102', th: 'พวกผม', zh: '我們 (男用)', zhSpeak: '我們，男生', meaning: '我們（男生）', syllables: sy('พวก puak ˋ | ผม phom /') },
@@ -148,7 +148,7 @@ const lesson: Lesson = {
         },
         {
           label: '所有格',
-          word: { kind: 'new', id: 'l02-0111', th: 'ของ', zh: '的 (所有格)', syllables: sy('ของ khong /') },
+          word: { kind: 'new', id: 'l02-0111', th: 'ของ', zh: '的 (所有格)', zhSpeak: '的，所有格', syllables: sy('ของ khong /') },
           pattern: '＋人稱代名詞',
           examples: [
             { kind: 'new', id: 'l02-0112', th: 'ของผม', zh: '我的 (男用)', zhSpeak: '我的，男生', meaning: '我的（男生）', syllables: sy('ของ khong / | ผม phom /') },

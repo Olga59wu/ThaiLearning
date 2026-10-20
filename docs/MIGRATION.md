@@ -5,7 +5,7 @@
 
 ---
 
-## 0. 目前進度（2026-10-15）
+## 0. 目前進度（2026-10-20）
 
 | 項目 | 狀態 | commit |
 |---|---|---|
@@ -39,7 +39,7 @@
 | 部署設定檔（`firebase.json`、`.firebaserc`、`firestore.rules`） | ✅ site ID `thai-learning-og` | `d962aa0` |
 | 部署（建立 site `thai-learning-og`、Authorized domains、`firestore:rules`、`hosting:thai`） | ✅ 2026-10-14 使用者完成，https://thai-learning-og.web.app；舊網站驗證過沒有被規則擋到 | |
 | 新功能：每週課程（`/lessons`），流程與格式見 `docs/LESSONS.md` | ✅ 第 1 課；考試待使用者實測 | `b08fef0`～`6f35064` |
-| 第 2 課（母音）：資料、課程頁、母音統一 อ 寫法（/thai、/path）、開發用跳過登入、考試新題型 | 考試待使用者實測；母音筆順待使用者在 /path 畫 | `7a557bc`～ |
+| 第 2 課（母音）：資料、課程頁、母音統一 อ 寫法與 สระ 念法（/thai、/path）、開發用跳過登入、考試新題型、累積考題數減半、音檔 | ✅ 考試使用者實測通過；母音 mp3 待下載確認；母音筆順待使用者在 /path 畫 | `7a557bc`～ |
 
 順序：**player → typing → downloader → path** → 第 5 步對照檢查（已完成）→ SW／離線實測 → 部署。
 
@@ -137,6 +137,8 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - 所有顯示元音字形的地方都改顯示 `writeBase`，อ 淺色、母音正常顏色（`components/common/VowelText.vue`，canvas 畫，配色同手寫底圖 `fillVowelText`；字級同原本的 class）：學習卡片（含收藏）、看字選音的題目、聽音辨字的選項（作答前後）、翻牌記憶的字卡（`MemoryCard.vowelText`，其他字卡照原版 `v-html`）；錯題複習、收藏範圍都走同一個測驗畫面。只改顯示，判斷與紀錄仍用 `char`／`soundText`
   - 寫法一律用 `char` 查 thaiData（`data/thaiWriteBase.ts` 的 `thaiWriteBase()`），**不讀物件身上的 `writeBase`**：錯題清單（localStorage `thai_mistakes`／雲端 `mistakeList`）存的是整個題目物件，加 writeBase 之前存的舊錯題沒有這個欄位，曾因此在錯題複習顯示 ◌ 寫法（2026-10-20 修正）
   - 行內文字（VowelText）的母音顏色同原本文字（`text-gray-800`／`dark:text-white`，`VOWEL_TEXT_COLORS`），小字的上方母音也看得清楚；手寫底圖（VowelGuide）維持 gray-500。翻牌記憶的元音字卡原本是 emerald 色，現在也是 gray-800
+  - **元音念法改為 สระ＋母音**（thaiData `speakText`，獨立母音 รึ、รือ）：學習卡片、聽音辨字、看字選音的試聽、Space 鍵都一樣；有 mp3（`th_สระอะ.mp3`）就播 mp3（`speechRate` 當播放速度），沒有才用 TTS。原版念 soundText（อะ）且一律 TTS
+  - TTS 時序（`utils/tts.ts`，2026-10-20）：只有正在念才 `cancel()`，cancel 後至少隔 250ms 才 `speak()`（iOS Safari cancel 後馬上 speak 會被吃掉）；不用等時同步 speak（iOS 第一次 speak 必須在點擊事件內）。原版 cancel 後固定 10ms。/player、/typing 未改
   - 元音手寫彈窗：底圖用 `VowelGuide`（同課程頁），筆順疊在底圖上、viewBox 固定 `0 0 100 100`，**不再 autoZoom 到筆畫範圍**；只畫動畫筆跡，不畫淺灰筆順底線。輔音、數字等其他分類不變
   - 手寫彈窗（所有分類）加上 `fit-viewport`：畫布邊長不超過 `calc(90vh - 12rem)`，正方形加標題列、按鈕列不超出彈窗、不出現捲軸（同課程頁）
   - 原本 5 個元音筆順（ะ、า、ิ、ี、ุ）是對著 ◌ 畫的，和 อ 底圖對不上，已從 thai.ts 移除（`3d6a085` 之前的版本還有），等使用者在 /path 重畫；重畫前 /thai、課程頁都不顯示元音筆順動畫，課程考試的手寫題也不出

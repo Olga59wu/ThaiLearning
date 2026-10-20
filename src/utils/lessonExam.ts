@@ -1,6 +1,6 @@
 // 每週課程考試：出題（純函式，方便測試）
 import { blocksOf, lessonPhrases, lessonPronounCells, lessonUnits, lessonVowels, resolveWord } from '@/data/lessons'
-import { vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
+import { vowelSpeakText, vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
 import { PARTICLE_SYLLABLE } from '@/data/lessons/helpers'
 import type { ExamQuestionType, Lesson, LessonPhrase, LessonVowel, PronounCell, ResolvedWord, Syllable, Tone } from '@/types/lesson'
 import { poolNumbers } from '@/utils/numberPool'
@@ -20,13 +20,15 @@ export interface ExamOption {
   zhuyin?: string
   /** 不顯示泰文（母音發音選項：泰文就是題目的字形，顯示等於給答案） */
   hideThai?: boolean
-  /** 母音字形選項（課本寫法，例如 -ะ） */
-  vowelForm?: string
+  /** 母音字形選項：搭配 อ 的寫法（畫成課本字形，例如 อะ → -ะ） */
+  vowelWriteBase?: string
 }
 
 /** 母音題的題目資料 */
 export interface ExamVowel {
   form: string
+  /** 搭配 อ 的寫法：畫課本字形（VowelForm）、結果頁文字用它（「-ิ」這種寫法在 iPhone 會出現 ◌） */
+  writeBase: string
   withO: string
   roman: string
   zhuyin?: string
@@ -230,12 +232,13 @@ export const vowelDistractors = (v: LessonVowel, pool: readonly LessonVowel[], c
   return result
 }
 
-const examVowel = (v: LessonVowel): ExamVowel => ({ form: v.form, withO: v.withO, roman: v.roman, zhuyin: v.zhuyin, tone: v.tone, length: v.length })
+const examVowel = (v: LessonVowel): ExamVowel => ({ form: v.form, writeBase: vowelWriteBase(v), withO: v.withO, roman: v.roman, zhuyin: v.zhuyin, tone: v.tone, length: v.length })
 const vowelSyllables = (v: LessonVowel): Syllable[] => [{ th: v.withO, roman: v.roman, tone: v.tone }]
 const LENGTH_LABEL = { short: '短音', long: '長音' } as const
 
 const vowelQuestion = (type: ExamQuestionType, v: LessonVowel, pool: readonly LessonVowel[], id: string): ExamQuestion => {
-  const base = { id, type, vowel: examVowel(v), speakText: v.withO }
+  // 念法統一用 vowelSpeakText（สระ＋母音；獨立母音 รึ…）
+  const base = { id, type, vowel: examVowel(v), speakText: vowelSpeakText(v) }
   switch (type) {
     case 'vowelSound':
       return {
@@ -244,16 +247,16 @@ const vowelQuestion = (type: ExamQuestionType, v: LessonVowel, pool: readonly Le
           key: vowelSoundKey(x), syllables: vowelSyllables(x), th: x.withO, zhuyin: x.zhuyin, hideThai: true, text: vowelSoundLabel(x),
         })),
         answerKey: vowelSoundKey(v),
-        promptLabel: v.form,
+        promptLabel: vowelWriteBase(v),
         answerLabel: vowelSoundLabel(v),
       }
     case 'vowelListen':
       return {
         ...base,
-        options: shuffleArray([v, ...vowelDistractors(v, pool)]).map((x) => ({ key: x.id, vowelForm: x.form, text: x.form })),
+        options: shuffleArray([v, ...vowelDistractors(v, pool)]).map((x) => ({ key: x.id, vowelWriteBase: vowelWriteBase(x), text: vowelWriteBase(x) })),
         answerKey: v.id,
         promptLabel: `🔊 ${vowelSoundLabel(v)}`,
-        answerLabel: v.form,
+        answerLabel: vowelWriteBase(v),
       }
     case 'vowelLength':
       return {
@@ -261,7 +264,7 @@ const vowelQuestion = (type: ExamQuestionType, v: LessonVowel, pool: readonly Le
         // 固定順序：短音在左、長音在右
         options: (['short', 'long'] as const).map((len) => ({ key: len, text: LENGTH_LABEL[len] })),
         answerKey: v.length!,
-        promptLabel: v.form,
+        promptLabel: vowelWriteBase(v),
         answerLabel: LENGTH_LABEL[v.length!],
       }
     case 'vowelHandwrite':
@@ -271,7 +274,7 @@ const vowelQuestion = (type: ExamQuestionType, v: LessonVowel, pool: readonly Le
         strokes: vowelStrokes(v),
         guideText: vowelWriteBase(v),
         promptLabel: `${vowelSoundLabel(v)} → 手寫`,
-        answerLabel: v.form,
+        answerLabel: vowelWriteBase(v),
       }
     default:
       throw new Error(`不是母音題：${type}`)
