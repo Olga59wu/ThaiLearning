@@ -10,6 +10,7 @@ defineProps<{
   strokes?: string[]
   fallbackChar?: string
   guideText?: string
+  fitViewport?: boolean
 }>()
 const emit = defineEmits<{ close: [] }>()
 </script>
@@ -27,7 +28,7 @@ const emit = defineEmits<{ close: [] }>()
         </button>
       </div>
 
-      <HandwritingPad :hw="hw" :is-dark="isDark" :strokes="strokes" :fallback-char="fallbackChar" :guide-text="guideText" />
+      <HandwritingPad :hw="hw" :is-dark="isDark" :strokes="strokes" :fallback-char="fallbackChar" :guide-text="guideText" :fit-viewport="fitViewport" />
     </div>
   </div>
 </template>

@@ -90,11 +90,11 @@ const setTab = (t: Tab) => router.replace({ query: { ...route.query, tab: t === 
     <ExamTab v-else :lesson="lesson" />
 
     <!-- 數字手寫彈窗 -->
-    <HandwritingModal v-if="hwTarget !== null" :hw="hw" :is-dark="isDark" @close="closeHW"
+    <HandwritingModal v-if="hwTarget !== null" :hw="hw" :is-dark="isDark" fit-viewport @close="closeHW"
       :title="`${toThaiDigits(hwTarget)}（${hwTarget}）`" :strokes="hwStrokes" :fallback-char="toThaiDigits(hwTarget)" />
 
     <!-- 母音手寫彈窗 -->
-    <HandwritingModal v-if="vowelTarget !== null" :hw="vowelHW.hw" :is-dark="isDark" @close="vowelHW.close"
+    <HandwritingModal v-if="vowelTarget !== null" :hw="vowelHW.hw" :is-dark="isDark" fit-viewport @close="vowelHW.close"
       :title="`${vowelTarget.form}（${vowelTarget.withO}）`" :strokes="vowelStrokes" :guide-text="vowelGuideText" />
   </div>
 </template>

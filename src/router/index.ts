@@ -134,7 +134,8 @@ if (import.meta.env.DEV) {
     path: '/dev/vowel-guides',
     name: 'dev-vowel-guides',
     component: () => import('@/views/DevVowelGuidesView.vue'),
-    meta: { title: '母音底圖原型', viewport: VIEWPORT.basic, lang: 'zh-TW', fonts: FONTS.lessons, requiresAuth: true },
+    // 開發用頁面不需要登入（方便用 headless 瀏覽器檢查）
+    meta: { title: '母音底圖原型', viewport: VIEWPORT.basic, lang: 'zh-TW', fonts: FONTS.lessons },
   })
 }
 

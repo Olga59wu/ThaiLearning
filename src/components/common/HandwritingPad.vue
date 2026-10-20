@@ -14,6 +14,8 @@ const props = withDefaults(
     fallbackChar?: string
     showGuide?: boolean
     guideText?: string
+    /** 課程頁彈窗：限制畫布邊長，讓正方形加上標題列、按鈕列不超過彈窗的 90vh（/thai 維持原版不設定） */
+    fitViewport?: boolean
   }>(),
   { showGuide: true },
 )
@@ -27,7 +29,7 @@ const setCanvasEl = (el: unknown) => { props.hw.canvasRef.value = el as HTMLCanv
 
 <template>
   <div class="p-5 bg-gray-50 dark:bg-slate-700/30 flex-1 overflow-y-auto">
-    <div class="relative flex items-center justify-center w-full overflow-hidden bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-gray-200 dark:border-slate-600 cursor-crosshair touch-none aspect-square mx-auto" id="canvas-container" :ref="setContainerEl">
+    <div class="relative flex items-center justify-center w-full overflow-hidden bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-gray-200 dark:border-slate-600 cursor-crosshair touch-none aspect-square mx-auto" id="canvas-container" :ref="setContainerEl" :style="fitViewport ? { maxWidth: 'min(100%, calc(90vh - 12rem))' } : undefined">
       <template v-if="showGuide && guideText">
         <VowelGuide :text="guideText" :is-dark="isDark" class="absolute inset-0 z-0" />
         <svg v-if="strokes && strokes.length > 0" :key="strokes.join('|')" class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">

@@ -5,6 +5,7 @@ import type { ThaiItem } from '@/types/thai'
 import CharPickerModal from '@/components/path/CharPickerModal.vue'
 import { usePageShell } from '@/composables/usePageShell'
 import { useTimers } from '@/composables/useTimers'
+import { GUIDE_FONT_RATIO, guideTextLayoutFor } from '@/utils/guideLayout'
 
 usePageShell({
   htmlClass: 'shell-common shell-path',
@@ -25,6 +26,9 @@ const inputCharEl = ref<HTMLDivElement | null>(null)
 let ctx: CanvasRenderingContext2D | null = null
 
 const guideChar = ref('')
+// 底字字級與位置：與課程母音底圖共用 utils/guideLayout 的規則（框的 68%＝原版 340px；放不下時等比例縮小、超出邊距時平移）
+const GUIDE_BOX_SIZE = 500 // 底字框＝畫布 500px（CANVAS_SIZE 宣告在後面，這裡另外寫）
+const guideStyle = ref({ fontSize: `${GUIDE_BOX_SIZE * GUIDE_FONT_RATIO}px`, transform: '' })
 const previewD = ref('')
 const outputValue = ref('')
 const smoothVal = ref('0.5')
@@ -112,6 +116,10 @@ const drawGuide = () => {
   // 1. 改用 textContent 取得 div 內的文字 (針對 contenteditable)
   const char = inputCharEl.value!.textContent ?? ''
   guideChar.value = char
+  guideTextLayoutFor(char, GUIDE_BOX_SIZE).then(({ fontSize, shiftX, shiftY }) => {
+    if (guideChar.value !== char) return
+    guideStyle.value = { fontSize: `${fontSize}px`, transform: shiftX || shiftY ? `translate(${shiftX}px, ${shiftY}px)` : '' }
+  })
 
   // 2. 強制置中樣式寫在 template 的 style（原版每次 drawGuide 設定，初始化時就會設定）
 
@@ -615,7 +623,7 @@ onMounted(() => {
 
       <div class="relative w-[500px] h-[500px] bg-white shadow-xs rounded-lg overflow-hidden border border-slate-200">
         <!-- 原版 drawGuide() 每次以 inline style 設定置中（初始化時就會執行） -->
-        <div id="guide-text" class="absolute inset-0 flex items-center justify-center text-[340px] leading-none text-gray-100 thai-font pointer-events-none z-0" style="display: flex; align-items: center; justify-content: center;">{{ guideChar }}</div>
+        <div id="guide-text" class="absolute inset-0 flex items-center justify-center text-[340px] leading-none text-gray-100 thai-font pointer-events-none z-0" style="display: flex; align-items: center; justify-content: center;" :style="guideStyle">{{ guideChar }}</div>
 
         <svg id="preview-svg" class="absolute inset-0 w-full h-full z-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
           <path id="preview-path" fill="none" stroke="#059669" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.8" :d="previewD" />

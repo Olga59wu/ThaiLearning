@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { layoutGuideText, loadGuideFont, type GuideLayout } from '@/utils/guideLayout'
 
 /**
  * 母音手寫底圖（例如 อะ）：อ 淺色、母音正常顏色。
- * 版面比照 /path 的底字（500px 框、字 340px＝68%、leading-none 置中），筆順座標 0～100 才能對齊。
+ * 字級與位置用 utils/guideLayout（與 /path 底字同一套規則：68%，放不下就等比例縮小），筆順座標 0～100 才能對齊。
  * 泰文的上下母音和 อ 是同一個字形組合，分 span 上色會斷掉，所以用 canvas：
  * 先整串畫正常顏色，再以 source-atop 在第一個 อ（子音位置）上重畫淺色，只改到 อ 的筆畫。
  */
 const props = defineProps<{ text: string; isDark: boolean }>()
+const emit = defineEmits<{ layout: [layout: GuideLayout, boxSize: number] }>()
 
-const FONT_RATIO = 0.68
 const COLOR = {
   light: { consonant: '#e5e7eb', vowel: '#6b7280' }, // gray-200／gray-500
   dark: { consonant: '#334155', vowel: '#94a3b8' }, // slate-700／slate-400
@@ -24,14 +25,8 @@ const draw = async () => {
   if (!canvas) return
   const token = ++drawToken
   const size = canvas.clientWidth
-  const fontSize = size * FONT_RATIO
-  const font = `${fontSize}px Sarabun, sans-serif`
-  // 等 Sarabun 載入，否則會用後備字體量測
-  try {
-    await document.fonts.load(font, props.text)
-  } catch {
-    // 字型載入失敗就用後備字體
-  }
+  if (size === 0) return
+  await loadGuideFont(props.text, size)
   if (token !== drawToken || !canvasEl.value) return
 
   const dpr = window.devicePixelRatio || 1
@@ -41,29 +36,23 @@ const draw = async () => {
   if (!ctx) return
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, size, size)
-  ctx.font = font
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
 
-  // 同 CSS：行高＝字級（leading-none），行框在容器內置中，基線＝行框頂＋半行距＋ascent
-  const m = ctx.measureText(props.text)
-  const ascent = m.fontBoundingBoxAscent
-  const descent = m.fontBoundingBoxDescent
-  const x = (size - m.width) / 2
-  const y = (size - fontSize) / 2 + (fontSize - (ascent + descent)) / 2 + ascent
+  const layout = layoutGuideText(ctx, props.text, size)
   const colors = props.isDark ? COLOR.dark : COLOR.light
-
   ctx.fillStyle = colors.vowel
-  ctx.fillText(props.text, x, y)
+  ctx.fillText(props.text, layout.x, layout.baseline)
 
   // 第一個 อ 是子音位置（ออ、เออ 的第二個 อ 是母音的一部分，不改色）
   const index = props.text.indexOf('อ')
   if (index >= 0) {
     ctx.globalCompositeOperation = 'source-atop'
     ctx.fillStyle = colors.consonant
-    ctx.fillText('อ', x + ctx.measureText(props.text.slice(0, index)).width, y)
+    ctx.fillText('อ', layout.x + ctx.measureText(props.text.slice(0, index)).width, layout.baseline)
     ctx.globalCompositeOperation = 'source-over'
   }
+  emit('layout', layout, size)
 }
 
 watch(() => [props.text, props.isDark], draw)
