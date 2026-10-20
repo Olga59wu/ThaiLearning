@@ -100,8 +100,10 @@ export interface LessonVowel {
   form: string
   /** 搭配 อ 的寫法（獨立母音是借用的唸法，例如 รึ）；發音用它 */
   withO: string
-  /** 手寫練習的底圖，預設 withO */
+  /** 手寫練習的底圖：只有不在 thaiData 的母音（ฦ、ฦๅ）才寫；有 thaiChar 的一律用 thaiData 的 writeBase */
   writeBase?: string
+  /** 筆順：只有不在 thaiData 的母音（ฦ、ฦๅ）才寫；有 thaiChar 的共用 thaiData 的 strokes */
+  strokes?: string[]
   /** 課本拼音 */
   roman: string
   /** 課本括號內的注音（有的才填） */

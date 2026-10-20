@@ -27,6 +27,8 @@ export interface ThaiItem {
   isCommon?: boolean
   duration?: 'Long' | 'Short'
   vowelLength?: 'Long' | 'Short'
+  /** 母音的寫法：用 อ 表示子音位置（例如 ◌ะ → อะ），/thai 卡片、手寫底圖、/path 底字、課程頁共用；char 維持 ◌ 寫法（收藏、錯題、課程 ref 的識別碼） */
+  writeBase?: string
   finalType?: string
   strokes?: string[]
 }

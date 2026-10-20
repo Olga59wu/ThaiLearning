@@ -6,6 +6,8 @@ import CharPickerModal from '@/components/path/CharPickerModal.vue'
 import { usePageShell } from '@/composables/usePageShell'
 import { useTimers } from '@/composables/useTimers'
 import { GUIDE_FONT_RATIO, guideTextLayoutFor } from '@/utils/guideLayout'
+import { LESSON_ONLY_VOWELS, writeBaseOfChar } from '@/data/lessons/vowels'
+import VowelGuide from '@/components/common/VowelGuide.vue'
 
 usePageShell({
   htmlClass: 'shell-common shell-path',
@@ -29,6 +31,8 @@ const guideChar = ref('')
 // 底字字級與位置：與課程母音底圖共用 utils/guideLayout 的規則（框的 68%＝原版 340px；放不下時等比例縮小、超出邊距時平移）
 const GUIDE_BOX_SIZE = 500 // 底字框＝畫布 500px（CANVAS_SIZE 宣告在後面，這裡另外寫）
 const guideStyle = ref({ fontSize: `${GUIDE_BOX_SIZE * GUIDE_FONT_RATIO}px`, transform: '' })
+// 元音的底字：writeBase（อ 表示子音位置，例如 ◌ะ → อะ），用和課程頁、/thai 相同的 VowelGuide 畫（刻意和原版不同，原版底字是 ◌ 寫法）
+const vowelGuideText = ref<string | undefined>(undefined)
 const previewD = ref('')
 const outputValue = ref('')
 const smoothVal = ref('0.5')
@@ -95,7 +99,8 @@ const selectChar = (char: string) => {
     foundItem = thaiData.find((d) => d.char.replace(/◌/g, '-') === char)
   }
 
-  currentCharObj = foundItem ?? null
+  // 不在 thaiData 的課程母音（ฦ、ฦๅ）：記住 char，輸出完整結構並標示要寫進課程檔
+  currentCharObj = foundItem ?? (lessonOnlyVowelOf(char) ? { char } : null)
 
   if (foundItem && foundItem.strokes && foundItem.strokes.length > 0) {
     strokes = []
@@ -116,6 +121,7 @@ const drawGuide = () => {
   // 1. 改用 textContent 取得 div 內的文字 (針對 contenteditable)
   const char = inputCharEl.value!.textContent ?? ''
   guideChar.value = char
+  vowelGuideText.value = writeBaseOfChar(char)
   guideTextLayoutFor(char, GUIDE_BOX_SIZE).then(({ fontSize, shiftX, shiftY }) => {
     if (guideChar.value !== char) return
     guideStyle.value = { fontSize: `${fontSize}px`, transform: shiftX || shiftY ? `translate(${shiftX}px, ${shiftY}px)` : '' }
@@ -403,7 +409,7 @@ const render = () => {
       // 有物件時：複製物件並替換 strokes，輸出完整結構
       const newObj: Record<string, unknown> = { ...currentCharObj }
       newObj.strokes = resultStrings
-      outputValue.value = objectToString(newObj) + ','
+      outputValue.value = lessonOnlyNote(currentCharObj.char) + objectToString(newObj) + ','
     } else {
       // 無物件時 (自創字)：只輸出 strokes 陣列
       outputValue.value = `strokes: [\n${resultStrings.map((s) => `      ${quote(s)},`).join('\n')}\n    ],`
@@ -411,6 +417,17 @@ const render = () => {
   } else {
     outputValue.value = ''
   }
+}
+
+// 不在 thaiData 的課程母音（ฦ、ฦๅ）
+const lessonOnlyVowelOf = (char: string) => LESSON_ONLY_VOWELS.find(({ vowel }) => vowel.form === char)
+
+// 課程母音的輸出開頭加註：筆順要寫進課程檔（不是 thai.ts）
+const lessonOnlyNote = (char: string): string => {
+  const found = lessonOnlyVowelOf(char)
+  if (!found) return ''
+  const file = `src/data/lessons/lesson-${String(found.lessonNo).padStart(2, '0')}.ts`
+  return `// ⚠️ ${char} 不在 thaiData：strokes 請寫進 ${file} 的 ${found.vowel.id}\n`
 }
 
 // 輸出成單引號字串，跳脫反斜線與單引號
@@ -623,7 +640,8 @@ onMounted(() => {
 
       <div class="relative w-[500px] h-[500px] bg-white shadow-xs rounded-lg overflow-hidden border border-slate-200">
         <!-- 原版 drawGuide() 每次以 inline style 設定置中（初始化時就會執行） -->
-        <div id="guide-text" class="absolute inset-0 flex items-center justify-center text-[340px] leading-none text-gray-100 thai-font pointer-events-none z-0" style="display: flex; align-items: center; justify-content: center;" :style="guideStyle">{{ guideChar }}</div>
+        <VowelGuide v-if="vowelGuideText" :text="vowelGuideText" :is-dark="false" class="absolute inset-0 z-0" />
+        <div id="guide-text" v-else class="absolute inset-0 flex items-center justify-center text-[340px] leading-none text-gray-100 thai-font pointer-events-none z-0" style="display: flex; align-items: center; justify-content: center;" :style="guideStyle">{{ guideChar }}</div>
 
         <svg id="preview-svg" class="absolute inset-0 w-full h-full z-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
           <path id="preview-path" fill="none" stroke="#059669" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.8" :d="previewD" />

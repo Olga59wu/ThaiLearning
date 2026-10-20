@@ -678,11 +678,8 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara A',
     meaning: '短音 A (後)',
     reading: 'a',
+    writeBase: 'อะ',
     duration: 'Short',
-    strokes: [
-      'M 59.1 62.5 L 61.2 62.2 Q 63.3 61.9 64.8 60.1 L 64.8 60.1 Q 66.3 58.3 65.7 55.6 L 65.7 55.6 Q 65.1 52.9 63.2 51.8 L 63.2 51.8 Q 61.3 50.7 59.2 51.2 L 59.2 51.2 Q 57.1 51.7 55.8 53.2 L 55.8 53.2 Q 54.5 54.7 54 56.7 L 54 56.7 Q 53.5 58.7 54.4 60.1 L 54.4 60.1 Q 55.3 61.5 56.8 62.6 L 56.8 62.6 Q 58.3 63.7 60.3 64.3 L 60.3 64.3 Q 62.3 64.9 64.9 64.9 L 64.9 64.9 Q 67.5 64.9 70 64.1 L 70 64.1 Q 72.5 63.3 74.4 61.8 L 74.4 61.8 Q 76.3 60.3 77.5 58 L 77.5 58 Q 78.7 55.7 79.2 52.8 L 79.7 49.9',
-      'M 58.7 82.7 L 60.6 82.9 Q 62.5 83.1 63.9 82.1 L 63.9 82.1 Q 65.3 81.1 65.9 78.9 L 65.9 78.9 Q 66.5 76.7 65.4 74.7 L 65.4 74.7 Q 64.3 72.7 62 72 L 62 72 Q 59.7 71.3 58 72.2 L 58 72.2 Q 56.3 73.1 55.3 74.7 L 55.3 74.7 Q 54.3 76.3 54.1 78.3 L 54.1 78.3 Q 53.9 80.3 55.5 82 L 55.5 82 Q 57.1 83.7 59.1 84.7 L 59.1 84.7 Q 61.1 85.7 63.1 85.8 L 63.1 85.8 Q 65.1 85.9 67.4 85.7 L 67.4 85.7 Q 69.7 85.5 71.6 84.7 L 71.6 84.7 Q 73.5 83.9 75.1 82.7 L 75.1 82.7 Q 76.7 81.5 78 79 L 78 79 Q 79.3 76.5 79.4 74.1 L 79.5 71.7',
-    ],
   },
   {
     type: 'vowel',
@@ -692,10 +689,8 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Aa',
     meaning: '長音 AA (後)',
     reading: 'aa',
+    writeBase: 'อา',
     duration: 'Long',
-    strokes: [
-      'M 55.5 59.9 L 56.1 57.1 Q 56.7 54.3 59 52.7 L 59 52.7 Q 61.3 51.1 63.6 50.4 L 63.6 50.4 Q 65.9 49.7 68.3 49.8 L 68.3 49.8 Q 70.7 49.9 72.7 50.8 L 72.7 50.8 Q 74.7 51.7 76.3 53.8 L 76.3 53.8 Q 77.9 55.9 78.3 58.5 L 78.3 58.5 Q 78.7 61.1 78.6 63.9 L 78.6 63.9 Q 78.5 66.7 78.6 72.1 L 78.6 72.1 Q 78.7 77.5 78.6 82.1 L 78.5 86.7',
-    ],
   },
   {
     type: 'vowel',
@@ -705,10 +700,8 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara I',
     meaning: '短音 I (上)',
     reading: 'i',
+    writeBase: 'อิ',
     duration: 'Short',
-    strokes: [
-      'M 64.9 46.7 L 51.5 46.9 Q 38.1 47.1 39.6 44.3 L 39.6 44.3 Q 41.1 41.5 43.3 40.1 L 43.3 40.1 Q 45.5 38.7 48.2 37.9 L 48.2 37.9 Q 50.9 37.1 53.3 37.3 L 53.3 37.3 Q 55.7 37.5 57.2 38.1 L 57.2 38.1 Q 58.7 38.7 60.3 39.7 L 60.3 39.7 Q 61.9 40.7 63.4 43.6 L 64.9 46.5',
-    ],
   },
   {
     type: 'vowel',
@@ -718,10 +711,8 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Ii',
     meaning: '長音 II (上)',
     reading: 'ii',
+    writeBase: 'อี',
     duration: 'Long',
-    strokes: [
-      'M 63.3 47.1 L 54.9 47.3 Q 46.5 47.5 41.8 47.5 L 41.8 47.5 Q 37.1 47.5 39.4 43.9 L 39.4 43.9 Q 41.7 40.3 43.9 39.1 L 43.9 39.1 Q 46.1 37.9 49.7 37.7 L 49.7 37.7 Q 53.3 37.5 55.7 38.5 L 55.7 38.5 Q 58.1 39.5 59.7 41.2 L 59.7 41.2 Q 61.3 42.9 62.7 45.3 L 62.7 45.3 Q 64.1 47.7 63.8 41.2 L 63.5 34.7',
-    ],
   },
   {
     type: 'vowel',
@@ -731,6 +722,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Ue',
     meaning: '短音 UE (上)',
     reading: 'ue',
+    writeBase: 'อึ',
     duration: 'Short',
   },
   {
@@ -741,6 +733,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Uue',
     meaning: '長音 UUE (上)',
     reading: 'uue',
+    writeBase: 'อื',
     duration: 'Long',
   },
   {
@@ -751,10 +744,8 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara U',
     meaning: '短音 U (下)',
     reading: 'u',
+    writeBase: 'อุ',
     duration: 'Short',
-    strokes: [
-      'M 63.3 95.3 L 62.1 96.3 Q 60.9 97.3 59.3 96.6 L 59.3 96.6 Q 57.7 95.9 57.5 94.4 L 57.5 94.4 Q 57.3 92.9 58.3 91.7 L 58.3 91.7 Q 59.3 90.5 60.9 91 L 60.9 91 Q 62.5 91.5 63 92.8 L 63 92.8 Q 63.5 94.1 63.6 97.4 L 63.7 100.7',
-    ],
   },
   {
     type: 'vowel',
@@ -764,6 +755,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Uu',
     meaning: '長音 UU (下)',
     reading: 'uu',
+    writeBase: 'อู',
     duration: 'Long',
   },
   {
@@ -774,6 +766,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara E',
     meaning: '短音 E (夾)',
     reading: 'e',
+    writeBase: 'เอะ',
     duration: 'Short',
   },
   {
@@ -784,6 +777,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Ee',
     meaning: '長音 EE (前)',
     reading: 'ee',
+    writeBase: 'เอ',
     duration: 'Long',
   },
   {
@@ -794,6 +788,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Ae',
     meaning: '短音 AE (夾)',
     reading: 'ae',
+    writeBase: 'แอะ',
     duration: 'Short',
   },
   {
@@ -804,6 +799,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Aae',
     meaning: '長音 AAE (前)',
     reading: 'aae',
+    writeBase: 'แอ',
     duration: 'Long',
   },
   {
@@ -814,6 +810,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara O',
     meaning: '短音 O (夾)',
     reading: 'o',
+    writeBase: 'โอะ',
     duration: 'Short',
   },
   {
@@ -824,6 +821,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Oo',
     meaning: '長音 OO (前)',
     reading: 'oo',
+    writeBase: 'โอ',
     duration: 'Long',
   },
   {
@@ -834,6 +832,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Am',
     meaning: '特殊音 AM (後)',
     reading: 'am',
+    writeBase: 'อำ',
     duration: 'Short',
   },
   {
@@ -844,6 +843,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Ai',
     meaning: '特殊音 AI (前/木卷)',
     reading: 'ai',
+    writeBase: 'ไอ',
     duration: 'Short',
   },
   {
@@ -854,6 +854,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Ai',
     meaning: '特殊音 AI (前/心卷)',
     reading: 'ai',
+    writeBase: 'ใอ',
     duration: 'Short',
   },
   {
@@ -864,6 +865,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Ao',
     meaning: '特殊音 AO (夾)',
     reading: 'ao',
+    writeBase: 'เอา',
     duration: 'Short',
   },
   {
@@ -874,6 +876,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Oe',
     meaning: '短音 OE (夾)',
     reading: 'oe',
+    writeBase: 'เออะ',
     duration: 'Short',
   },
   {
@@ -884,6 +887,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Oee',
     meaning: '長音 OEE (夾)',
     reading: 'oee',
+    writeBase: 'เออ',
     duration: 'Long',
   },
   {
@@ -894,6 +898,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Aw',
     meaning: '短音 AW (夾)',
     reading: 'aw',
+    writeBase: 'เอาะ',
     duration: 'Short',
   },
   {
@@ -904,6 +909,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Aww',
     meaning: '長音 AWW (後)',
     reading: 'aww',
+    writeBase: 'ออ',
     duration: 'Long',
   },
   {
@@ -914,6 +920,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Ia',
     meaning: '短音 IA (夾)',
     reading: 'ia',
+    writeBase: 'เอียะ',
     duration: 'Short',
   },
   {
@@ -924,6 +931,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Iia',
     meaning: '長音 IIA (夾)',
     reading: 'iia',
+    writeBase: 'เอีย',
     duration: 'Long',
   },
   {
@@ -934,6 +942,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Uea',
     meaning: '短音 UEA (夾)',
     reading: 'uea',
+    writeBase: 'เอือะ',
     duration: 'Short',
   },
   {
@@ -944,6 +953,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Uuea',
     meaning: '長音 UUEA (夾)',
     reading: 'uuea',
+    writeBase: 'เอือ',
     duration: 'Long',
   },
   {
@@ -954,6 +964,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Ua',
     meaning: '短音 UA (後)',
     reading: 'ua',
+    writeBase: 'อัวะ',
     duration: 'Short',
   },
   {
@@ -964,6 +975,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Sara Uua',
     meaning: '長音 UUA (後)',
     reading: 'uua',
+    writeBase: 'อัว',
     duration: 'Long',
   },
   {
@@ -974,6 +986,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Rue',
     meaning: '彈舌音 Rue (前)',
     reading: 'rue',
+    writeBase: 'ฤ',
     duration: 'Short',
   },
   {
@@ -984,6 +997,7 @@ export const thaiData: ThaiItem[] = [
     name: 'Rue',
     meaning: '彈舌音 Rue 長 (前)',
     reading: 'rue',
+    writeBase: 'ฤๅ',
     duration: 'Long',
   },
 

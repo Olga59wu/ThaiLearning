@@ -342,10 +342,12 @@ export const createThaiPage = () => {
   const isToneOptSelected = (idx: number) => toneTraining.isLocked && (idx === toneTraining.targetIdx || idx === selectedToneOpt.value)
 
   // HW Logic（畫布、筆色、縮放、清除、筆順動畫在 useHandwriting；彈窗是共用的 HandwritingModal）
+  // 元音：底圖用 writeBase（อ 淺色，同課程頁 VowelGuide），筆順疊在底圖上、不縮放到筆畫範圍（刻意和原版不同）
+  const hwGuideText = computed(() => (hwItem.value?.type === 'vowel' ? hwItem.value.writeBase : undefined))
   const openHW = (item: ThaiItem) => {
     hwItem.value = item; modals.value.writing = true
     nextTick(() => {
-      if (hw.initCanvas()) hw.autoZoomSvg(hwItem.value?.strokes)
+      if (hw.initCanvas() && !hwGuideText.value) hw.autoZoomSvg(hwItem.value?.strokes)
     })
   }
 
@@ -379,7 +381,7 @@ export const createThaiPage = () => {
     sentenceCats, sentence, setSentenceCat, nextSentence,
     memory, initMemoryGame, flipMemoryCard,
     toneTraining, toneHeaders, toneGraphs, toneColors, currentTonePracticeChars, animatingToneIdx, playToneSequence, triggerToneButtonAnimation, toneChallengeOpts, selectedToneOpt, startNewToneChallenge, enterToneChallenge, checkToneGuess, getToneBtnStyle, isToneOptSelected,
-    hwItem, hw, openHW,
+    hwItem, hwGuideText, hw, openHW,
     speak, switchMode, toggleDarkMode, togglePinyin, resetAllData, toggleStar,
     initVoices, handleKeydown,
   }

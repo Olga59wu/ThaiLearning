@@ -1,20 +1,14 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { layoutGuideText, loadGuideFont, type GuideLayout } from '@/utils/guideLayout'
+import { fillVowelText, layoutGuideText, loadGuideFont, type GuideLayout } from '@/utils/guideLayout'
 
 /**
  * 母音手寫底圖（例如 อะ）：อ 淺色、母音正常顏色。
  * 字級與位置用 utils/guideLayout（與 /path 底字同一套規則：68%，放不下就等比例縮小），筆順座標 0～100 才能對齊。
- * 泰文的上下母音和 อ 是同一個字形組合，分 span 上色會斷掉，所以用 canvas：
- * 先整串畫正常顏色，再以 source-atop 在第一個 อ（子音位置）上重畫淺色，只改到 อ 的筆畫。
+ * 上色用 fillVowelText（與 /thai 元音卡片相同配色）。
  */
 const props = defineProps<{ text: string; isDark: boolean }>()
 const emit = defineEmits<{ layout: [layout: GuideLayout, boxSize: number] }>()
-
-const COLOR = {
-  light: { consonant: '#e5e7eb', vowel: '#6b7280' }, // gray-200／gray-500
-  dark: { consonant: '#334155', vowel: '#94a3b8' }, // slate-700／slate-400
-}
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 let drawToken = 0
@@ -40,18 +34,7 @@ const draw = async () => {
   ctx.textBaseline = 'alphabetic'
 
   const layout = layoutGuideText(ctx, props.text, size)
-  const colors = props.isDark ? COLOR.dark : COLOR.light
-  ctx.fillStyle = colors.vowel
-  ctx.fillText(props.text, layout.x, layout.baseline)
-
-  // 第一個 อ 是子音位置（ออ、เออ 的第二個 อ 是母音的一部分，不改色）
-  const index = props.text.indexOf('อ')
-  if (index >= 0) {
-    ctx.globalCompositeOperation = 'source-atop'
-    ctx.fillStyle = colors.consonant
-    ctx.fillText('อ', layout.x + ctx.measureText(props.text.slice(0, index)).width, layout.baseline)
-    ctx.globalCompositeOperation = 'source-over'
-  }
+  fillVowelText(ctx, props.text, layout.x, layout.baseline, props.isDark)
   emit('layout', layout, size)
 }
 

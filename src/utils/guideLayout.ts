@@ -6,7 +6,7 @@
 //    量出來的字寬或字高超過框扣掉上下左右各 8% 邊距時，等比例縮小字級，讓整個字放得下。
 // 2. 位置同 CSS 的 leading-none 置中：行高＝字級，行框垂直置中；字寬（advance）水平置中。
 // 3. 置中後實際筆畫還是超出邊距時（例如 อุ 的 ุ 在下方、โ 的筆畫凸出 advance），平移推回邊距內。
-// （2026-10-20 用 /dev/vowel-guides 檢查：thaiData 已有筆順的 59 個字都在邊距內，不會被縮小或平移，已畫好的筆順不受影響）
+// （2026-10-20 用 /dev/vowel-guides 檢查：thaiData 已有筆順的字（輔音、數字等 54 個）都在邊距內，不會被縮小或平移，已畫好的筆順不受影響）
 
 export const GUIDE_FONT_RATIO = 0.68
 export const GUIDE_MARGIN_RATIO = 0.08
@@ -113,4 +113,28 @@ export const guideTextLayoutFor = async (
   if (!measureCtx || !text) return { fontSize: boxSize * GUIDE_FONT_RATIO, shiftX: 0, shiftY: 0 }
   const { fontSize, shiftX, shiftY } = layoutGuideText(measureCtx, text, boxSize)
   return { fontSize, shiftX, shiftY }
+}
+
+// ---- 母音寫法的配色：อ（子音位置）淺色、母音正常顏色 ----
+// /thai 元音卡片、手寫底圖（課程頁、/thai）、/path 底字共用
+export const VOWEL_COLORS = {
+  light: { consonant: '#e5e7eb', vowel: '#6b7280' }, // gray-200／gray-500
+  dark: { consonant: '#334155', vowel: '#94a3b8' }, // slate-700／slate-400
+}
+
+/**
+ * 在 canvas 畫母音寫法（ctx.font 要先設好）：先整串畫正常顏色，再以 source-atop 在第一個 อ 上重畫淺色。
+ * 泰文的上下母音和 อ 是同一個字形組合，分 span 上色會斷掉，所以用 canvas。
+ * 第一個 อ 是子音位置（ออ、เออ 的第二個 อ 是母音的一部分，不改色）；沒有 อ 的（ฤ）整個是正常顏色。
+ */
+export const fillVowelText = (ctx: CanvasRenderingContext2D, text: string, x: number, baseline: number, isDark: boolean) => {
+  const colors = isDark ? VOWEL_COLORS.dark : VOWEL_COLORS.light
+  ctx.fillStyle = colors.vowel
+  ctx.fillText(text, x, baseline)
+  const index = text.indexOf('อ')
+  if (index < 0) return
+  ctx.globalCompositeOperation = 'source-atop'
+  ctx.fillStyle = colors.consonant
+  ctx.fillText('อ', x + ctx.measureText(text.slice(0, index)).width, baseline)
+  ctx.globalCompositeOperation = 'source-over'
 }

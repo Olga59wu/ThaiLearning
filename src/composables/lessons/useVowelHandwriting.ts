@@ -2,11 +2,9 @@ import { computed, inject, nextTick, provide, ref, type InjectionKey } from 'vue
 import { storeToRefs } from 'pinia'
 import { useThaiLearnStore } from '@/stores/thaiLearn'
 import { useHandwriting } from '@/composables/useHandwriting'
-import { vowelStrokes } from '@/data/lessons/vowels'
+import { vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
 import type { LessonVowel } from '@/types/lesson'
 
-/** 母音手寫的底圖：課本練習頁搭配 อ 寫（อะ、อา…），獨立母音寫字本身 */
-export const vowelWriteBase = (v: LessonVowel): string => v.writeBase ?? v.withO
 
 /**
  * 課程頁的母音手寫彈窗：母音卡片的 ✍️ 呼叫 open(v)，彈窗由 LessonView 顯示。

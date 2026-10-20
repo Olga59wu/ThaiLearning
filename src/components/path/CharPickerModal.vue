@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { thaiData } from '@/data/thai'
+import { LESSON_ONLY_VOWELS } from '@/data/lessons/vowels'
 
 // 原版 #picker-modal：只保留泰語輔音／元音／數字 tab（日語平假名／片假名已移除）
 type PickerType = 'thai_con' | 'thai_vow' | 'thai_num'
@@ -8,6 +9,8 @@ type PickerType = 'thai_con' | 'thai_vow' | 'thai_num'
 interface PickerItem {
   char: string
   realChar?: string
+  /** 選字表上顯示的字（元音顯示 writeBase，例如 อะ） */
+  display?: string
   label: string
 }
 
@@ -31,7 +34,11 @@ const tabs: { type: PickerType; label: string }[] = [
 const list = computed<PickerItem[]>(() => {
   if (pickerType.value === 'thai_con') return thaiData.filter((d) => d.type === 'consonant').map((d) => ({ char: d.char, label: d.reading }))
   if (pickerType.value === 'thai_num') return thaiData.filter((d) => d.type === 'numbers').map((d) => ({ char: d.char, label: d.reading }))
-  return thaiData.filter((d) => d.type === 'vowel').map((d) => ({ char: d.char.replace(/◌/g, '-'), realChar: d.char, label: d.reading }))
+  // 元音顯示 writeBase（อ 表示子音位置，同課本；刻意和原版不同）；不在 thaiData 的 ฦ、ฦๅ 也列在後面，筆順寫進課程檔
+  return [
+    ...thaiData.filter((d) => d.type === 'vowel').map((d) => ({ char: d.char.replace(/◌/g, '-'), realChar: d.char, display: d.writeBase, label: d.reading })),
+    ...LESSON_ONLY_VOWELS.map(({ lessonNo, vowel }) => ({ char: vowel.form, display: vowel.writeBase, label: `${vowel.roman}・第${lessonNo}課` })),
+  ]
 })
 
 const renderPicker = (type: PickerType) => {
@@ -62,7 +69,7 @@ const closeCharPicker = (e: MouseEvent | null) => {
       </div>
 
       <div id="picker-grid" class="flex-1 overflow-y-auto p-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 content-start bg-slate-50">
-        <button v-for="(item, i) in list" :key="`${pickerType}-${i}`" class="flex flex-col items-center justify-center p-2 bg-white rounded-xl border border-gray-200 shadow-xs hover:border-emerald-500 hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-50 transition-all h-24 group" @click="emit('select', item.realChar || item.char)"><span class="text-3xl font-bold text-gray-700 group-hover:text-emerald-600 thai-font mb-1">{{ item.realChar || item.char }}</span><span class="text-xs text-gray-400 uppercase group-hover:text-emerald-500 font-mono">{{ item.label || '' }}</span></button>
+        <button v-for="(item, i) in list" :key="`${pickerType}-${i}`" class="flex flex-col items-center justify-center p-2 bg-white rounded-xl border border-gray-200 shadow-xs hover:border-emerald-500 hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-50 transition-all h-24 group" @click="emit('select', item.realChar || item.char)"><span class="text-3xl font-bold text-gray-700 group-hover:text-emerald-600 thai-font mb-1">{{ item.display || item.realChar || item.char }}</span><span class="text-xs text-gray-400 uppercase group-hover:text-emerald-500 font-mono">{{ item.label || '' }}</span></button>
       </div>
     </div>
   </div>

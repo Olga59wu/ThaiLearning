@@ -5,7 +5,7 @@ import { ALL_VOCAB_CATEGORIES, lessonNoOfCategory } from '@/data/vocabCategories
 import {
   blocksOf, LESSON_VOCAB_CATEGORIES, LESSONS, lessonPhrases, lessonPronounCells, lessonRawWords, lessonUnits, lessonVowels, lessonWords, resolveWord,
 } from '@/data/lessons'
-import { vowelPosition, vowelThaiItem } from '@/data/lessons/vowels'
+import { vowelPosition, vowelThaiItem, vowelWriteBase } from '@/data/lessons/vowels'
 import { sy } from '@/data/lessons/helpers'
 import { numberToSyllables, numberToThai, numberWordSyllables } from '@/utils/thaiNumber'
 import type { ExamQuestionType, LessonWord, Tone, VowelGroup } from '@/types/lesson'
@@ -160,6 +160,24 @@ describe('第 2 課', () => {
     const chars = vowels.flatMap((v) => (v.thaiChar ? [v.thaiChar] : []))
     expect(new Set(chars).size).toBe(chars.length)
     expect(thaiData.filter((t) => t.type === 'vowel').every((t) => chars.includes(t.char))).toBe(true)
+  })
+
+  it('寫法（writeBase）單一來源：thaiData 母音都有，有連結的課程母音不自己寫；ฦ、ฦๅ 寫在課程檔', () => {
+    thaiData.filter((t) => t.type === 'vowel').forEach((t) => {
+      expect(t.writeBase, t.char).toBeTruthy()
+      // ◌ 換成 อ 表示子音位置；獨立母音（ฤ、ฤๅ）寫字本身
+      if (t.char.includes('◌')) expect(t.writeBase, t.char).toMatch(/อ/)
+      else expect(t.writeBase).toBe(t.char)
+    })
+    vowels.forEach((v) => {
+      if (v.thaiChar) {
+        expect(v.writeBase, `${v.no} 用 thaiData 的 writeBase`).toBeUndefined()
+        expect(v.strokes, `${v.no} 用 thaiData 的 strokes`).toBeUndefined()
+      } else expect(v.writeBase).toBe(v.form)
+    })
+    expect(vowelWriteBase(vowels.find((v) => v.no === 6)!)).toBe('อื')
+    expect(vowelWriteBase(vowels.find((v) => v.no === 1)!)).toBe('อะ')
+    expect(vowelWriteBase(vowels.find((v) => v.no === 31)!)).toBe('ฦ')
   })
 
   it('有連結的母音都有位置說明', () => {

@@ -130,6 +130,12 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - 以 `item.type` 判斷（`LearnSection.vue` 的 `HANDWRITING_TYPES`），不用分類名稱字串
   - 筆圖示是 `absolute` 定位，拿掉不影響星號位置、卡片高度與間距
   - 上方提示文字在這 5 個分類只顯示「點擊卡片發音」，隱藏「，點擊筆圖示可手寫練習」
+- **元音一律用 อ 表示子音位置**（2026-10-20 使用者決定，和課本、每週課程同一套寫法）：
+  - thaiData 母音新增 `writeBase`（例如 `◌ะ` → `อะ`、`◌ือ` → `อื`、`ฤ` → `ฤ`），是唯一來源；每週課程的母音從 thaiData 讀取（不在 thaiData 的 ฦ、ฦๅ 寫在 lesson-02）
+  - `char`（`◌ะ` 等）**不改**：它是收藏、錯題、課程 ref 的識別碼
+  - 學習卡片的元音字形顯示 `writeBase`，อ 淺色、母音正常顏色（`components/common/VowelText.vue`，canvas 畫，配色同手寫底圖 `fillVowelText`）
+  - 元音手寫彈窗：底圖用 `VowelGuide`（同課程頁），筆順疊在底圖上、viewBox 固定 `0 0 100 100`，**不再 autoZoom 到筆畫範圍**；只畫動畫筆跡，不畫淺灰筆順底線。輔音、數字等其他分類不變
+  - 原本 5 個元音筆順（ะ、า、ิ、ี、ุ）是對著 ◌ 畫的，和 อ 底圖對不上，已從 thai.ts 移除（`3d6a085` 之前的版本還有），等使用者在 /path 重畫；重畫前 /thai、課程頁都不顯示元音筆順動畫，課程考試的手寫題也不出
 
 ### /player 的決策與已修正 bug
 - 壞音檔名單啟動時從 localStorage `thai-broken-audio` 讀取（原版不讀；使用者確認保留）；雲端有 `brokenAudio` 時覆蓋並寫回 localStorage（改由 `vocabProgress.applyCloudData()` 處理，見 /typing）
@@ -195,6 +201,11 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - 匯入：先解析出 `parsedStrokes`，為空就不改動字底圖／`currentCharObj`／畫布；**保留匯入框內容**，失敗訊息以 `importError` 紅字顯示在匯入框下方（再次匯入或 `@input` 時清除）；成功訊息照原版用 placeholder（`showImportMessage()`，3 秒，連續匯入時重新計時）
   - 輸出用 `quote()` 跳脫 `\` 與 `'`；匯入的 `char` regex 支援跳脫字元並還原
 - 決定不修：觸控支援（見 TODO）
+- 刻意和原版不同（2026-10-20）：
+  - 底字的字級與位置改用 `utils/guideLayout`（和課程頁、/thai 的手寫底圖同一套規則）：框的 68%（＝原版 340px），寬或高超過扣掉 8% 邊距就等比例縮小，置中後超出邊距就平移推回。已有筆順的輔音、數字都在邊距內，大小、位置和原版相同
+  - 「泰語元音」tab：選字表顯示 `writeBase`（อะ…），底字用 `VowelGuide`（canvas，อ 淺色）畫 writeBase；輸出的 `char` 仍是 `◌ะ`
+  - 「泰語元音」tab 後面加上不在 thaiData 的課程母音（ฦ、ฦๅ，標「第2課」）；輸出開頭加註「strokes 請寫進 lesson-02.ts 的 l02-v31」
+  - 開發用的 `/dev/vowel-guides`（只在 `pnpm dev` 註冊、不需登入）：檢查 32 個母音底圖、已有筆順的字有沒有被縮放／平移、手寫彈窗捲軸（`?modal=เอือะ`）、/thai 元音卡片預覽
 
 ### 第 5 步對照檢查結論（2026-10-13）
 - 7 頁全部搬完並經使用者對照確認；§2 決策、§3 架構、§5 盤點項目逐項核對皆已實作

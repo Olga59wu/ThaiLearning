@@ -3,18 +3,19 @@ import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { thaiData } from '@/data/thai'
 import { getLesson, lessonVowels } from '@/data/lessons'
-import { vowelStrokes } from '@/data/lessons/vowels'
+import { vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
 import { useLessonTheme } from '@/composables/lessons/useLessonTheme'
 import { useHandwriting } from '@/composables/useHandwriting'
-import { vowelWriteBase } from '@/composables/lessons/useVowelHandwriting'
 import { layoutGuideText, loadGuideFont, GUIDE_MARGIN_RATIO, type GuideLayout } from '@/utils/guideLayout'
 import VowelGuide from '@/components/common/VowelGuide.vue'
+import VowelText from '@/components/common/VowelText.vue'
 import HandwritingModal from '@/components/common/HandwritingModal.vue'
 
 // 開發用（只在 pnpm dev 註冊路由）：
 // 1. 第 2 課 32 個母音的手寫底圖，有筆順的疊上橘色路徑，自動檢查筆畫是否完整在框內
 // 2. thaiData 有筆順的字在 /path（500px 框）的縮放比例：必須都是 100%，否則已畫好的筆順會和底字對不上
 // 3. ?modal=เอือะ：直接打開該母音的手寫彈窗，檢查有沒有捲軸
+// 4. /thai 元音卡片的字形預覽（VowelText，同卡片的 text-3xl 粗體）
 const { isDark, toggleDark } = useLessonTheme()
 const route = useRoute()
 
@@ -48,6 +49,8 @@ const allVowelsOk = computed(() => vowels.value.length > 0 && vowels.value.every
 // /path：thaiData 有筆順的字
 const PATH_BOX = 500
 const pathRows = ref<{ char: string; check: Check }[]>([])
+const thaiVowels = thaiData.filter((t) => t.type === 'vowel')
+
 const pathScaled = computed(() => pathRows.value.filter((r) => r.check.scale < 0.999 || r.check.shifted))
 
 // 手寫彈窗
@@ -117,6 +120,15 @@ onMounted(async () => {
         <span class="thai-font">{{ r.char }}</span> {{ r.check.inBox ? '超出邊距' : '超出框' }} x {{ fmt(r.check.left) }}～{{ fmt(r.check.right) }} y {{ fmt(r.check.top) }}～{{ fmt(r.check.bottom) }}
       </li>
     </ul>
+
+    <h2 class="mt-6 text-lg font-bold text-gray-800 dark:text-white">/thai 元音卡片預覽（{{ thaiVowels.length }} 個）</h2>
+    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+      <div v-for="t in thaiVowels" :key="t.char" class="flex flex-col items-center justify-center gap-1 p-3 min-h-[120px] rounded-2xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+        <div class="font-bold thai-font mb-2 text-center text-3xl"><VowelText v-if="t.writeBase" :text="t.writeBase" :is-dark="isDark" :font-size="30" :line-height="36 / 30" bold /></div>
+        <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 thai-font">{{ t.thaiLabel }}</div>
+        <div class="text-[10px] font-mono text-gray-400">{{ t.strokes ? '有筆順' : '無筆順' }}</div>
+      </div>
+    </div>
 
     <p v-if="modalVowel" id="modal-overflow" class="font-mono text-sm text-gray-600 dark:text-gray-300">彈窗：{{ modalOverflow }}</p>
     <HandwritingModal v-if="modalVowel" :hw="hw" :is-dark="isDark" fit-viewport :title="`${modalVowel.v.form}（${modalVowel.v.withO}）`"

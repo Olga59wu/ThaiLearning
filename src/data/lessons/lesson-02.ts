@@ -15,9 +15,9 @@ const vowels: LessonVowel[] = [
   { id: 'l02-v03', no: 3, form: '-ิ', withO: 'อิ', roman: 'i', zhuyin: 'ㄧ', tone: 'low', length: 'short', group: 'short', thaiChar: '◌ิ' },
   { id: 'l02-v04', no: 4, form: '-ี', withO: 'อี', roman: 'i', zhuyin: 'ㄧ', tone: 'mid', length: 'long', group: 'long', thaiChar: '◌ี' },
   { id: 'l02-v05', no: 5, form: '-ึ', withO: 'อึ', roman: 'eu', tone: 'low', length: 'short', group: 'short', thaiChar: '◌ึ' },
-  // 課本字形欄只印 -ื；練習頁（p41）寫 อื
+  // 課本字形欄只印 -ื；練習頁（p41）寫 อื（thaiData 的 writeBase）
   {
-    id: 'l02-v06', no: 6, form: '-ื', withO: 'อือ', writeBase: 'อื', roman: 'eu', tone: 'mid', length: 'long', group: 'long', thaiChar: '◌ือ',
+    id: 'l02-v06', no: 6, form: '-ื', withO: 'อือ', roman: 'eu', tone: 'mid', length: 'long', group: 'long', thaiChar: '◌ือ',
     pencil: [{ page: 41, text: '印刷 ↔ 手寫，前後都可' }],
   },
   { id: 'l02-v07', no: 7, form: '-ุ', withO: 'อุ', roman: 'u', zhuyin: 'ㄨ', tone: 'low', length: 'short', group: 'short', thaiChar: '◌ุ' },
@@ -73,8 +73,9 @@ const vowels: LessonVowel[] = [
   { id: 'l02-v28', no: 28, form: 'เ-า', withO: 'เอา', roman: 'ao', zhuyin: 'ㄠ', tone: 'mid', group: 'special', thaiChar: 'เ◌า' },
 
   // 獨立母音 4 個（p48）：借用子音 ร、ล 搭配 -ึ、-ื 來發音；短音第 4 聲、長音第 1 聲；練習頁（p49）不搭配 อ
-  { id: 'l02-v29', no: 29, form: 'ฤ', withO: 'รึ', writeBase: 'ฤ', roman: 'reu', tone: 'high', length: 'short', group: 'independent', thaiChar: 'ฤ' },
-  { id: 'l02-v30', no: 30, form: 'ฤๅ', withO: 'รือ', writeBase: 'ฤๅ', roman: 'reu', tone: 'mid', length: 'long', group: 'independent', thaiChar: 'ฤๅ' },
+  // ฦ、ฦๅ 不在 thaiData，writeBase 與筆順寫在這裡（筆順用 /path 畫好後補 strokes）
+  { id: 'l02-v29', no: 29, form: 'ฤ', withO: 'รึ', roman: 'reu', tone: 'high', length: 'short', group: 'independent', thaiChar: 'ฤ' },
+  { id: 'l02-v30', no: 30, form: 'ฤๅ', withO: 'รือ', roman: 'reu', tone: 'mid', length: 'long', group: 'independent', thaiChar: 'ฤๅ' },
   { id: 'l02-v31', no: 31, form: 'ฦ', withO: 'ลึ', writeBase: 'ฦ', roman: 'leu', tone: 'high', length: 'short', group: 'independent', deprecated: true },
   { id: 'l02-v32', no: 32, form: 'ฦๅ', withO: 'ลือ', writeBase: 'ฦๅ', roman: 'leu', tone: 'mid', length: 'long', group: 'independent', deprecated: true },
 ]
