@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { thaiData } from '@/data/thai'
 import { getLesson, lessonVowels } from '@/data/lessons'
-import { vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
+import { vowelLabel, vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
 import { useLessonTheme } from '@/composables/lessons/useLessonTheme'
 import { useHandwriting } from '@/composables/useHandwriting'
 import { layoutGuideText, loadGuideFont, GUIDE_MARGIN_RATIO, type GuideLayout } from '@/utils/guideLayout'
@@ -140,7 +140,7 @@ onMounted(async () => {
     </div>
 
     <p v-if="modalVowel" id="modal-overflow" class="font-mono text-sm text-gray-600 dark:text-gray-300">彈窗：{{ modalOverflow }}</p>
-    <HandwritingModal v-if="modalVowel" :hw="hw" :is-dark="isDark" fit-viewport :title="`${modalVowel.v.form}（${modalVowel.v.withO}）`"
+    <HandwritingModal v-if="modalVowel" :hw="hw" :is-dark="isDark" fit-viewport :title="vowelLabel(modalVowel.v)"
       :strokes="modalVowel.strokes" :guide-text="modalVowel.base" @close="() => {}" />
   </div>
 </template>

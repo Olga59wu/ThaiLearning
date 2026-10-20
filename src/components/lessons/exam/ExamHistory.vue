@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import type { LessonExamRecord } from '@/types/lesson'
 import { QUESTION_TYPE_LABEL } from '@/utils/lessonExam'
+import ExamLabel from './ExamLabel.vue'
 
 // 歷次考試：摘要列表，點開看錯題（雲端同步來的舊紀錄沒有錯題明細）
 defineProps<{ records: LessonExamRecord[] }>()
@@ -39,10 +40,10 @@ const toggle = (id: string) => {
           <ul v-else class="flex flex-col gap-1.5">
             <li v-for="(w, i) in r.wrong" :key="i" class="p-2 rounded-xl bg-red-50/60 dark:bg-red-900/10">
               <div class="text-xs text-gray-400 dark:text-gray-500">{{ QUESTION_TYPE_LABEL[w.type] }}</div>
-              <div class="font-bold text-gray-800 dark:text-white thai-font">{{ w.prompt }}</div>
+              <div class="font-bold text-gray-800 dark:text-white thai-font"><ExamLabel :text="w.prompt" :font-size="14" :line-height="20 / 14" /></div>
               <div class="flex flex-wrap gap-x-4 thai-font">
-                <span class="text-emerald-600 dark:text-emerald-400">正確：{{ w.answer }}</span>
-                <span class="text-red-500 dark:text-red-400">你的答案：{{ w.given ?? '（未作答）' }}</span>
+                <span class="text-emerald-600 dark:text-emerald-400">正確：<ExamLabel :text="w.answer" :font-size="14" :line-height="20 / 14" /></span>
+                <span class="text-red-500 dark:text-red-400">你的答案：<ExamLabel :text="w.given ?? '（未作答）'" :font-size="14" :line-height="20 / 14" /></span>
               </div>
             </li>
           </ul>

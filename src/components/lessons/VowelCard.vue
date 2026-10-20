@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { vowelPosition, vowelSpeakText, vowelWriteBase } from '@/data/lessons/vowels'
+import { vowelLabel, vowelPosition, vowelSpeakText, vowelWriteBase } from '@/data/lessons/vowels'
 import type { LessonVowel } from '@/types/lesson'
 import { toneOrdinalLabel } from '@/utils/tone'
 import ToneSyllables from './ToneSyllables.vue'
@@ -10,7 +10,7 @@ import WriteButton from './WriteButton.vue'
 import PencilNotes from './PencilNotes.vue'
 import VowelForm from './VowelForm.vue'
 
-// 一個母音：課本字形（不受「泰文字」開關影響，這課就是在學字形）、搭配 อ、拼音＋注音、聲調、位置
+// 一個母音：寫法（不受「泰文字」開關影響，這課就是在學字形）、สระ 名稱、拼音＋注音、聲調、位置
 const props = defineProps<{ vowel: LessonVowel }>()
 const v = computed(() => props.vowel)
 const position = computed(() => vowelPosition(v.value))
@@ -28,9 +28,9 @@ const nameTh = computed(() => v.value.name?.map((s) => s.th).join('') ?? '')
       <SpeakButton :text="vowelSpeakText(v)" />
     </div>
 
-    <!-- 課本字形（text-4xl leading-tight：36px、1.25）；canvas 畫，iPhone 不會出現 ◌ -->
-    <div class="text-4xl leading-tight thai-font text-gray-800 dark:text-white"><VowelForm :write-base="vowelWriteBase(v)" :font-size="36" :line-height="1.25" /></div>
-    <div class="text-lg leading-tight thai-font text-emerald-600 dark:text-emerald-400">{{ v.withO }}</div>
+    <!-- 母音寫法、สระ 名稱：同 /thai 元音卡片（text-3xl 粗體：30px、36 / 30；綠字 thaiLabel） -->
+    <div class="text-3xl font-bold thai-font text-gray-800 dark:text-white"><VowelForm :write-base="vowelWriteBase(v)" :font-size="30" :line-height="36 / 30" /></div>
+    <div class="text-sm font-semibold thai-font text-emerald-600 dark:text-emerald-400">{{ vowelLabel(v) }}</div>
     <div class="flex items-end gap-1">
       <ToneSyllables :syllables="reading" />
       <span v-if="v.zhuyin" class="text-base font-bold text-gray-500 dark:text-gray-400 leading-none">（{{ v.zhuyin }}）</span>

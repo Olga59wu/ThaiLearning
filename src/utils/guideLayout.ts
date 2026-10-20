@@ -116,14 +116,14 @@ export const guideTextLayoutFor = async (
 }
 
 // ---- 母音寫法的配色：อ（子音位置）淺色、母音正常顏色 ----
-// /thai 元音卡片、手寫底圖（課程頁、/thai）、/path 底字共用
+// 全站共用：/thai 元音卡片、課程頁、考試、手寫底圖（課程頁、/thai）、/path 底字
 // 手寫底圖（VowelGuide）：母音 gray-500，描寫時不搶筆跡
 export const VOWEL_COLORS = {
   light: { consonant: '#e5e7eb', vowel: '#6b7280' }, // gray-200／gray-500
   dark: { consonant: '#334155', vowel: '#94a3b8' }, // slate-700／slate-400
 }
 
-// 行內文字（VowelText：/thai 卡片、測驗、翻牌記憶）：母音同原本文字的 text-gray-800 / dark:text-white，小字的細筆畫也看得清楚
+// 行內文字（VowelText：/thai 卡片、測驗、翻牌記憶、課程頁、考試）：母音同原本文字的 text-gray-800 / dark:text-white，小字的細筆畫也看得清楚
 export const VOWEL_TEXT_COLORS: typeof VOWEL_COLORS = {
   light: { consonant: '#e5e7eb', vowel: '#1f2937' }, // gray-200／gray-800
   dark: { consonant: '#334155', vowel: '#ffffff' }, // slate-700／white
@@ -151,39 +151,4 @@ export const fillVowelText = (
   ctx.fillStyle = colors.consonant
   ctx.fillText('อ', x + ctx.measureText(text.slice(0, index)).width, baseline)
   ctx.globalCompositeOperation = 'source-over'
-}
-
-/**
- * 畫課本字形（例如 -ิ、เ-าะ）：用搭配 อ 的寫法（อิ、เอาะ）畫，擦掉第一個 อ（子音位置）再補一條橫線。
- * 不能直接畫「-」加附加符號：iOS Safari 會在掛在「-」上的 ◌ิ ◌ุ 等前面補虛線圈（◌）；
- * 用 อ 排版，上下母音的位置就和課本一樣在橫線上方／下方。沒有 อ 的（ฤ）照原樣畫。
- */
-export const fillVowelForm = (
-  ctx: CanvasRenderingContext2D,
-  writeBase: string,
-  x: number,
-  baseline: number,
-  color: string,
-  fontSize: number,
-  bold = false,
-) => {
-  ctx.fillStyle = color
-  ctx.fillText(writeBase, x, baseline)
-  const index = writeBase.indexOf('อ')
-  if (index < 0) return
-  const ox = x + ctx.measureText(writeBase.slice(0, index)).width
-  // 擦掉 อ（只擦 อ 的筆畫，上下母音和 อ 之間有空隙，不受影響）；
-  // 字的邊緣是半透明的反鋸齒像素，只用 fillText 擦會留下淡淡的輪廓，所以再加一圈細描邊
-  ctx.globalCompositeOperation = 'destination-out'
-  ctx.fillText('อ', ox, baseline)
-  ctx.lineWidth = Math.max(1.5, fontSize * 0.04)
-  ctx.lineJoin = 'round'
-  ctx.strokeStyle = '#000'
-  ctx.strokeText('อ', ox, baseline)
-  ctx.globalCompositeOperation = 'source-over'
-  // 橫線：อ 字身高度的中間，寬度約 อ 的 70%，粗細接近筆畫
-  const m = ctx.measureText('อ')
-  const midY = baseline - m.actualBoundingBoxAscent / 2
-  const thick = Math.max(1, fontSize * (bold ? 0.09 : 0.065))
-  ctx.fillRect(ox + m.width * 0.15, midY - thick / 2, m.width * 0.7, thick)
 }

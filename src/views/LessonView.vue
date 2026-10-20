@@ -6,6 +6,7 @@ import { useLessonTheme } from '@/composables/lessons/useLessonTheme'
 import { provideLessonAudio } from '@/composables/lessons/useLessonAudio'
 import { provideNumberHandwriting } from '@/composables/lessons/useNumberHandwriting'
 import { provideVowelHandwriting } from '@/composables/lessons/useVowelHandwriting'
+import { vowelLabel } from '@/data/lessons/vowels'
 import { useLessonRecordsStore } from '@/stores/lessonRecords'
 import { toThaiDigits } from '@/utils/thaiNumber'
 import HandwritingModal from '@/components/common/HandwritingModal.vue'
@@ -95,6 +96,6 @@ const setTab = (t: Tab) => router.replace({ query: { ...route.query, tab: t === 
 
     <!-- 母音手寫彈窗 -->
     <HandwritingModal v-if="vowelTarget !== null" :hw="vowelHW.hw" :is-dark="isDark" fit-viewport @close="vowelHW.close"
-      :title="`${vowelTarget.form}（${vowelTarget.withO}）`" :strokes="vowelStrokes" :guide-text="vowelGuideText" />
+      :title="vowelLabel(vowelTarget)" :strokes="vowelStrokes" :guide-text="vowelGuideText" />
   </div>
 </template>

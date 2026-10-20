@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { fillVowelForm, fillVowelText, GUIDE_FONT_FAMILY, VOWEL_TEXT_COLORS } from '@/utils/guideLayout'
+import { fillVowelText, GUIDE_FONT_FAMILY, VOWEL_TEXT_COLORS } from '@/utils/guideLayout'
 
 /**
- * 行內的母音寫法（例如 /thai 元音卡片的 อะ）：อ 淺色、母音同原本文字的顏色（VOWEL_TEXT_COLORS）。
- * dash：改畫課本字形（อ 換成橫線，例如 อิ → -ิ；fillVowelForm），整個字同一個顏色。
+ * 母音寫法（全站共用：/thai 元音卡片、測驗、翻牌記憶、課程頁、考試）：อ 淺色、母音同原本文字的顏色（VOWEL_TEXT_COLORS）。
+ * 不用課本的「-」表示子音位置（iPhone Safari 會在掛在「-」上的上下母音前面補虛線圈 ◌）。
  * 佔位大小同一般文字（寬＝字寬、高＝行高）；凸出行框的上下母音依實際筆畫範圍多留空間，以負 margin 抵銷（同 HTML 文字的 overflow）。
  */
 const props = withDefaults(
-  defineProps<{ text: string; isDark: boolean; fontSize: number; bold?: boolean; lineHeight?: number; dash?: boolean }>(),
-  { bold: false, lineHeight: 1.2, dash: false },
+  defineProps<{ text: string; isDark: boolean; fontSize: number; bold?: boolean; lineHeight?: number }>(),
+  { bold: false, lineHeight: 1.2 },
 )
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -57,13 +57,10 @@ const draw = async () => {
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
   const baseline = pad.top + lineBaseline
-  if (props.dash) {
-    const color = (props.isDark ? VOWEL_TEXT_COLORS.dark : VOWEL_TEXT_COLORS.light).vowel
-    fillVowelForm(ctx, props.text, pad.left, baseline, color, fs, props.bold)
-  } else fillVowelText(ctx, props.text, pad.left, baseline, props.isDark, VOWEL_TEXT_COLORS)
+  fillVowelText(ctx, props.text, pad.left, baseline, props.isDark, VOWEL_TEXT_COLORS)
 }
 
-watch(() => [props.text, props.isDark, props.fontSize, props.bold, props.dash], draw)
+watch(() => [props.text, props.isDark, props.fontSize, props.bold], draw)
 onMounted(draw)
 onBeforeUnmount(() => {
   drawToken++

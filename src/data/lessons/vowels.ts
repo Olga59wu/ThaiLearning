@@ -16,6 +16,9 @@ export const vowelPosition = (v: LessonVowel): string | undefined =>
 /** 母音的寫法（อ 表示子音位置，例如 อะ）：有連結的用 thaiData 的 writeBase（單一來源），ฦ、ฦๅ 用課程資料 */
 export const vowelWriteBase = (v: LessonVowel): string => vowelThaiItem(v)?.writeBase ?? v.writeBase ?? v.withO
 
+/** 母音的名稱（同 /thai 卡片綠字的 thaiLabel，例如 สระอะ、ตัว ฤ）；ฦ、ฦๅ 沒有連結，照 ฤ 的格式 */
+export const vowelLabel = (v: LessonVowel): string => vowelThaiItem(v)?.thaiLabel ?? `ตัว ${v.form}`
+
 /** 母音的念法（課本 p40「สระ＋母音發音」）：有連結的用 thaiData 的 speakText（單一來源），ฦ、ฦๅ 直接念 withO（ลึ、ลือ） */
 export const vowelSpeakText = (v: LessonVowel): string => vowelThaiItem(v)?.speakText ?? v.withO
 
@@ -29,6 +32,13 @@ export const vowelStrokes = (v: LessonVowel): string[] | undefined => {
 export const LESSON_ONLY_VOWELS: { lessonNo: number; vowel: LessonVowel }[] = LESSONS.flatMap((l) =>
   l.blocks.flatMap((b) => (b.type === 'vowels' ? b.vowels.filter((v) => v.thaiChar === undefined).map((vowel) => ({ lessonNo: l.no, vowel })) : [])),
 )
+
+/** 考試結果、錯題紀錄的文字是不是母音寫法（是就用 VowelForm 畫） */
+const VOWEL_WRITE_BASES = new Set([
+  ...thaiData.flatMap((t) => (t.type === 'vowel' && t.writeBase ? [t.writeBase] : [])),
+  ...LESSON_ONLY_VOWELS.map(({ vowel }) => vowelWriteBase(vowel)),
+])
+export const isVowelWriteBase = (text: string | null | undefined): text is string => !!text && VOWEL_WRITE_BASES.has(text)
 
 /** /thai、/path 用：thaiData 母音或課程限定母音的寫法；不是母音就回傳 undefined */
 export const writeBaseOfChar = (char: string): string | undefined =>

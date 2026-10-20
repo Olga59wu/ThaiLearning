@@ -1,6 +1,6 @@
 // 每週課程考試：出題（純函式，方便測試）
 import { blocksOf, lessonPhrases, lessonPronounCells, lessonUnits, lessonVowels, resolveWord } from '@/data/lessons'
-import { vowelSpeakText, vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
+import { vowelLabel, vowelSpeakText, vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
 import { PARTICLE_SYLLABLE } from '@/data/lessons/helpers'
 import type { ExamQuestionType, Lesson, LessonPhrase, LessonVowel, PronounCell, ResolvedWord, Syllable, Tone } from '@/types/lesson'
 import { poolNumbers } from '@/utils/numberPool'
@@ -20,16 +20,18 @@ export interface ExamOption {
   zhuyin?: string
   /** 不顯示泰文（母音發音選項：泰文就是題目的字形，顯示等於給答案） */
   hideThai?: boolean
-  /** 母音字形選項：搭配 อ 的寫法（畫成課本字形，例如 อะ → -ะ） */
+  /** 母音字形選項：搭配 อ 的寫法（VowelForm 畫，淺色 อ） */
   vowelWriteBase?: string
 }
 
 /** 母音題的題目資料 */
 export interface ExamVowel {
   form: string
-  /** 搭配 อ 的寫法：畫課本字形（VowelForm）、結果頁文字用它（「-ิ」這種寫法在 iPhone 會出現 ◌） */
+  /** 搭配 อ 的寫法（VowelForm 畫，淺色 อ）；結果頁文字也用它（不用「-ิ」：iPhone 會出現 ◌） */
   writeBase: string
   withO: string
+  /** สระ 名稱（同 /thai 綠字，例如 สระอะ） */
+  label: string
   roman: string
   zhuyin?: string
   tone: Tone
@@ -232,7 +234,7 @@ export const vowelDistractors = (v: LessonVowel, pool: readonly LessonVowel[], c
   return result
 }
 
-const examVowel = (v: LessonVowel): ExamVowel => ({ form: v.form, writeBase: vowelWriteBase(v), withO: v.withO, roman: v.roman, zhuyin: v.zhuyin, tone: v.tone, length: v.length })
+const examVowel = (v: LessonVowel): ExamVowel => ({ form: v.form, writeBase: vowelWriteBase(v), withO: v.withO, label: vowelLabel(v), roman: v.roman, zhuyin: v.zhuyin, tone: v.tone, length: v.length })
 const vowelSyllables = (v: LessonVowel): Syllable[] => [{ th: v.withO, roman: v.roman, tone: v.tone }]
 const LENGTH_LABEL = { short: '短音', long: '長音' } as const
 

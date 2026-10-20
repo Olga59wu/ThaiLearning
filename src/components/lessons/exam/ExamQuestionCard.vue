@@ -135,10 +135,10 @@ onMounted(() => {
               d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
           </svg>
         </button>
-        <!-- 母音字形（不受「泰文字」開關影響）＋搭配 อ -->
+        <!-- 母音寫法（不受「泰文字」開關影響）＋สระ 名稱（同 /thai） -->
         <div v-else-if="(q.type === 'vowelSound' || q.type === 'vowelLength') && q.vowel" class="flex flex-col items-center gap-1">
-          <div class="text-7xl leading-tight thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="72" :line-height="1.25" /></div>
-          <div class="text-2xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.withO }}</div>
+          <div class="text-7xl font-bold leading-tight thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="72" :line-height="1.25" /></div>
+          <div class="text-2xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.label }}</div>
         </div>
         <!-- 手寫母音：看發音（拼音＋注音＋聲調＋長短）寫字形 -->
         <div v-else-if="q.type === 'vowelHandwrite' && q.vowel && vowelReading" class="flex flex-wrap items-center justify-center gap-3">
@@ -179,7 +179,7 @@ onMounted(() => {
             <span v-if="opt.zhuyin" class="text-base text-gray-500 dark:text-gray-400 leading-none">（{{ opt.zhuyin }}）</span>
           </span>
           <ThaiReading v-else-if="opt.syllables" :syllables="opt.syllables" :th="opt.th!" />
-          <span v-else-if="opt.vowelWriteBase" class="text-4xl font-normal thai-font"><VowelForm :write-base="opt.vowelWriteBase" :font-size="36" :line-height="40 / 36" /></span>
+          <span v-else-if="opt.vowelWriteBase" class="text-4xl font-bold thai-font"><VowelForm :write-base="opt.vowelWriteBase" :font-size="36" :line-height="40 / 36" /></span>
           <span v-else :class="opt.thaiDigits ? 'text-4xl thai-font font-normal' : q.type === 'listenNumber' ? 'text-3xl font-black' : 'text-lg'">{{ opt.text }}</span>
         </button>
       </div>
@@ -209,8 +209,8 @@ onMounted(() => {
             <ThaiReading v-if="numReading" :syllables="numReading.syllables" :th="numReading.th" size="sm" />
           </div>
           <div v-else-if="q.vowel" class="flex items-baseline gap-3">
-            <span class="text-4xl thai-font text-emerald-600 dark:text-emerald-400"><VowelForm :write-base="q.vowel.writeBase" :font-size="36" :line-height="40 / 36" /></span>
-            <span class="text-2xl thai-font text-gray-500 dark:text-gray-400">{{ q.vowel.withO }}</span>
+            <span class="text-4xl font-bold thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="36" :line-height="40 / 36" /></span>
+            <span class="text-2xl thai-font text-gray-500 dark:text-gray-400">{{ q.vowel.label }}</span>
           </div>
           <div class="flex items-center gap-3">
             <span class="text-sm text-gray-500 dark:text-gray-400">寫對了嗎？</span>
@@ -231,10 +231,10 @@ onMounted(() => {
           <span class="text-2xl thai-font text-emerald-600 dark:text-emerald-400">{{ toThaiDigits(q.num) }}</span>
           <ThaiReading v-if="numReading" :syllables="numReading.syllables" :th="numReading.th" />
         </div>
-        <!-- 母音：字形＋搭配 อ＋發音＋長短 -->
+        <!-- 母音：寫法＋สระ 名稱＋發音＋長短 -->
         <div v-else-if="q.vowel && vowelReading" class="flex flex-wrap items-center justify-center gap-3">
-          <span class="text-3xl thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="30" :line-height="36 / 30" /></span>
-          <span class="text-2xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.withO }}</span>
+          <span class="text-3xl font-bold thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="30" :line-height="36 / 30" /></span>
+          <span class="text-2xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.label }}</span>
           <ToneSyllables :syllables="vowelReading" />
           <span v-if="q.vowel.zhuyin" class="font-bold text-gray-500 dark:text-gray-400">（{{ q.vowel.zhuyin }}）</span>
           <span class="text-sm font-bold text-gray-500 dark:text-gray-400">{{ TONE_MARK[q.vowel.tone] }} {{ toneOrdinalLabel(q.vowel.tone) }}<template v-if="q.vowel.length">・{{ LENGTH_LABEL[q.vowel.length] }}</template></span>

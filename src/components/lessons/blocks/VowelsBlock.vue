@@ -35,6 +35,7 @@ const toneText = (tone: Tone) => `${TONE_MARK[tone]} ${toneOrdinalLabel(tone)}`
       <ToneSyllables v-if="block.intro" :syllables="block.intro" />
       <span v-if="block.summary" class="font-bold text-emerald-700 dark:text-emerald-300">{{ block.summary }}</span>
       <span class="w-full text-xs text-gray-500 dark:text-gray-400">母音的唸法：sa-ra ＋ 母音發音</span>
+      <span class="w-full -mt-1.5 text-xs text-gray-500 dark:text-gray-400">課本表格用 - 表示子音位置，這裡用淺色 <span class="thai-font">อ</span> 表示</span>
     </div>
 
     <!-- 短音／長音 -->

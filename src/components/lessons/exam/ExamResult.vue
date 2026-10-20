@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { ExamWrongAnswer } from '@/types/lesson'
 import type { RecordSyncStatus } from '@/stores/lessonRecords'
 import { QUESTION_TYPE_LABEL } from '@/utils/lessonExam'
+import ExamLabel from './ExamLabel.vue'
 
 const props = defineProps<{ correct: number; total: number; wrong: ExamWrongAnswer[]; retry: boolean; syncStatus: RecordSyncStatus }>()
 const emit = defineEmits<{ retryWrong: []; restart: []; back: [] }>()
@@ -48,10 +49,10 @@ const message = computed(() =>
       <ul class="flex flex-col gap-2">
         <li v-for="(w, i) in wrong" :key="i" class="p-3 rounded-2xl bg-red-50/60 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30">
           <div class="text-xs font-bold text-gray-400 dark:text-gray-500">{{ QUESTION_TYPE_LABEL[w.type] }}</div>
-          <div class="mt-1 font-bold text-gray-800 dark:text-white thai-font">{{ w.prompt }}</div>
+          <div class="mt-1 font-bold text-gray-800 dark:text-white thai-font"><ExamLabel :text="w.prompt" /></div>
           <div class="mt-1 flex flex-wrap gap-x-4 text-sm thai-font">
-            <span class="text-emerald-600 dark:text-emerald-400">正確：{{ w.answer }}</span>
-            <span class="text-red-500 dark:text-red-400">你的答案：{{ w.given ?? '（未作答）' }}</span>
+            <span class="text-emerald-600 dark:text-emerald-400">正確：<ExamLabel :text="w.answer" :font-size="14" :line-height="20 / 14" /></span>
+            <span class="text-red-500 dark:text-red-400">你的答案：<ExamLabel :text="w.given ?? '（未作答）'" :font-size="14" :line-height="20 / 14" /></span>
           </div>
         </li>
       </ul>
