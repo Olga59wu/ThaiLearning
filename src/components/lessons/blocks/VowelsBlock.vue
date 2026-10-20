@@ -71,7 +71,7 @@ const toneText = (tone: Tone) => `${TONE_MARK[tone]} ${toneOrdinalLabel(tone)}`
       </h3>
       <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
         泰文獨立母音沒有自己的發音，因此借用子音 <span class="thai-font">ร</span> 和 <span class="thai-font">ล</span>
-        搭配母音 <VowelForm write-base="อึ" :font-size="14" :line-height="20 / 14" /> 和 <VowelForm write-base="อื" :font-size="14" :line-height="20 / 14" /> 來發音。
+        搭配母音 <VowelForm write-base="อึ" :font-size="14" :line-height="20 / 14" inline /> 和 <VowelForm write-base="อื" :font-size="14" :line-height="20 / 14" inline /> 來發音。
       </p>
       <div class="grid grid-cols-2 gap-3">
         <h3 class="flex flex-wrap items-baseline gap-x-2 font-bold text-gray-700 dark:text-gray-200">

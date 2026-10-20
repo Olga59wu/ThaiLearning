@@ -119,6 +119,7 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 - 查詢一律用 `src/data/lessons/vowels.ts`（`vowelWriteBase`、`vowelSpeakText`、`vowelStrokes`）或 `src/data/thaiWriteBase.ts`（/thai：用 char 查，舊錯題物件沒有這些欄位）
 - **全站母音一律用淺色 อ 寫法，不使用 -**（課本表格的 `-ิ` 只存在資料的 `form`，不顯示在畫面上；iPhone Safari 也會在「-」加上下母音前面補虛線圈 ◌）
   - 畫法：`components/common/VowelText.vue`（canvas，淺色 อ＋深色母音、粗體；獨立母音 ฤ、ฤๅ、ฦ、ฦๅ 沒有 อ，整個字深色）。/thai 直接用它，課程頁、考試用 `components/lessons/VowelForm.vue`（同一個元件，配色從 store 取）
+  - 句子裡的小字（例如「搭配母音 อึ 和 อื」）用 `<VowelForm inline>`：一般字重、母音同句子的灰色、อ 比卡片稍深（`VOWEL_INLINE_COLORS`）
   - 母音卡片：寫法下面的綠字是 สระ 名稱（`vowelLabel`：thaiData 的 `thaiLabel`，例如 `สระอะ`、`ตัว ฤ`），和 /thai 一樣
   - 考試的題目、選項、答案用 VowelForm；結果頁、歷次紀錄的文字是 writeBase（`อิ`），由 `ExamLabel.vue` 判斷（`isVowelWriteBase`）改用 VowelForm 畫。測試會檢查考試文字不含「-」
 - 手寫底圖的版面規則（字高 68%、放不下縮小、超出邊距平移）在 `src/utils/guideLayout.ts`，/path、課程頁、/thai 共用；`/dev/vowel-guides`（只有 `pnpm dev`）可以一次檢查 32 個底圖與筆順對齊

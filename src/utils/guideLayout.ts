@@ -129,6 +129,13 @@ export const VOWEL_TEXT_COLORS: typeof VOWEL_COLORS = {
   dark: { consonant: '#334155', vowel: '#ffffff' }, // slate-700／white
 }
 
+// 句子裡的小字（VowelForm inline，例如母音表說明的 อึ、อื）：母音同句子的 text-gray-500 / dark:text-gray-400，
+// อ 比卡片稍深，14px 也看得清楚
+export const VOWEL_INLINE_COLORS: typeof VOWEL_COLORS = {
+  light: { consonant: '#d1d5db', vowel: '#6b7280' }, // gray-300／gray-500
+  dark: { consonant: '#475569', vowel: '#9ca3af' }, // slate-600／gray-400
+}
+
 /**
  * 在 canvas 畫母音寫法（ctx.font 要先設好）：先整串畫正常顏色，再以 source-atop 在第一個 อ 上重畫淺色。
  * 泰文的上下母音和 อ 是同一個字形組合，分 span 上色會斷掉，所以用 canvas。

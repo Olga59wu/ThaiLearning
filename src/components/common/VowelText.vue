@@ -8,8 +8,8 @@ import { fillVowelText, GUIDE_FONT_FAMILY, VOWEL_TEXT_COLORS } from '@/utils/gui
  * 佔位大小同一般文字（寬＝字寬、高＝行高）；凸出行框的上下母音依實際筆畫範圍多留空間，以負 margin 抵銷（同 HTML 文字的 overflow）。
  */
 const props = withDefaults(
-  defineProps<{ text: string; isDark: boolean; fontSize: number; bold?: boolean; lineHeight?: number }>(),
-  { bold: false, lineHeight: 1.2 },
+  defineProps<{ text: string; isDark: boolean; fontSize: number; bold?: boolean; lineHeight?: number; palette?: typeof VOWEL_TEXT_COLORS }>(),
+  { bold: false, lineHeight: 1.2, palette: () => VOWEL_TEXT_COLORS },
 )
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -57,10 +57,10 @@ const draw = async () => {
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
   const baseline = pad.top + lineBaseline
-  fillVowelText(ctx, props.text, pad.left, baseline, props.isDark, VOWEL_TEXT_COLORS)
+  fillVowelText(ctx, props.text, pad.left, baseline, props.isDark, props.palette)
 }
 
-watch(() => [props.text, props.isDark, props.fontSize, props.bold], draw)
+watch(() => [props.text, props.isDark, props.fontSize, props.bold, props.palette], draw)
 onMounted(draw)
 onBeforeUnmount(() => {
   drawToken++
