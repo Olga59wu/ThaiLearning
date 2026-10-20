@@ -7,8 +7,13 @@ import {
 } from '@/data/lessons'
 import { VOWEL_AUDIO_TEXTS, vowelPosition, vowelSpeakText, vowelThaiItem, vowelWriteBase } from '@/data/lessons/vowels'
 import { sy } from '@/data/lessons/helpers'
+import { thaiVowelSpeak } from '@/data/thaiWriteBase'
+import { audioFileName } from '@/services/offlineAudio'
 import { numberToSyllables, numberToThai, numberWordSyllables } from '@/utils/thaiNumber'
 import type { ExamQuestionType, LessonWord, Tone, VowelGroup } from '@/types/lesson'
+
+// Google TTS 把 สระ 念成「sa」的 10 個母音：改念 สะ-หระ-X
+const SA_RA = ['อำ', 'อึ', 'อุ', 'แอะ', 'แอ', 'โอะ', 'โอ', 'เออะ', 'เออ', 'เอือ']
 
 const allRawWords = (): LessonWord[] =>
   LESSONS.flatMap((l) => [
@@ -188,9 +193,20 @@ describe('第 2 課', () => {
     vowels.forEach((v) => {
       const s = vowelSpeakText(v)
       if (v.group === 'independent') expect(s).toBe(v.withO)
-      else expect(s, v.form).toBe('สระ' + v.withO)
+      else expect(s, v.form).toBe((SA_RA.includes(v.withO) ? 'สะ-หระ-' : 'สระ') + v.withO)
     })
     expect(VOWEL_AUDIO_TEXTS).toHaveLength(32)
+  })
+
+  it('改念 สะ-หระ-X 的 10 個母音：音檔清單用新念法（檔名和舊的 th_สระX.mp3 不同），舊念法不在清單裡', () => {
+    SA_RA.forEach((withO) => {
+      expect(VOWEL_AUDIO_TEXTS).toContain('สะ-หระ-' + withO)
+      expect(VOWEL_AUDIO_TEXTS).not.toContain('สระ' + withO)
+      expect(audioFileName('สะ-หระ-' + withO, 'th')).not.toBe(audioFileName('สระ' + withO, 'th'))
+    })
+    // /thai 用 char 查念法，與課程頁一致
+    expect(thaiVowelSpeak({ type: 'vowel', char: '◌ำ' })).toBe('สะ-หระ-อำ')
+    expect(thaiVowelSpeak({ type: 'vowel', char: '◌ะ' })).toBe('สระอะ')
   })
 
   it('有連結的母音都有位置說明', () => {

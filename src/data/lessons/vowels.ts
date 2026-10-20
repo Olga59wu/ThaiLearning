@@ -1,6 +1,6 @@
 // 母音連結 thaiData（寫法、筆順、位置說明）；獨立一個檔，避免隨身聽／打字（vocabCategories）跟著載入 thaiData
 import { thaiData } from '@/data/thai'
-import { thaiWriteBaseOfChar } from '@/data/thaiWriteBase'
+import { thaiWriteBaseOfChar, vowelSpokenText } from '@/data/thaiWriteBase'
 import type { ThaiItem } from '@/types/thai'
 import type { LessonVowel } from '@/types/lesson'
 import { LESSONS } from './registry'
@@ -19,8 +19,14 @@ export const vowelWriteBase = (v: LessonVowel): string => vowelThaiItem(v)?.writ
 /** 母音的名稱（同 /thai 卡片綠字的 thaiLabel，例如 สระอะ、ตัว ฤ）；ฦ、ฦๅ 沒有連結，照 ฤ 的格式 */
 export const vowelLabel = (v: LessonVowel): string => vowelThaiItem(v)?.thaiLabel ?? `ตัว ${v.form}`
 
-/** 母音的念法（課本 p40「สระ＋母音發音」）：有連結的用 thaiData 的 speakText（單一來源），ฦ、ฦๅ 直接念 withO（ลึ、ลือ） */
-export const vowelSpeakText = (v: LessonVowel): string => vowelThaiItem(v)?.speakText ?? v.withO
+/**
+ * 母音的念法（課本 p40「สระ＋母音發音」）：有連結的用 thaiData 的 speakText（單一來源，經 vowelSpokenText，部分改念 สะ-หระ-X），
+ * ฦ、ฦๅ 直接念 withO（ลึ、ลือ）
+ */
+export const vowelSpeakText = (v: LessonVowel): string => {
+  const speakText = vowelThaiItem(v)?.speakText
+  return speakText === undefined ? v.withO : vowelSpokenText(speakText)
+}
 
 /** 母音的筆順（有連結的共用 thaiData，ฦ、ฦๅ 用課程資料；沒有就是 undefined） */
 export const vowelStrokes = (v: LessonVowel): string[] | undefined => {
@@ -51,7 +57,7 @@ export const writeBaseOfChar = (char: string): string | undefined =>
  */
 export const VOWEL_AUDIO_TEXTS: string[] = [
   ...new Set([
-    ...thaiData.flatMap((t) => (t.type === 'vowel' && t.speakText ? [t.speakText] : [])),
+    ...thaiData.flatMap((t) => (t.type === 'vowel' && t.speakText ? [vowelSpokenText(t.speakText)] : [])),
     ...LESSON_ONLY_VOWELS.map(({ vowel }) => vowelSpeakText(vowel)),
   ]),
 ]
