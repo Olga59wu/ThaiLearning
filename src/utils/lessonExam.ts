@@ -175,7 +175,7 @@ export const examPlan = (lessons: readonly Lesson[], no: number, scope: ExamScop
   const numbers = new Set<number>()
   included.forEach((l) =>
     blocksOf(l, 'exam').forEach((b) => {
-      poolNumbers(b.config.numbers).forEach((n) => numbers.add(n))
+      if (b.config.numbers) poolNumbers(b.config.numbers).forEach((n) => numbers.add(n))
       b.config.questions.forEach((q) => counts.set(q.type, Math.max(counts.get(q.type) ?? 0, q.count)))
     }),
   )

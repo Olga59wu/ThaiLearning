@@ -122,6 +122,7 @@ const lesson: Lesson = {
           meaning: '你好！／再見！（意思是祝你平安快樂）',
           particles: ['ครับ', 'ค่ะ'],
           variants: [{ particle: 'ค่ะ', id: 'l01-0401', zh: '你好/再見 (女用)' }],
+          confusableWith: ['l02-p3'],
         },
         {
           id: 'l01-p2',

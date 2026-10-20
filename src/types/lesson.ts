@@ -10,6 +10,13 @@ export interface Syllable {
   tone: Tone
 }
 
+/** 鉛筆筆記：使用者自己在課本上的手寫補充（和課本印刷內容分開顯示） */
+export interface PencilNote {
+  /** 課本頁碼 */
+  page: number
+  text: string
+}
+
 /** 連結到現有資料（不複製）：分類單字 id、/thai 項目的 char、sentenceData 的 thai */
 export interface DataRef {
   vocabId?: string
@@ -29,6 +36,7 @@ interface WordBase {
   note?: string
   /** 是否放進「📘 第N課」分類，預設 true */
   inCategory?: boolean
+  pencil?: PencilNote[]
 }
 
 /** 連結字：th／zh 從 thaiVocab 取得 */
@@ -60,6 +68,7 @@ export interface ResolvedWord {
   note?: string
   ref?: DataRef
   inCategory: boolean
+  pencil?: PencilNote[]
 }
 
 export type Particle = 'ครับ' | 'ค่ะ'
@@ -73,8 +82,66 @@ export interface LessonPhrase {
   particles: Particle[]
   /** 有放進分類的語尾版本（固定 id，zh 為分類顯示用） */
   variants?: { particle: Particle; id: string; zh: string }[]
-  /** 意思重疊的 phrase id，不可同時出現在選項 */
+  /** 意思重疊的 phrase id（可跨課），不可同時出現在選項 */
   confusableWith?: string[]
+  pencil?: PencilNote[]
+}
+
+/** 母音分組：短音、長音、特殊、獨立 */
+export type VowelGroup = 'short' | 'long' | 'special' | 'independent'
+
+/** 母音（課本寫法；和 thaiData 重複的用 thaiChar 連結，共用筆順與位置說明） */
+export interface LessonVowel {
+  /** 固定 id（`l02-v01` 格式） */
+  id: string
+  /** 課本編號 1～32 */
+  no: number
+  /** 課本字形，- 表示子音位置（例如 -ะ） */
+  form: string
+  /** 搭配 อ 的寫法（獨立母音是借用的唸法，例如 รึ）；發音用它 */
+  withO: string
+  /** 手寫練習的底圖，預設 withO */
+  writeBase?: string
+  /** 課本拼音 */
+  roman: string
+  /** 課本括號內的注音（有的才填） */
+  zhuyin?: string
+  tone: Tone
+  /** 長短音；特殊母音沒有 */
+  length?: 'short' | 'long'
+  group: VowelGroup
+  /** thaiData 的 char（例如 ◌ะ） */
+  thaiChar?: string
+  /** 母音名稱（例如 ไม้ม้วน） */
+  name?: Syllable[]
+  /** 課本上的補充（例如只有 20 個單字） */
+  note?: string
+  /** 已停用 */
+  deprecated?: boolean
+  pencil?: PencilNote[]
+}
+
+export type PronounPerson = '我' | '你/您' | '他/她'
+export type PronounLevel = '一般' | '禮貌' | '謙卑' | '尊稱'
+
+/** 人稱代名詞表的一格：wordId 指向 pronouns 區塊 words 解析後的 id */
+export interface PronounCell {
+  person: PronounPerson
+  gender: 'male' | 'female'
+  level: PronounLevel
+  wordId: string
+  pencil?: PencilNote[]
+}
+
+/** 用法：一個字＋例子（例如 複數 พวก＋人稱代名詞） */
+export interface UsageItem {
+  /** 例如「複數」 */
+  label: string
+  word: LessonWord
+  /** 例如「＋人稱代名詞」 */
+  pattern?: string
+  examples: LessonWord[]
+  pencil?: PencilNote[]
 }
 
 /** 數字範圍：min～max 再加上 extra */
@@ -94,7 +161,8 @@ export type ExamQuestionType =
   | 'phraseMeaning' // 常用語 → 選中文
 
 export interface ExamConfig {
-  numbers: NumberPool
+  /** 數字題的範圍（沒有數字題時不用填） */
+  numbers?: NumberPool
   questions: { type: ExamQuestionType; count: number }[]
 }
 
@@ -121,6 +189,19 @@ export type LessonBlock =
   | { type: 'homework'; title: string; task: string; numbers: NumberPool }
   | { type: 'practice'; numberReading?: NumberPool }
   | { type: 'exam'; config: ExamConfig }
+  | {
+      type: 'vowels'
+      title: string
+      titleTh?: string
+      /** 標題的唸法（例如 สระ sa-ra） */
+      intro?: Syllable[]
+      summary?: string
+      vowels: LessonVowel[]
+      /** 分組標題旁的鉛筆筆記 */
+      groupPencil?: Partial<Record<VowelGroup, PencilNote[]>>
+    }
+  | { type: 'pronouns'; title: string; words: LessonWord[]; cells: PronounCell[] }
+  | { type: 'usage'; title: string; items: UsageItem[] }
 
 export interface Lesson {
   /** 課次（網址 /lessons/1） */

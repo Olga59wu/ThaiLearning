@@ -1,7 +1,7 @@
 // 每週課程：解析連結字詞、整理分類（課程清單在 registry.ts）
 import { FULL_VOCAB } from '@/data/thaiVocab'
 import type { VocabCategories, VocabWord } from '@/types/thai'
-import type { Lesson, LessonBlock, LessonPhrase, LessonWord, ResolvedWord } from '@/types/lesson'
+import type { Lesson, LessonBlock, LessonPhrase, LessonVowel, LessonWord, PronounCell, ResolvedWord } from '@/types/lesson'
 import { LESSONS } from './registry'
 
 export { getLesson, latestLesson, LESSONS } from './registry'
@@ -20,6 +20,7 @@ export const resolveWord = (w: LessonWord): ResolvedWord => {
       note: w.note,
       ref: w.ref,
       inCategory: w.inCategory ?? true,
+      pencil: w.pencil,
     }
   }
   const vocab = FULL_VOCAB.find((v) => v.id === w.ref.vocabId)
@@ -35,6 +36,7 @@ export const resolveWord = (w: LessonWord): ResolvedWord => {
     note: w.note,
     ref: w.ref,
     inCategory: w.inCategory ?? true,
+    pencil: w.pencil,
   }
 }
 
@@ -43,15 +45,35 @@ type BlockOf<T extends LessonBlock['type']> = Extract<LessonBlock, { type: T }>
 export const blocksOf = <T extends LessonBlock['type']>(lesson: Lesson, type: T): BlockOf<T>[] =>
   lesson.blocks.filter((b): b is BlockOf<T> => b.type === type)
 
-/** 單字表與貨幣區塊的字詞（依出現順序，不去重） */
-export const lessonWords = (lesson: Lesson): ResolvedWord[] =>
-  lesson.blocks.flatMap((b) => (b.type === 'vocab' || b.type === 'currency' ? b.words.map(resolveWord) : []))
+/** 各區塊的字詞（未解析；單字表、貨幣、人稱代名詞、用法），依出現順序，不去重；常用語另外處理 */
+export const lessonRawWords = (lesson: Lesson): LessonWord[] =>
+  lesson.blocks.flatMap((b) => {
+    if (b.type === 'vocab' || b.type === 'currency' || b.type === 'pronouns') return b.words
+    if (b.type === 'usage') return b.items.flatMap((item) => [item.word, ...item.examples])
+    return []
+  })
+
+/** 各區塊的字詞（已解析），依出現順序，不去重 */
+export const lessonWords = (lesson: Lesson): ResolvedWord[] => lessonRawWords(lesson).map(resolveWord)
 
 /** 數字單位（有 placeValue 的字詞） */
 export const lessonUnits = (lesson: Lesson): ResolvedWord[] =>
   lessonWords(lesson).filter((w) => w.placeValue !== undefined)
 
 export const lessonPhrases = (lesson: Lesson): LessonPhrase[] => blocksOf(lesson, 'phrases').flatMap((b) => b.phrases)
+
+export const lessonVowels = (lesson: Lesson): LessonVowel[] => blocksOf(lesson, 'vowels').flatMap((b) => b.vowels)
+
+/** 人稱代名詞表的格子，帶上解析後的字 */
+export const lessonPronounCells = (lesson: Lesson): (PronounCell & { word: ResolvedWord })[] =>
+  blocksOf(lesson, 'pronouns').flatMap((b) => {
+    const words = b.words.map(resolveWord)
+    return b.cells.map((cell) => {
+      const word = words.find((w) => w.id === cell.wordId)
+      if (!word) throw new Error(`人稱代名詞表找不到字：${cell.wordId}`)
+      return { ...cell, word }
+    })
+  })
 
 /** 「第N課」分類：字詞＋常用語原形＋語尾版本，以 id 去重 */
 export const lessonVocab = (lesson: Lesson): VocabWord[] => {

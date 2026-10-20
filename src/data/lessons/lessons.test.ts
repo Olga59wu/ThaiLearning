@@ -2,14 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { sentenceData, thaiData } from '@/data/thai'
 import { FULL_VOCAB, VOCAB_CATEGORIES } from '@/data/thaiVocab'
 import { ALL_VOCAB_CATEGORIES, lessonNoOfCategory } from '@/data/vocabCategories'
-import { blocksOf, LESSON_VOCAB_CATEGORIES, LESSONS, lessonPhrases, lessonUnits, lessonWords, resolveWord } from '@/data/lessons'
+import {
+  blocksOf, LESSON_VOCAB_CATEGORIES, LESSONS, lessonPhrases, lessonPronounCells, lessonRawWords, lessonUnits, lessonVowels, lessonWords, resolveWord,
+} from '@/data/lessons'
+import { vowelPosition, vowelThaiItem } from '@/data/lessons/vowels'
 import { sy } from '@/data/lessons/helpers'
 import { numberToSyllables, numberToThai, numberWordSyllables } from '@/utils/thaiNumber'
-import type { ExamQuestionType, LessonWord } from '@/types/lesson'
+import type { ExamQuestionType, LessonWord, Tone, VowelGroup } from '@/types/lesson'
 
 const allRawWords = (): LessonWord[] =>
   LESSONS.flatMap((l) => [
-    ...l.blocks.flatMap((b) => (b.type === 'vocab' || b.type === 'currency' ? b.words : [])),
+    ...lessonRawWords(l),
     ...lessonPhrases(l).map((p) => p.base),
   ])
 
@@ -74,19 +77,17 @@ describe('id', () => {
       if (w.kind === 'new') expect(FULL_VOCAB.some((v) => v.id === w.id), w.id).toBe(false)
     })
   })
-  it('常用語 id 不重複，confusableWith 互相指向存在的常用語', () => {
-    LESSONS.forEach((l) => {
-      const phrases = lessonPhrases(l)
-      const ids = phrases.map((p) => p.id)
-      expect(new Set(ids).size).toBe(ids.length)
-      phrases.forEach((p) =>
-        p.confusableWith?.forEach((c) => {
-          const other = phrases.find((x) => x.id === c)
-          expect(other, c).toBeDefined()
-          expect(other!.confusableWith).toContain(p.id)
-        }),
-      )
-    })
+  it('常用語 id 不重複（跨課），confusableWith 互相指向存在的常用語（可跨課）', () => {
+    const phrases = LESSONS.flatMap(lessonPhrases)
+    const ids = phrases.map((p) => p.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    phrases.forEach((p) =>
+      p.confusableWith?.forEach((c) => {
+        const other = phrases.find((x) => x.id === c)
+        expect(other, c).toBeDefined()
+        expect(other!.confusableWith, `${c} 也要指向 ${p.id}`).toContain(p.id)
+      }),
+    )
   })
 })
 
@@ -122,6 +123,74 @@ describe('第 1 課', () => {
   })
 })
 
+describe('第 2 課', () => {
+  const l2 = LESSONS.find((l) => l.no === 2)!
+  const vowels = lessonVowels(l2)
+
+  it('母音 32 個：課本編號 1～32 連續、id 固定格式且不重複', () => {
+    expect(vowels.map((v) => v.no)).toEqual(Array.from({ length: 32 }, (_, i) => i + 1))
+    vowels.forEach((v) => expect(v.id).toBe(`l02-v${String(v.no).padStart(2, '0')}`))
+  })
+
+  it('分組：短音 12、長音 12、特殊 4、獨立 4', () => {
+    const count = (g: VowelGroup) => vowels.filter((v) => v.group === g).length
+    expect([count('short'), count('long'), count('special'), count('independent')]).toEqual([12, 12, 4, 4])
+  })
+
+  it('聲調與長短依課本分組：短音第 2 聲、長音第 1 聲、特殊第 1 聲、獨立短第 4 聲、獨立長第 1 聲', () => {
+    vowels.forEach((v) => {
+      const expected: Tone =
+        v.group === 'short' ? 'low' : v.group === 'independent' && v.length === 'short' ? 'high' : 'mid'
+      expect(v.tone, `${v.no} ${v.form}`).toBe(expected)
+      if (v.group === 'short') expect(v.length).toBe('short')
+      if (v.group === 'long') expect(v.length).toBe('long')
+      if (v.group === 'special') expect(v.length).toBeUndefined()
+      if (v.group === 'independent') expect(v.length).toBeDefined()
+    })
+  })
+
+  it('連結 thaiData 的母音：30 個都找得到，只有 ฦ、ฦๅ 沒有（已停用）', () => {
+    vowels.forEach((v) => {
+      if (v.thaiChar) expect(vowelThaiItem(v), v.thaiChar).toBeDefined()
+    })
+    expect(vowels.filter((v) => v.thaiChar).length).toBe(30)
+    expect(vowels.filter((v) => !v.thaiChar).map((v) => v.form)).toEqual(['ฦ', 'ฦๅ'])
+    expect(vowels.filter((v) => v.deprecated).map((v) => v.form)).toEqual(['ฦ', 'ฦๅ'])
+    // 每個 thaiData 母音只連結一次
+    const chars = vowels.flatMap((v) => (v.thaiChar ? [v.thaiChar] : []))
+    expect(new Set(chars).size).toBe(chars.length)
+    expect(thaiData.filter((t) => t.type === 'vowel').every((t) => chars.includes(t.char))).toBe(true)
+  })
+
+  it('有連結的母音都有位置說明', () => {
+    vowels.forEach((v) => {
+      if (v.thaiChar) expect(vowelPosition(v), v.thaiChar).toBeTruthy()
+    })
+  })
+
+  it('人稱代名詞表：16 格都指向區塊裡的字', () => {
+    expect(lessonPronounCells(l2)).toHaveLength(16)
+  })
+
+  it('分類內容：母音、人名、新常用語原形不放；ค่ะ 版放', () => {
+    const th = lessonVocab(l2).map((v) => v.th)
+    expect(th).toEqual(expect.arrayContaining(['ฉัน', 'ดิฉัน', 'ท่าน', 'พวกผม', 'ของฉัน', 'คุณพ่อ', 'โชคดี', 'อรุณสวัสดิ์ค่ะ', 'ลาก่อนค่ะ']))
+    ;['อะ', 'คุณศักดา', 'คุณยุพิน', 'อรุณสวัสดิ์', 'ราตรีสวัสดิ์', 'ลาก่อน', 'อรุณสวัสดิ์ครับ'].forEach((t) => expect(th).not.toContain(t))
+  })
+
+  it('鉛筆筆記不含泰文字', () => {
+    const notes = [
+      ...vowels.flatMap((v) => v.pencil ?? []),
+      ...blocksOf(l2, 'vowels').flatMap((b) => Object.values(b.groupPencil ?? {}).flat()),
+      ...lessonPronounCells(l2).flatMap((c) => c.pencil ?? []),
+      ...blocksOf(l2, 'usage').flatMap((b) => b.items.flatMap((i) => i.pencil ?? [])),
+      ...lessonPhrases(l2).flatMap((p) => p.pencil ?? []),
+    ]
+    expect(notes.length).toBeGreaterThan(0)
+    notes.forEach((n) => expect(n.text).not.toMatch(/[฀-๿]/))
+  })
+})
+
 describe('規則說明', () => {
   it('{泰文} 標記都能解析成音節；標記外不含泰文字', () => {
     LESSONS.forEach((l) =>
@@ -146,11 +215,13 @@ describe('考試設定', () => {
       const exams = blocksOf(l, 'exam')
       expect(exams).toHaveLength(1)
       const { numbers, questions } = exams[0]!.config
-      expect(numbers.min).toBeLessThanOrEqual(numbers.max)
-      const poolSize = new Set([
-        ...Array.from({ length: numbers.max - numbers.min + 1 }, (_, i) => numbers.min + i),
-        ...(numbers.extra ?? []),
-      ]).size
+      if (numbers) expect(numbers.min).toBeLessThanOrEqual(numbers.max)
+      const poolSize = numbers
+        ? new Set([
+            ...Array.from({ length: numbers.max - numbers.min + 1 }, (_, i) => numbers.min + i),
+            ...(numbers.extra ?? []),
+          ]).size
+        : 0
       questions.forEach((q) => {
         expect(q.count).toBeGreaterThan(0)
         if (NUMERIC.includes(q.type)) expect(q.count).toBeLessThanOrEqual(poolSize)
