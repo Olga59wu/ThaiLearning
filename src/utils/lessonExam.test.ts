@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { LESSONS } from '@/data/lessons'
 import {
   buildExam,
+  cumulativeCount,
   digitDistractors,
   examPlan,
   listenDistractors,
@@ -151,6 +152,31 @@ describe('examPlan（第 2 課）', () => {
   it('還沒有母音筆順時不出手寫母音題；其他題型照設定', () => {
     const types = Object.fromEntries(lesson2Plan().questions.map((q) => [q.type, q.count]))
     expect(types).toEqual({ vowelSound: 5, vowelListen: 4, vowelLength: 3, pronounChoice: 4, phraseMeaning: 4 })
+  })
+  it('累積考：每課每種題型的題數減半（無條件進位、至少 1 題），各課從自己的題庫出題', () => {
+    expect([1, 2, 3, 4, 5].map(cumulativeCount)).toEqual([1, 1, 2, 2, 3])
+    const plan = examPlan(LESSONS, 2, 'cumulative')
+    const sectionOf = (no: number) => Object.fromEntries(plan.sections.find((s) => s.lessonNo === no)!.questions.map((q) => [q.type, q.count]))
+    // 第 1 課：4、3、3、4、3、3、4 → 各 2 題
+    expect(sectionOf(1)).toEqual({ digitChoice: 2, digitInput: 2, digitHandwrite: 2, readingChoice: 2, listenNumber: 2, unitMeaning: 2, phraseMeaning: 2 })
+    // 第 2 課：5、4、3、（手寫沒有筆順 → 0）、4、4
+    expect(sectionOf(2)).toEqual({ vowelSound: 3, vowelListen: 2, vowelLength: 2, pronounChoice: 2, phraseMeaning: 2 })
+    const total = plan.questions.reduce((s, q) => s + q.count, 0)
+    expect(total).toBe(25)
+    // 設定畫面：同題型加總
+    expect(plan.questions.find((q) => q.type === 'phraseMeaning')!.count).toBe(4)
+    for (let t = 0; t < 30; t++) {
+      const exam = buildExam(plan)
+      expect(exam).toHaveLength(25)
+      // 常用語：第 1 課、第 2 課各 2 題
+      const phrases = exam.filter((q) => q.type === 'phraseMeaning')
+      const l1Meanings = new Set(lesson1Plan().phrases.map((p) => p.meaning))
+      expect(phrases.filter((q) => l1Meanings.has(q.answerKey))).toHaveLength(2)
+    }
+  })
+  it('本課考試維持原題數', () => {
+    expect(examPlan(LESSONS, 1, 'lesson').questions.reduce((s, q) => s + q.count, 0)).toBe(24)
+    expect(examPlan(LESSONS, 2, 'lesson').questions.reduce((s, q) => s + q.count, 0)).toBe(20)
   })
   it('累積考包含第 1、2 課的題型與題庫', () => {
     const plan = examPlan(LESSONS, 2, 'cumulative')

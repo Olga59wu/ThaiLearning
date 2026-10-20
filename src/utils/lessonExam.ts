@@ -312,13 +312,31 @@ const pronounQuestion = (cell: ExamPronounCell, cells: readonly ExamPronounCell[
 // ---- 考卷 ----
 export type ExamScope = 'lesson' | 'cumulative'
 
-export interface ExamPlan {
+/** 題庫：題目從這裡抽 */
+export interface ExamPools {
   numbers: number[]
   units: ResolvedWord[]
   phrases: LessonPhrase[]
   vowels: LessonVowel[]
   pronounCells: ExamPronounCell[]
-  questions: { type: ExamQuestionType; count: number }[]
+}
+
+export interface ExamPlanQuestion {
+  type: ExamQuestionType
+  count: number
+}
+
+/** 一課的出題：題目從該課的題庫抽 */
+export interface ExamSection {
+  lessonNo: number
+  pools: ExamPools
+  questions: ExamPlanQuestion[]
+}
+
+/** 考試計畫：最上層的題庫是所有課合併（錯誤選項從這裡挑），questions 是各課加總（設定畫面顯示用） */
+export interface ExamPlan extends ExamPools {
+  questions: ExamPlanQuestion[]
+  sections: ExamSection[]
 }
 
 /** 各題型的題庫（題數不能超過題庫大小） */
@@ -329,64 +347,86 @@ const vowelPool = (type: ExamQuestionType, vowels: readonly LessonVowel[]): Less
   if (type === 'vowelHandwrite') return vowels.filter((v) => vowelStrokes(v) !== undefined)
   return [...vowels]
 }
-const poolSize = (type: ExamQuestionType, plan: Omit<ExamPlan, 'questions'>): number => {
-  if (NUMBER_TYPES.includes(type)) return plan.numbers.length
-  if (type === 'unitMeaning') return plan.units.length
-  if (type === 'phraseMeaning') return plan.phrases.length
-  if (type === 'pronounChoice') return plan.pronounCells.length
-  return vowelPool(type, plan.vowels).length
+const poolSize = (type: ExamQuestionType, pools: ExamPools): number => {
+  if (NUMBER_TYPES.includes(type)) return pools.numbers.length
+  if (type === 'unitMeaning') return pools.units.length
+  if (type === 'phraseMeaning') return pools.phrases.length
+  if (type === 'pronounChoice') return pools.pronounCells.length
+  return vowelPool(type, pools.vowels).length
 }
 
+const uniqueBy = <T>(items: T[], key: (item: T) => string): T[] => [...new Map(items.map((x) => [key(x), x])).values()]
+
+/** 一課的題庫 */
+const lessonPools = (l: Lesson): ExamPools => {
+  const numbers = new Set<number>()
+  blocksOf(l, 'exam').forEach((b) => {
+    if (b.config.numbers) poolNumbers(b.config.numbers).forEach((n) => numbers.add(n))
+  })
+  return {
+    numbers: [...numbers].sort((a, b) => a - b),
+    units: uniqueBy(lessonUnits(l), (u) => u.id),
+    phrases: uniqueBy(lessonPhrases(l), (p) => p.id),
+    vowels: uniqueBy(lessonVowels(l), (v) => v.id),
+    pronounCells: lessonPronounCells(l),
+  }
+}
+
+const mergePools = (pools: ExamPools[]): ExamPools => ({
+  numbers: [...new Set(pools.flatMap((p) => p.numbers))].sort((a, b) => a - b),
+  units: uniqueBy(pools.flatMap((p) => p.units), (u) => u.id),
+  phrases: uniqueBy(pools.flatMap((p) => p.phrases), (p) => p.id),
+  vowels: uniqueBy(pools.flatMap((p) => p.vowels), (v) => v.id),
+  pronounCells: pools.flatMap((p) => p.pronounCells),
+})
+
+/** 累積考：每課每種題型的題數減半（無條件進位，至少 1 題） */
+export const cumulativeCount = (count: number): number => Math.max(1, Math.ceil(count / 2))
+
 /**
- * 考試範圍：只考本課＝本課的設定；累積＝第 1 課到本課，
- * 題型取聯集、題數取各課設定的最大值、題目內容合併各課資料
+ * 考試範圍：只考本課＝本課的設定；
+ * 累積＝第 1 課到本課，每課各自出題（題數減半，題目從該課的題庫抽），錯誤選項從所有課合併的題庫挑。
+ * 題數不超過題庫大小；題庫是空的題型不出（例如還沒有筆順的手寫母音）
  */
 export const examPlan = (lessons: readonly Lesson[], no: number, scope: ExamScope): ExamPlan => {
   const included = lessons.filter((l) => (scope === 'lesson' ? l.no === no : l.no <= no))
-  const counts = new Map<ExamQuestionType, number>()
-  const numbers = new Set<number>()
-  included.forEach((l) =>
-    blocksOf(l, 'exam').forEach((b) => {
-      if (b.config.numbers) poolNumbers(b.config.numbers).forEach((n) => numbers.add(n))
-      b.config.questions.forEach((q) => counts.set(q.type, Math.max(counts.get(q.type) ?? 0, q.count)))
-    }),
-  )
-  const unitMap = new Map<string, ResolvedWord>()
-  included.flatMap(lessonUnits).forEach((u) => unitMap.set(u.id, u))
-  const phraseMap = new Map<string, LessonPhrase>()
-  included.flatMap(lessonPhrases).forEach((p) => phraseMap.set(p.id, p))
-  const vowelMap = new Map<string, LessonVowel>()
-  included.flatMap(lessonVowels).forEach((v) => vowelMap.set(v.id, v))
-  const pools = {
-    numbers: [...numbers].sort((a, b) => a - b),
-    units: [...unitMap.values()],
-    phrases: [...phraseMap.values()],
-    vowels: [...vowelMap.values()],
-    pronounCells: included.flatMap(lessonPronounCells),
+  const sections: ExamSection[] = included.map((l) => {
+    const pools = lessonPools(l)
+    const questions = blocksOf(l, 'exam')
+      .flatMap((b) => b.config.questions)
+      .map((q) => ({ type: q.type, count: Math.min(scope === 'lesson' ? q.count : cumulativeCount(q.count), poolSize(q.type, pools)) }))
+      .filter((q) => q.count > 0)
+    return { lessonNo: l.no, pools, questions }
+  })
+  // 設定畫面：同題型各課加總（依第一次出現的順序）
+  const totals = new Map<ExamQuestionType, number>()
+  sections.forEach((s) => s.questions.forEach((q) => totals.set(q.type, (totals.get(q.type) ?? 0) + q.count)))
+  return {
+    ...mergePools(sections.map((s) => s.pools)),
+    questions: [...totals].map(([type, count]) => ({ type, count })),
+    sections,
   }
-  // 題數不超過題庫大小；題庫是空的題型不出（例如還沒有筆順的手寫母音）
-  const questions = [...counts]
-    .map(([type, count]) => ({ type, count: Math.min(count, poolSize(type, pools)) }))
-    .filter((q) => q.count > 0)
-  return { ...pools, questions }
 }
 
-/** 依考試範圍出題：同一題型內的題目不重複，整份考卷順序隨機 */
+/** 依考試範圍出題：各課從自己的題庫抽，同一課同題型的題目不重複，整份考卷順序隨機 */
 export const buildExam = (plan: ExamPlan): ExamQuestion[] => {
   const questions: ExamQuestion[] = []
-  plan.questions.forEach(({ type, count }) => {
-    if (type === 'unitMeaning') {
-      shuffleArray(plan.units).slice(0, count).forEach((u, i) => questions.push(unitQuestion(u, plan.units, `${type}-${i}`)))
-    } else if (type === 'phraseMeaning') {
-      shuffleArray(plan.phrases).slice(0, count).forEach((p, i) => questions.push(phraseQuestion(p, plan.phrases, `${type}-${i}`)))
-    } else if (type === 'pronounChoice') {
-      shuffleArray(plan.pronounCells).slice(0, count).forEach((c, i) => questions.push(pronounQuestion(c, plan.pronounCells, `${type}-${i}`)))
-    } else if (type.startsWith('vowel')) {
-      // 題目從該題型的題庫抽，錯誤選項從全部母音挑
-      shuffleArray(vowelPool(type, plan.vowels)).slice(0, count).forEach((v, i) => questions.push(vowelQuestion(type, v, plan.vowels, `${type}-${i}`)))
-    } else {
-      shuffleArray(plan.numbers).slice(0, count).forEach((n, i) => questions.push(numberQuestion(type, n, `${type}-${i}`)))
-    }
+  plan.sections.forEach(({ lessonNo, pools, questions: qs }) => {
+    qs.forEach(({ type, count }) => {
+      const id = (i: number) => `${type}-${lessonNo}-${i}`
+      if (type === 'unitMeaning') {
+        shuffleArray(pools.units).slice(0, count).forEach((u, i) => questions.push(unitQuestion(u, plan.units, id(i))))
+      } else if (type === 'phraseMeaning') {
+        shuffleArray(pools.phrases).slice(0, count).forEach((p, i) => questions.push(phraseQuestion(p, plan.phrases, id(i))))
+      } else if (type === 'pronounChoice') {
+        shuffleArray(pools.pronounCells).slice(0, count).forEach((c, i) => questions.push(pronounQuestion(c, plan.pronounCells, id(i))))
+      } else if (type.startsWith('vowel')) {
+        // 題目從該題型的題庫抽，錯誤選項從全部母音挑
+        shuffleArray(vowelPool(type, pools.vowels)).slice(0, count).forEach((v, i) => questions.push(vowelQuestion(type, v, plan.vowels, id(i))))
+      } else {
+        shuffleArray(pools.numbers).slice(0, count).forEach((n, i) => questions.push(numberQuestion(type, n, id(i))))
+      }
+    })
   })
   return shuffleArray(questions)
 }
