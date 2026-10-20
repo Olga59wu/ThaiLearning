@@ -1,11 +1,12 @@
 // 每週課程考試：出題（純函式，方便測試）
-import { blocksOf, lessonPhrases, lessonUnits, resolveWord } from '@/data/lessons'
+import { blocksOf, lessonPhrases, lessonPronounCells, lessonUnits, lessonVowels, resolveWord } from '@/data/lessons'
+import { vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
 import { PARTICLE_SYLLABLE } from '@/data/lessons/helpers'
-import type { ExamQuestionType, Lesson, LessonPhrase, ResolvedWord, Syllable } from '@/types/lesson'
+import type { ExamQuestionType, Lesson, LessonPhrase, LessonVowel, PronounCell, ResolvedWord, Syllable, Tone } from '@/types/lesson'
 import { poolNumbers } from '@/utils/numberPool'
 import { shuffleArray } from '@/utils/shuffle'
 import { numberToSyllables, numberToThai, readingDistractorSyllables, toThaiDigits } from '@/utils/thaiNumber'
-import { joinSyllables, romanOf } from '@/utils/tone'
+import { joinSyllables, romanOf, TONE_MARK, toneOrdinalLabel } from '@/utils/tone'
 
 /** 選項：唸法用 syllables＋th 顯示（依「泰文字」開關），其他顯示 text */
 export interface ExamOption {
@@ -15,6 +16,22 @@ export interface ExamOption {
   thaiDigits?: boolean
   syllables?: Syllable[]
   th?: string
+  /** 母音發音選項：拼音後面的注音 */
+  zhuyin?: string
+  /** 不顯示泰文（母音發音選項：泰文就是題目的字形，顯示等於給答案） */
+  hideThai?: boolean
+  /** 母音字形選項（課本寫法，例如 -ะ） */
+  vowelForm?: string
+}
+
+/** 母音題的題目資料 */
+export interface ExamVowel {
+  form: string
+  withO: string
+  roman: string
+  zhuyin?: string
+  tone: Tone
+  length?: 'short' | 'long'
 }
 
 export interface ExamQuestion {
@@ -26,6 +43,15 @@ export interface ExamQuestion {
   reading?: { syllables: Syllable[]; th: string }
   options?: ExamOption[]
   answerKey: string
+  /** 母音題的題目 */
+  vowel?: ExamVowel
+  /** 人稱代名詞題的情境（例如「我・女生・禮貌」） */
+  context?: string
+  /** 答完念出的泰文（母音、人稱代名詞） */
+  speakText?: string
+  /** 手寫母音：筆順與底圖 */
+  strokes?: string[]
+  guideText?: string
   /** 結果頁與紀錄用（不含泰文字母，只有泰文數字與拼音） */
   promptLabel: string
   answerLabel: string
@@ -41,6 +67,11 @@ export const QUESTION_TYPE_LABEL: Record<ExamQuestionType, string> = {
   listenNumber: '聽發音 → 選數字',
   unitMeaning: '單位 → 選中文',
   phraseMeaning: '常用語 → 選中文',
+  vowelSound: '看母音 → 選發音',
+  vowelListen: '聽發音 → 選母音',
+  vowelLength: '看母音 → 長音／短音',
+  vowelHandwrite: '聽發音 → 手寫母音',
+  pronounChoice: '人稱代名詞 → 選拼音',
 }
 
 // ---- 數字 → 泰文數字：易混淆的字 ----
@@ -155,6 +186,129 @@ const phraseQuestion = (phrase: LessonPhrase, phrases: LessonPhrase[], id: strin
   }
 }
 
+// ---- 母音 ----
+/** 發音相近的母音（課本編號）：短音配短音、長音配長音 */
+const SIMILAR_VOWELS: readonly (readonly [number, number])[] = [
+  [13, 15], [14, 16], // โอะ／เอาะ、โอ／ออ
+  [9, 11], [10, 12], // เอะ／แอะ、เอ／แอ
+  [17, 15], [18, 16], // เออะ／เอาะ、เออ／ออ
+  [19, 21], [20, 22], // เอียะ／เอือะ、เอีย／เอือ
+  [5, 7], [6, 8], // อึ／อุ、อือ／อู
+]
+
+/** 長短音的另一半：1↔2、3↔4…23↔24，獨立母音 29↔30、31↔32；特殊母音沒有 */
+export const vowelPartnerNo = (v: LessonVowel): number | undefined => {
+  if (v.group === 'special' || v.length === undefined) return undefined
+  return v.no % 2 === 1 ? v.no + 1 : v.no - 1
+}
+
+/** 發音（拼音＋聲調）相同的母音視為同一個發音（例如 ใ- 與 ไ- 都是 ai 第 1 聲） */
+export const vowelSoundKey = (v: LessonVowel): string => `${v.roman}|${v.tone}`
+
+export const vowelSoundLabel = (v: LessonVowel): string =>
+  `${v.roman}${v.zhuyin ? `（${v.zhuyin}）` : ''} ${TONE_MARK[v.tone]} ${toneOrdinalLabel(v.tone)}`
+
+/**
+ * 母音的錯誤選項：先放長短音的另一半（อิ／อี）、再放發音相近的（โอะ／เอาะ、เอะ／แอะ…），不足再隨機；
+ * 發音相同的不重複出現，也不和答案同音（ใ-／ไ-）
+ */
+export const vowelDistractors = (v: LessonVowel, pool: readonly LessonVowel[], count = OPTION_COUNT - 1): LessonVowel[] => {
+  const byNo = (n: number | undefined) => (n === undefined ? undefined : pool.find((x) => x.no === n))
+  const similar = SIMILAR_VOWELS.flatMap(([a, b]) => (a === v.no ? [b] : b === v.no ? [a] : []))
+  const ordered = [
+    ...[vowelPartnerNo(v), ...similar].map(byNo).filter((x): x is LessonVowel => x !== undefined),
+    ...shuffleArray(pool),
+  ]
+  const usedSounds = new Set([vowelSoundKey(v)])
+  const result: LessonVowel[] = []
+  for (const x of ordered) {
+    if (result.length >= count) break
+    if (usedSounds.has(vowelSoundKey(x))) continue
+    usedSounds.add(vowelSoundKey(x))
+    result.push(x)
+  }
+  return result
+}
+
+const examVowel = (v: LessonVowel): ExamVowel => ({ form: v.form, withO: v.withO, roman: v.roman, zhuyin: v.zhuyin, tone: v.tone, length: v.length })
+const vowelSyllables = (v: LessonVowel): Syllable[] => [{ th: v.withO, roman: v.roman, tone: v.tone }]
+const LENGTH_LABEL = { short: '短音', long: '長音' } as const
+
+const vowelQuestion = (type: ExamQuestionType, v: LessonVowel, pool: readonly LessonVowel[], id: string): ExamQuestion => {
+  const base = { id, type, vowel: examVowel(v), speakText: v.withO }
+  switch (type) {
+    case 'vowelSound':
+      return {
+        ...base,
+        options: shuffleArray([v, ...vowelDistractors(v, pool)]).map((x) => ({
+          key: vowelSoundKey(x), syllables: vowelSyllables(x), th: x.withO, zhuyin: x.zhuyin, hideThai: true, text: vowelSoundLabel(x),
+        })),
+        answerKey: vowelSoundKey(v),
+        promptLabel: v.form,
+        answerLabel: vowelSoundLabel(v),
+      }
+    case 'vowelListen':
+      return {
+        ...base,
+        options: shuffleArray([v, ...vowelDistractors(v, pool)]).map((x) => ({ key: x.id, vowelForm: x.form, text: x.form })),
+        answerKey: v.id,
+        promptLabel: `🔊 ${vowelSoundLabel(v)}`,
+        answerLabel: v.form,
+      }
+    case 'vowelLength':
+      return {
+        ...base,
+        // 固定順序：短音在左、長音在右
+        options: (['short', 'long'] as const).map((len) => ({ key: len, text: LENGTH_LABEL[len] })),
+        answerKey: v.length!,
+        promptLabel: v.form,
+        answerLabel: LENGTH_LABEL[v.length!],
+      }
+    case 'vowelHandwrite':
+      return {
+        ...base,
+        answerKey: 'correct',
+        strokes: vowelStrokes(v),
+        guideText: vowelWriteBase(v),
+        promptLabel: `${vowelSoundLabel(v)} → 手寫`,
+        answerLabel: v.form,
+      }
+    default:
+      throw new Error(`不是母音題：${type}`)
+  }
+}
+
+// ---- 人稱代名詞 ----
+export type ExamPronounCell = PronounCell & { word: ResolvedWord }
+
+const GENDER_LABEL = { male: '男生', female: '女生' } as const
+export const pronounContext = (c: PronounCell): string => `${c.person}・${GENDER_LABEL[c.gender]}・${c.level}`
+
+/** 人稱代名詞的錯誤選項：優先同一人稱的其他說法，再補其他代名詞；同一個字只出現一次 */
+export const pronounDistractors = (cell: ExamPronounCell, cells: readonly ExamPronounCell[], count = OPTION_COUNT - 1): ResolvedWord[] => {
+  const ordered = [...shuffleArray(cells.filter((c) => c.person === cell.person)), ...shuffleArray(cells)].map((c) => c.word)
+  const result: ResolvedWord[] = []
+  for (const w of ordered) {
+    if (result.length >= count) break
+    if (w.id === cell.word.id || result.some((r) => r.id === w.id)) continue
+    result.push(w)
+  }
+  return result
+}
+
+const pronounQuestion = (cell: ExamPronounCell, cells: readonly ExamPronounCell[], id: string): ExamQuestion => ({
+  id,
+  type: 'pronounChoice',
+  context: pronounContext(cell),
+  speakText: cell.word.th,
+  options: shuffleArray([cell.word, ...pronounDistractors(cell, cells)]).map((w) => ({
+    key: w.id, syllables: w.syllables, th: w.th, text: romanOf(w.syllables),
+  })),
+  answerKey: cell.word.id,
+  promptLabel: pronounContext(cell),
+  answerLabel: romanOf(cell.word.syllables),
+})
+
 // ---- 考卷 ----
 export type ExamScope = 'lesson' | 'cumulative'
 
@@ -162,7 +316,25 @@ export interface ExamPlan {
   numbers: number[]
   units: ResolvedWord[]
   phrases: LessonPhrase[]
+  vowels: LessonVowel[]
+  pronounCells: ExamPronounCell[]
   questions: { type: ExamQuestionType; count: number }[]
+}
+
+/** 各題型的題庫（題數不能超過題庫大小） */
+const NUMBER_TYPES: readonly ExamQuestionType[] = ['digitChoice', 'digitInput', 'digitHandwrite', 'readingChoice', 'listenNumber']
+const vowelPool = (type: ExamQuestionType, vowels: readonly LessonVowel[]): LessonVowel[] => {
+  if (type === 'vowelLength') return vowels.filter((v) => v.length !== undefined)
+  // 手寫：有筆順的才出（目前沒有母音筆順，等使用者在 /path 畫）
+  if (type === 'vowelHandwrite') return vowels.filter((v) => vowelStrokes(v) !== undefined)
+  return [...vowels]
+}
+const poolSize = (type: ExamQuestionType, plan: Omit<ExamPlan, 'questions'>): number => {
+  if (NUMBER_TYPES.includes(type)) return plan.numbers.length
+  if (type === 'unitMeaning') return plan.units.length
+  if (type === 'phraseMeaning') return plan.phrases.length
+  if (type === 'pronounChoice') return plan.pronounCells.length
+  return vowelPool(type, plan.vowels).length
 }
 
 /**
@@ -183,12 +355,20 @@ export const examPlan = (lessons: readonly Lesson[], no: number, scope: ExamScop
   included.flatMap(lessonUnits).forEach((u) => unitMap.set(u.id, u))
   const phraseMap = new Map<string, LessonPhrase>()
   included.flatMap(lessonPhrases).forEach((p) => phraseMap.set(p.id, p))
-  return {
+  const vowelMap = new Map<string, LessonVowel>()
+  included.flatMap(lessonVowels).forEach((v) => vowelMap.set(v.id, v))
+  const pools = {
     numbers: [...numbers].sort((a, b) => a - b),
     units: [...unitMap.values()],
     phrases: [...phraseMap.values()],
-    questions: [...counts].map(([type, count]) => ({ type, count })),
+    vowels: [...vowelMap.values()],
+    pronounCells: included.flatMap(lessonPronounCells),
   }
+  // 題數不超過題庫大小；題庫是空的題型不出（例如還沒有筆順的手寫母音）
+  const questions = [...counts]
+    .map(([type, count]) => ({ type, count: Math.min(count, poolSize(type, pools)) }))
+    .filter((q) => q.count > 0)
+  return { ...pools, questions }
 }
 
 /** 依考試範圍出題：同一題型內的題目不重複，整份考卷順序隨機 */
@@ -199,6 +379,11 @@ export const buildExam = (plan: ExamPlan): ExamQuestion[] => {
       shuffleArray(plan.units).slice(0, count).forEach((u, i) => questions.push(unitQuestion(u, plan.units, `${type}-${i}`)))
     } else if (type === 'phraseMeaning') {
       shuffleArray(plan.phrases).slice(0, count).forEach((p, i) => questions.push(phraseQuestion(p, plan.phrases, `${type}-${i}`)))
+    } else if (type === 'pronounChoice') {
+      shuffleArray(plan.pronounCells).slice(0, count).forEach((c, i) => questions.push(pronounQuestion(c, plan.pronounCells, `${type}-${i}`)))
+    } else if (type.startsWith('vowel')) {
+      // 題目從該題型的題庫抽，錯誤選項從全部母音挑
+      shuffleArray(vowelPool(type, plan.vowels)).slice(0, count).forEach((v, i) => questions.push(vowelQuestion(type, v, plan.vowels, `${type}-${i}`)))
     } else {
       shuffleArray(plan.numbers).slice(0, count).forEach((n, i) => questions.push(numberQuestion(type, n, `${type}-${i}`)))
     }

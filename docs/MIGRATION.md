@@ -39,6 +39,7 @@
 | 部署設定檔（`firebase.json`、`.firebaserc`、`firestore.rules`） | ✅ site ID `thai-learning-og` | `d962aa0` |
 | 部署（建立 site `thai-learning-og`、Authorized domains、`firestore:rules`、`hosting:thai`） | ✅ 2026-10-14 使用者完成，https://thai-learning-og.web.app；舊網站驗證過沒有被規則擋到 | |
 | 新功能：每週課程（`/lessons`），流程與格式見 `docs/LESSONS.md` | ✅ 第 1 課；考試待使用者實測 | `b08fef0`～`6f35064` |
+| 第 2 課（母音）：資料、課程頁、母音統一 อ 寫法（/thai、/path）、開發用跳過登入、考試新題型 | 考試待使用者實測；母音筆順待使用者在 /path 畫 | `7a557bc`～ |
 
 順序：**player → typing → downloader → path** → 第 5 步對照檢查（已完成）→ SW／離線實測 → 部署。
 

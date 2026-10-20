@@ -161,6 +161,11 @@ export type ExamQuestionType =
   | 'listenNumber' // 聽發音 → 選數字
   | 'unitMeaning' // 單位泰文 → 選中文
   | 'phraseMeaning' // 常用語 → 選中文
+  | 'vowelSound' // 看母音字形 → 選發音（拼音＋注音＋聲調）
+  | 'vowelListen' // 聽母音發音 → 選字形
+  | 'vowelLength' // 看母音 → 判斷長音／短音
+  | 'vowelHandwrite' // 看發音 → 手寫母音（有筆順的才出；自評 ✓／✗）
+  | 'pronounChoice' // 人稱代名詞：看情境 → 選拼音
 
 export interface ExamConfig {
   /** 數字題的範圍（沒有數字題時不用填） */

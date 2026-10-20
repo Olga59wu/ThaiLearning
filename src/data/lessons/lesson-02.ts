@@ -209,10 +209,17 @@ const lesson: Lesson = {
       ],
     },
     {
-      // 母音、人稱代名詞的新題型在下一步加入
       type: 'exam',
       config: {
-        questions: [{ type: 'phraseMeaning', count: 4 }],
+        // 手寫母音只出有筆順的（目前沒有，題數會自動變 0，畫好筆順後才出現）
+        questions: [
+          { type: 'vowelSound', count: 5 },
+          { type: 'vowelListen', count: 4 },
+          { type: 'vowelLength', count: 3 },
+          { type: 'vowelHandwrite', count: 2 },
+          { type: 'pronounChoice', count: 4 },
+          { type: 'phraseMeaning', count: 4 },
+        ],
       },
     },
   ],

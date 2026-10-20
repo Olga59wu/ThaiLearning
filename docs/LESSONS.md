@@ -43,6 +43,7 @@ export default lesson
 sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 ```
 泰文欄用課本的**發音拼法**（例如 สวัสดี 拆成 `สะ`、`หวัด`、`ดี`），拼音用課本的拼法（`sib` 不是 `sip`）。
+課本有時用「第 N 聲」：第 1 聲＝中 `—`、第 2 聲＝低 `ˇ`、第 3 聲＝降 `ˋ`、第 4 聲＝高 `~`、第 5 聲＝升 `/`（`utils/tone.ts` 的 `TONE_ORDINAL`／`toneOrdinalLabel()`）。
 
 ### 2.3 重複的字詞用 ref 連結，不要複製
 先查現有資料：`src/data/thaiVocab.ts`（隨身聽單字，有 id）、`src/data/thai.ts` 的 `thaiData`（/thai 的字，用 `char`）、`sentenceData`（/thai 的句子，用 `thai`）。
@@ -68,7 +69,10 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 | `notes` | 筆記 | 純文字，不含泰文字 |
 | `homework` | 作業 | `numbers` 範圍（格子可翻開唸法、✍️ 練寫） |
 | `practice` | 練習設定 | `numberReading` 數字範圍 |
-| `exam` | 考試設定 | `numbers` 數字範圍、`questions` 題型與題數 |
+| `exam` | 考試設定 | `numbers` 數字範圍（沒有數字題可省略）、`questions` 題型與題數 |
+| `vowels` | 母音表 | `vowels`（`LessonVowel`：課本字形 `form`、搭配 อ `withO`、拼音、注音、聲調、長短、分組、`thaiChar` 連結 thaiData）、`groupPencil`；寫法（`writeBase`）與筆順一律用 thaiData 的，不在 thaiData 的（ฦ、ฦๅ）才寫在課程檔 |
+| `pronouns` | 人稱代名詞表 | `words`（不重複的字）、`cells`（人稱 × 男女 × 等級 → `wordId`） |
+| `usage` | 用法 | `items`：`label`（例如「複數」）＋ `word` ＋ `pattern`（例如「＋人稱代名詞」）＋ `examples` |
 
 ### 2.5 考試題型
 | 題型 | 內容 | 資料來源 |
@@ -80,9 +84,15 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 | `listenNumber` | 聽發音 → 選數字 | `exam.numbers` |
 | `unitMeaning` | 單位 → 選中文 | 有 `placeValue` 的字詞 |
 | `phraseMeaning` | 常用語 → 選中文 | `phrases` 區塊 |
+| `vowelSound` | 看母音字形 → 選發音（拼音＋注音＋聲調，不顯示泰文） | `vowels` 區塊；錯誤選項先放長短音另一半（อิ／อี）、再放發音相近的（โอะ／เอาะ、เอะ／แอะ…），同音的不重複 |
+| `vowelListen` | 聽發音 → 選母音字形 | 同上；同音的（ใ-／ไ-）不同時出現 |
+| `vowelLength` | 看母音 → 長音／短音 | 短音、長音、獨立母音（特殊母音不出） |
+| `vowelHandwrite` | 看發音 → 手寫母音，看答案後自評 | 有筆順的母音才出（底圖 อ 淺色＋筆順動畫） |
+| `pronounChoice` | 看情境（例如「我・女生・禮貌」）→ 選拼音 | `pronouns` 區塊；錯誤選項優先同一人稱的其他說法 |
 
 新的內容類型（例如一般單字 → 中文）需要新增題型時，改 `ExamQuestionType`（`types/lesson.ts`）、`utils/lessonExam.ts` 的出題、`ExamQuestionCard.vue` 的顯示，並補測試。
 累積考：題型取第 1 課到本課的聯集，題數取各課設定的最大值。
+題數不超過題庫大小，題庫是空的題型不出（例如還沒有筆順時的 `vowelHandwrite`）；考試設定畫面顯示的是實際題數。
 
 ## 3. 音檔
 - 「第N課」分類裡的字（`inCategory` 的單字、常用語原形、`variants`）會出現在 `/downloader` 的「待抓」，打包後放 `public/audio/TH/`
