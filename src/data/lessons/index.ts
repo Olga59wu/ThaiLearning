@@ -92,6 +92,13 @@ export const lessonVocab = (lesson: Lesson): VocabWord[] => {
   return result
 }
 
+/** 課程字詞的中文念讀文字（id → zhSpeak），pnpm audio:fetch 用 */
+export const LESSON_ZH_SPEAK: Record<string, string> = Object.fromEntries(
+  LESSONS.flatMap((l) => [...lessonRawWords(l), ...lessonPhrases(l).map((p) => p.base)]).flatMap((w) =>
+    w.zhSpeak ? [[resolveWord(w).id, w.zhSpeak] as const] : [],
+  ),
+)
+
 export const LESSON_VOCAB_CATEGORIES: VocabCategories = Object.fromEntries(
   LESSONS.map((l) => [l.category, lessonVocab(l)]),
 )

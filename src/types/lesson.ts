@@ -34,6 +34,8 @@ interface WordBase {
   placeValue?: number
   /** 課本上的補充（例如位數大寫 佰） */
   note?: string
+  /** 中文音檔要念的文字（pnpm audio:fetch）：有填就用它，沒填才套用清理規則（去掉括號內容、「/」改「，」）；用在括號內的說明是重點時 */
+  zhSpeak?: string
   /** 是否放進「📘 第N課」分類，預設 true */
   inCategory?: boolean
   pencil?: PencilNote[]

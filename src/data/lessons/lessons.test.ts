@@ -3,7 +3,7 @@ import { sentenceData, thaiData } from '@/data/thai'
 import { FULL_VOCAB, VOCAB_CATEGORIES } from '@/data/thaiVocab'
 import { ALL_VOCAB_CATEGORIES, lessonNoOfCategory } from '@/data/vocabCategories'
 import {
-  blocksOf, LESSON_VOCAB_CATEGORIES, LESSONS, lessonPhrases, lessonPronounCells, lessonRawWords, lessonUnits, lessonVowels, lessonWords, resolveWord,
+  blocksOf, LESSON_VOCAB_CATEGORIES, LESSON_ZH_SPEAK, LESSONS, lessonPhrases, lessonPronounCells, lessonRawWords, lessonUnits, lessonVowels, lessonWords, resolveWord,
 } from '@/data/lessons'
 import { vowelPosition, vowelThaiItem, vowelWriteBase } from '@/data/lessons/vowels'
 import { sy } from '@/data/lessons/helpers'
@@ -194,6 +194,14 @@ describe('第 2 課', () => {
     const th = lessonVocab(l2).map((v) => v.th)
     expect(th).toEqual(expect.arrayContaining(['ฉัน', 'ดิฉัน', 'ท่าน', 'พวกผม', 'ของฉัน', 'คุณพ่อ', 'โชคดี', 'อรุณสวัสดิ์ค่ะ', 'ลาก่อนค่ะ']))
     ;['อะ', 'คุณศักดา', 'คุณยุพิน', 'อรุณสวัสดิ์', 'ราตรีสวัสดิ์', 'ลาก่อน', 'อรุณสวัสดิ์ครับ'].forEach((t) => expect(th).not.toContain(t))
+  })
+
+  it('中文念讀（zhSpeak）：人稱代名詞保留括號內的重點，id 都在分類裡', () => {
+    expect(LESSON_ZH_SPEAK['l02-0001']).toBe('我，男生謙卑')
+    expect(LESSON_ZH_SPEAK['l02-0005']).toBe('您，尊稱')
+    expect(Object.keys(LESSON_ZH_SPEAK)).toHaveLength(9)
+    const ids = new Set(lessonVocab(l2).map((v) => v.id))
+    Object.keys(LESSON_ZH_SPEAK).forEach((id) => expect(ids.has(id), id).toBe(true))
   })
 
   it('鉛筆筆記不含泰文字', () => {

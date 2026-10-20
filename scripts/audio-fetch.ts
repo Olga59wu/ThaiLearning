@@ -3,7 +3,8 @@
 // - 發音來源、語速同 /downloader（translate_tts，client=tw-ob，泰文 th、中文 zh-TW，預設語速）；Node 直接請求，不經代理、不產生 zip
 // - 每個檔案間隔 1.2 秒、每 20 個多休息 1 秒、失敗重試 2 次（同 /downloader）
 // - 自訂單字存在瀏覽器 localStorage，腳本讀不到，不在範圍內
-// - 中文念的文字會清理（檔名不變）：括號與括號內容不念、「/」改成「，」。例如「你好/再見 (女用)」念「你好，再見」
+// - 中文念的文字（檔名不變）：課程字詞有 zhSpeak 就念它（例如「我 (男用，謙卑)」念「我，男生謙卑」）；
+//   沒有才清理：括號與括號內容不念、「/」改成「，」。例如「你好/再見 (女用)」念「你好，再見」
 import { existsSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -12,7 +13,7 @@ import { audioManifestPlugin } from '../build-plugins/audioManifest.ts'
 
 type Lang = 'th' | 'zh'
 interface VocabWord { id: string; th: string; zh: string }
-interface MissingFile { file: string; text: string; lang: Lang; words: string[] }
+interface MissingFile { file: string; text: string; lang: Lang; words: string[]; /** 課程字詞指定的中文念讀（zhSpeak） */ speak?: string }
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const AUDIO_DIR = resolve(ROOT, 'public/audio/TH')
@@ -45,14 +46,19 @@ const loadSiteModules = async () => {
     const audio = (await server.ssrLoadModule('/src/services/offlineAudio.ts')) as {
       audioFileName: (text: string, type: Lang) => string
     }
-    return { categories: categories.ALL_VOCAB_CATEGORIES, audioFileName: audio.audioFileName }
+    const lessons = (await server.ssrLoadModule('/src/data/lessons/index.ts')) as { LESSON_ZH_SPEAK: Record<string, string> }
+    return { categories: categories.ALL_VOCAB_CATEGORIES, audioFileName: audio.audioFileName, zhSpeak: lessons.LESSON_ZH_SPEAK }
   } finally {
     await server.close()
   }
 }
 
 /** 所有應該存在的音檔中，實際缺少的（以檔名去重） */
-const findMissing = (categories: Record<string, VocabWord[]>, audioFileName: (t: string, l: Lang) => string): MissingFile[] => {
+const findMissing = (
+  categories: Record<string, VocabWord[]>,
+  audioFileName: (t: string, l: Lang) => string,
+  zhSpeak: Record<string, string>,
+): MissingFile[] => {
   const existing = new Set(existsSync(AUDIO_DIR) ? readdirSync(AUDIO_DIR).map((f) => f.normalize('NFC')) : [])
   const missing = new Map<string, MissingFile>()
   Object.values(categories).flat().forEach((w) => {
@@ -63,6 +69,11 @@ const findMissing = (categories: Record<string, VocabWord[]>, audioFileName: (t:
       if (existing.has(file)) return
       const entry = missing.get(file) ?? { file, text, lang, words: [] }
       if (!entry.words.includes(w.id)) entry.words.push(w.id)
+      const speak = lang === 'zh' ? zhSpeak[w.id] : undefined
+      if (speak) {
+        if (entry.speak && entry.speak !== speak) console.warn(`⚠️ ${file} 有兩種念法：「${entry.speak}」「${speak}」，使用第一個`)
+        entry.speak ??= speak
+      }
       missing.set(file, entry)
     })
   })
@@ -102,13 +113,15 @@ const fetchMp3 = async (text: string, lang: Lang): Promise<{ data?: Buffer; erro
 }
 
 const main = async () => {
-  const { categories, audioFileName } = await loadSiteModules()
-  const missing = findMissing(categories, audioFileName)
+  const { categories, audioFileName, zhSpeak } = await loadSiteModules()
+  const missing = findMissing(categories, audioFileName, zhSpeak)
+  // 實際念的文字：zhSpeak 優先，沒有才清理
+  const spokenOf = (m: MissingFile) => m.speak ?? spokenText(m.text, m.lang)
   const wordCount = new Set(Object.values(categories).flat().map((w) => w.id)).size
 
   console.log(`單字 ${wordCount} 個；public/audio/TH/ 缺 ${missing.length} 個檔案（泰文 ${missing.filter((m) => m.lang === 'th').length}、中文 ${missing.filter((m) => m.lang === 'zh').length}）\n`)
   missing.forEach((m, i) => {
-    const spoken = spokenText(m.text, m.lang)
+    const spoken = spokenOf(m)
     console.log(`${String(i + 1).padStart(3)}. ${m.file}  ← ${m.words.join(', ')}${spoken !== m.text ? `  （念：${spoken}）` : ''}`)
   })
   if (missing.length === 0 || DRY_RUN) {
@@ -121,7 +134,7 @@ const main = async () => {
   const failed: { file: string; error: string }[] = []
   for (let i = 0; i < missing.length; i++) {
     const m = missing[i]!
-    const { data, error } = await fetchMp3(spokenText(m.text, m.lang), m.lang)
+    const { data, error } = await fetchMp3(spokenOf(m), m.lang)
     if (data) {
       writeFileSync(resolve(AUDIO_DIR, m.file), data)
       ok.push(m.file)

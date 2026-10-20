@@ -84,12 +84,12 @@ const vowels: LessonVowel[] = [
 const pronounWords: LessonWord[] = [
   { kind: 'ref', ref: { vocabId: 'th-0011' }, meaning: '我（一般，男女都可用）', syllables: sy('ฉัน chan /') },
   { kind: 'ref', ref: { vocabId: 'th-0010' }, meaning: '我（男生，禮貌）', syllables: sy('ผม phom /') },
-  { kind: 'new', id: 'l02-0001', th: 'กระผม', zh: '我 (男用，謙卑)', meaning: '我（男生，謙卑）', syllables: sy('กระ kra ˇ | ผม phom /') },
-  { kind: 'new', id: 'l02-0002', th: 'ดิฉัน', zh: '我 (女用，禮貌)', meaning: '我（女生，禮貌）', syllables: sy('ดิ di ˇ | ฉัน chan /') },
-  { kind: 'new', id: 'l02-0003', th: 'หนู', zh: '我 (女用，謙卑)', meaning: '我（女生，謙卑）', syllables: sy('หนู nu /') },
-  { kind: 'new', id: 'l02-0004', th: 'เธอ', zh: '你/她 (一般)', meaning: '你（一般）／她（一般）', syllables: sy('เธอ ther —') },
+  { kind: 'new', id: 'l02-0001', th: 'กระผม', zh: '我 (男用，謙卑)', zhSpeak: '我，男生謙卑', meaning: '我（男生，謙卑）', syllables: sy('กระ kra ˇ | ผม phom /') },
+  { kind: 'new', id: 'l02-0002', th: 'ดิฉัน', zh: '我 (女用，禮貌)', zhSpeak: '我，女生禮貌', meaning: '我（女生，禮貌）', syllables: sy('ดิ di ˇ | ฉัน chan /') },
+  { kind: 'new', id: 'l02-0003', th: 'หนู', zh: '我 (女用，謙卑)', zhSpeak: '我，女生謙卑', meaning: '我（女生，謙卑）', syllables: sy('หนู nu /') },
+  { kind: 'new', id: 'l02-0004', th: 'เธอ', zh: '你/她 (一般)', zhSpeak: '你，她，一般', meaning: '你（一般）／她（一般）', syllables: sy('เธอ ther —') },
   { kind: 'ref', ref: { vocabId: 'th-0012' }, meaning: '你／您（禮貌）', syllables: sy('คุณ khun —') },
-  { kind: 'new', id: 'l02-0005', th: 'ท่าน', zh: '您/他/她 (尊稱)', meaning: '您（尊稱）／他、她（禮貌）', syllables: sy('ท่าน than ˋ') },
+  { kind: 'new', id: 'l02-0005', th: 'ท่าน', zh: '您/他/她 (尊稱)', zhSpeak: '您，尊稱', meaning: '您（尊稱）／他、她（禮貌）', syllables: sy('ท่าน than ˋ') },
   { kind: 'ref', ref: { vocabId: 'th-0014' }, meaning: '他（一般）', syllables: sy('เขา khao /') },
 ]
 
@@ -142,8 +142,8 @@ const lesson: Lesson = {
           word: { kind: 'new', id: 'l02-0101', th: 'พวก', zh: '們 (複數)', syllables: sy('พวก puak ˋ') },
           pattern: '＋人稱代名詞',
           examples: [
-            { kind: 'new', id: 'l02-0102', th: 'พวกผม', zh: '我們 (男用)', meaning: '我們（男生）', syllables: sy('พวก puak ˋ | ผม phom /') },
-            { kind: 'new', id: 'l02-0103', th: 'พวกฉัน', zh: '我們 (女用)', meaning: '我們（女生）', syllables: sy('พวก puak ˋ | ฉัน chan /') },
+            { kind: 'new', id: 'l02-0102', th: 'พวกผม', zh: '我們 (男用)', zhSpeak: '我們，男生', meaning: '我們（男生）', syllables: sy('พวก puak ˋ | ผม phom /') },
+            { kind: 'new', id: 'l02-0103', th: 'พวกฉัน', zh: '我們 (女用)', zhSpeak: '我們，女生', meaning: '我們（女生）', syllables: sy('พวก puak ˋ | ฉัน chan /') },
           ],
         },
         {
@@ -151,8 +151,8 @@ const lesson: Lesson = {
           word: { kind: 'new', id: 'l02-0111', th: 'ของ', zh: '的 (所有格)', syllables: sy('ของ khong /') },
           pattern: '＋人稱代名詞',
           examples: [
-            { kind: 'new', id: 'l02-0112', th: 'ของผม', zh: '我的 (男用)', meaning: '我的（男生）', syllables: sy('ของ khong / | ผม phom /') },
-            { kind: 'new', id: 'l02-0113', th: 'ของฉัน', zh: '我的 (女用)', meaning: '我的（女生）', syllables: sy('ของ khong / | ฉัน chan /') },
+            { kind: 'new', id: 'l02-0112', th: 'ของผม', zh: '我的 (男用)', zhSpeak: '我的，男生', meaning: '我的（男生）', syllables: sy('ของ khong / | ผม phom /') },
+            { kind: 'new', id: 'l02-0113', th: 'ของฉัน', zh: '我的 (女用)', zhSpeak: '我的，女生', meaning: '我的（女生）', syllables: sy('ของ khong / | ฉัน chan /') },
           ],
         },
         {
