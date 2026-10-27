@@ -10,11 +10,15 @@ import {
   listenDistractors,
   normalizeNumberInput,
   OPTION_COUNT,
+  practiceVowelQuestion,
+  practiceVowels,
   pronounDistractors,
   reshuffleQuestions,
   vowelDistractors,
+  vowelLengthPairs,
   vowelSoundKey,
 } from '@/utils/lessonExam'
+import { vowelDeprecated, vowelPositionKey } from '@/data/lessons/vowels'
 import type { Lesson } from '@/types/lesson'
 import { toThaiDigits } from '@/utils/thaiNumber'
 
@@ -159,7 +163,7 @@ describe('examPlan（第 2 課）', () => {
   })
   it('手寫母音題數不超過有筆順的母音數（沒有筆順就不出）；其他題型照設定', () => {
     const types = Object.fromEntries(lesson2Plan().questions.map((q) => [q.type, q.count]))
-    expect(types).toEqual(withHandwrite({ vowelSound: 5, vowelListen: 4, vowelLength: 3, pronounChoice: 4, phraseMeaning: 4 }, HANDWRITE_LESSON))
+    expect(types).toEqual(withHandwrite({ vowelSound: 5, vowelListen: 4, vowelLength: 3, vowelPosition: 3, pronounChoice: 4, phraseMeaning: 4 }, HANDWRITE_LESSON))
   })
   it('累積考：每課每種題型的題數減半（無條件進位、至少 1 題），各課從自己的題庫出題', () => {
     expect([1, 2, 3, 4, 5].map(cumulativeCount)).toEqual([1, 1, 2, 2, 3])
@@ -167,15 +171,15 @@ describe('examPlan（第 2 課）', () => {
     const sectionOf = (no: number) => Object.fromEntries(plan.sections.find((s) => s.lessonNo === no)!.questions.map((q) => [q.type, q.count]))
     // 第 1 課：4、3、3、4、3、3、4 → 各 2 題
     expect(sectionOf(1)).toEqual({ digitChoice: 2, digitInput: 2, digitHandwrite: 2, readingChoice: 2, listenNumber: 2, unitMeaning: 2, phraseMeaning: 2 })
-    // 第 2 課：5、4、3、2（手寫：不超過有筆順的母音數）、4、4
-    expect(sectionOf(2)).toEqual(withHandwrite({ vowelSound: 3, vowelListen: 2, vowelLength: 2, pronounChoice: 2, phraseMeaning: 2 }, HANDWRITE_CUMULATIVE))
+    // 第 2 課：5、4、3、2（手寫：不超過有筆順的母音數）、3、4、4
+    expect(sectionOf(2)).toEqual(withHandwrite({ vowelSound: 3, vowelListen: 2, vowelLength: 2, vowelPosition: 2, pronounChoice: 2, phraseMeaning: 2 }, HANDWRITE_CUMULATIVE))
     const total = plan.questions.reduce((s, q) => s + q.count, 0)
-    expect(total).toBe(25 + HANDWRITE_CUMULATIVE)
+    expect(total).toBe(27 + HANDWRITE_CUMULATIVE)
     // 設定畫面：同題型加總
     expect(plan.questions.find((q) => q.type === 'phraseMeaning')!.count).toBe(4)
     for (let t = 0; t < 30; t++) {
       const exam = buildExam(plan)
-      expect(exam).toHaveLength(25 + HANDWRITE_CUMULATIVE)
+      expect(exam).toHaveLength(27 + HANDWRITE_CUMULATIVE)
       // 常用語：第 1 課、第 2 課各 2 題
       const phrases = exam.filter((q) => q.type === 'phraseMeaning')
       const l1Meanings = new Set(lesson1Plan().phrases.map((p) => p.meaning))
@@ -184,7 +188,7 @@ describe('examPlan（第 2 課）', () => {
   })
   it('本課考試維持原題數', () => {
     expect(examPlan(LESSONS, 1, 'lesson').questions.reduce((s, q) => s + q.count, 0)).toBe(24)
-    expect(examPlan(LESSONS, 2, 'lesson').questions.reduce((s, q) => s + q.count, 0)).toBe(20 + HANDWRITE_LESSON)
+    expect(examPlan(LESSONS, 2, 'lesson').questions.reduce((s, q) => s + q.count, 0)).toBe(23 + HANDWRITE_LESSON)
   })
   it('累積考包含第 1、2 課的題型與題庫', () => {
     const plan = examPlan(LESSONS, 2, 'cumulative')
@@ -264,8 +268,8 @@ describe('buildExam（第 2 課，重複出題 30 次）', () => {
   const plan = lesson2Plan()
   const total = plan.questions.reduce((s, q) => s + q.count, 0)
 
-  it('題數符合設定（20 題＋手寫母音），同題型題目不重複', () => {
-    expect(total).toBe(20 + HANDWRITE_LESSON)
+  it('題數符合設定（23 題＋手寫母音），同題型題目不重複', () => {
+    expect(total).toBe(23 + HANDWRITE_LESSON)
     for (let t = 0; t < 30; t++) {
       const exam = buildExam(plan)
       expect(exam).toHaveLength(total)
@@ -279,7 +283,7 @@ describe('buildExam（第 2 課，重複出題 30 次）', () => {
     }
   })
 
-  it('選項不重複、恰好 1 個正確；看長短只有 2 個選項，其他 4 個（手寫題沒有選項）', () => {
+  it('選項不重複、恰好 1 個正確；看長短 2 個、位置 5 個選項，其他 4 個（手寫題沒有選項）', () => {
     for (let t = 0; t < 30; t++) {
       buildExam(plan).forEach((q) => {
         if (q.type === 'vowelHandwrite') {
@@ -288,7 +292,7 @@ describe('buildExam（第 2 課，重複出題 30 次）', () => {
           return
         }
         expect(q.options, q.id).toBeDefined()
-        expect(q.options).toHaveLength(q.type === 'vowelLength' ? 2 : OPTION_COUNT)
+        expect(q.options).toHaveLength(q.type === 'vowelLength' ? 2 : q.type === 'vowelPosition' ? 5 : OPTION_COUNT)
         expect(new Set(q.options!.map((o) => o.key)).size).toBe(q.options!.length)
         expect(q.options!.filter((o) => o.key === q.answerKey)).toHaveLength(1)
       })
@@ -332,6 +336,60 @@ describe('buildExam（第 2 課，重複出題 30 次）', () => {
           expect(q.options!.map((o) => o.key)).not.toContain(other)
         })
     }
+  })
+})
+
+describe('位置題', () => {
+  it('32 個母音都有位置；ใ、ไ（前/心卷、前/木卷）算「前」', () => {
+    const vowels = lesson2Plan().vowels
+    vowels.forEach((v) => expect(vowelPositionKey(v), v.form).toBeDefined())
+    expect(vowelPositionKey(vowelNo(26))).toBe('前')
+    expect(vowelPositionKey(vowelNo(27))).toBe('前')
+    expect(vowelPositionKey(vowelNo(1))).toBe('後')
+    expect(vowelPositionKey(vowelNo(9))).toBe('夾')
+  })
+  it('選項固定 前、後、上、下、夾，答案顯示完整位置說明', () => {
+    const q = buildExam(lesson2Plan()).find((x) => x.type === 'vowelPosition')!
+    expect(q.options!.map((o) => o.key)).toEqual(['前', '後', '上', '下', '夾'])
+    expect(q.vowel!.position).toBeDefined()
+  })
+})
+
+describe('母音練習', () => {
+  const vowels = () => lesson2Plan().vowels
+  it('範圍篩選；預設排除已停用（ฦ、ฦๅ）', () => {
+    expect(practiceVowels(vowels(), 'all', false)).toHaveLength(32)
+    expect(practiceVowels(vowels(), 'all', true)).toHaveLength(30)
+    expect(practiceVowels(vowels(), 'all', true).some(vowelDeprecated)).toBe(false)
+    expect(practiceVowels(vowels(), 'short', true)).toHaveLength(12)
+    expect(practiceVowels(vowels(), 'independent', true).map((v) => v.no)).toEqual([29, 30])
+  })
+  it('出題沿用考試：短音範圍的錯誤選項仍有長音的另一半；不和上一題重複', () => {
+    const shorts = practiceVowels(vowels(), 'short', true)
+    const all = practiceVowels(vowels(), 'all', true)
+    let prev: string | undefined
+    for (let t = 0; t < 50; t++) {
+      const q = practiceVowelQuestion('vowelSound', shorts, all, `p${t}`, prev)!
+      const v = shorts.find((x) => x.id === q.vowel!.id)!
+      expect(v).toBeDefined()
+      expect(q.vowel!.id).not.toBe(prev)
+      const partner = all.find((x) => x.no === v.no + 1)!
+      expect(q.options!.map((o) => o.key)).toContain(vowelSoundKey(partner))
+      prev = q.vowel!.id
+    }
+  })
+  it('題庫是空的回傳 undefined（特殊母音沒有長短音）', () => {
+    const specials = practiceVowels(vowels(), 'special', true)
+    expect(practiceVowelQuestion('vowelLength', specials, vowels(), 'x')).toBeUndefined()
+  })
+  it('長短對照：12 組＋獨立母音；排除已停用就沒有 ฦ／ฦๅ；特殊母音沒有', () => {
+    const nos = (pairs: ReturnType<typeof vowelLengthPairs>) => pairs.map(([s, l]) => [s.no, l.no])
+    expect(vowelLengthPairs(vowels(), 'all', false)).toHaveLength(14)
+    expect(nos(vowelLengthPairs(vowels(), 'all', true))).toContainEqual([1, 2])
+    expect(nos(vowelLengthPairs(vowels(), 'all', true))).not.toContainEqual([31, 32])
+    expect(nos(vowelLengthPairs(vowels(), 'independent', true))).toEqual([[29, 30]])
+    expect(vowelLengthPairs(vowels(), 'long', true)).toHaveLength(12)
+    expect(vowelLengthPairs(vowels(), 'special', true)).toHaveLength(0)
   })
 })
 

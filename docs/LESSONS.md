@@ -69,7 +69,7 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 | `phrases` | 常用語 | `base`（原形，不含 ครับ/ค่ะ）、`particles`、`variants`（放進分類的語尾版本與 id）、`confusableWith`（意思重疊的句子 id，雙向都要寫） |
 | `notes` | 筆記 | 純文字，不含泰文字 |
 | `homework` | 作業 | `numbers` 範圍（格子可翻開唸法、✍️ 練寫） |
-| `practice` | 練習設定 | `numberReading` 數字範圍 |
+| `practice` | 練習設定 | `numberReading` 數字範圍；`vowels` 母音練習的模式（見 §2.6） |
 | `exam` | 考試設定 | `numbers` 數字範圍（沒有數字題可省略）、`questions` 題型與題數 |
 | `vowels` | 母音表 | `vowels`（`LessonVowel`：課本字形 `form`、搭配 อ `withO`、拼音、注音、聲調、長短、分組、`thaiChar` 必填，連結 thaiData）、`groupPencil`；寫法（`writeBase`）、筆順、念法、位置、已停用（`deprecated`）一律用 thaiData 的，課程檔不自己存 |
 | `pronouns` | 人稱代名詞表 | `words`（不重複的字）、`cells`（人稱 × 男女 × 等級 → `wordId`） |
@@ -89,11 +89,30 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 | `vowelListen` | 聽發音 → 選母音字形 | 同上；同音的（ใ-／ไ-）不同時出現 |
 | `vowelLength` | 看母音 → 長音／短音 | 短音、長音、獨立母音（特殊母音不出） |
 | `vowelHandwrite` | 看發音 → 手寫母音，看答案後自評 | 有筆順的母音才出（底圖 อ 淺色＋筆順動畫） |
+| `vowelPosition` | 看母音 → 選位置（前／後／上／下／夾，固定順序） | thaiData meaning 括號內的位置說明（`vowelPositionKey`）；ใ、ไ 的「前/心卷」「前/木卷」算「前」，答案顯示完整說明 |
 | `pronounChoice` | 看情境（例如「我・女生・禮貌」）→ 選拼音 | `pronouns` 區塊；錯誤選項優先同一人稱的其他說法 |
 
 新的內容類型（例如一般單字 → 中文）需要新增題型時，改 `ExamQuestionType`（`types/lesson.ts`）、`utils/lessonExam.ts` 的出題、`ExamQuestionCard.vue` 的顯示，並補測試。
 累積考：第 1 課到本課**每課各自出題**，每種題型的題數是該課設定的一半（無條件進位、至少 1 題），題目從該課的題庫抽；錯誤選項從所有課合併的題庫挑（跨課的 confusableWith 一樣有效）。本課考試維持設定的題數。
 題數不超過題庫大小，題庫是空的題型不出（例如還沒有筆順時的 `vowelHandwrite`）；考試設定畫面顯示的是實際題數。
+
+### 2.6 母音練習（`practice` 區塊的 `vowels`）
+```ts
+{ type: 'practice', vowels: ['sound', 'listen', 'length', 'position', 'handwrite', 'pairs'] }
+```
+| 模式 | 內容 | 對應考試題型 |
+|---|---|---|
+| `sound` | 看字選音 | `vowelSound` |
+| `listen` | 聽音選字 | `vowelListen` |
+| `length` | 長短音（特殊母音不出） | `vowelLength` |
+| `position` | 位置 | `vowelPosition` |
+| `handwrite` | 手寫（題目出現就自動播放發音；有筆順的才出） | `vowelHandwrite` |
+| `pairs` | 長短對照聽：列出長短音配對，點一組連續播放短音、長音（`playSequence`），不是測驗 | — |
+
+- 題目是本課的母音；不計分、不存紀錄、題數不限，畫面顯示答對數／總數與連續答對次數（換模式不歸零）
+- 出題和考試共用：`practiceVowelQuestion` → `vowelPool`、`vowelQuestion`（錯誤選項規則相同），畫面共用 `ExamQuestionCard`（`practice` 模式：不顯示進度與題號）
+- 範圍：全部／短音／長音／特殊母音／獨立母音（`practiceVowels`），「排除已停用」預設勾選；錯誤選項不受範圍限制（短音範圍仍會出長音的另一半），只排除已停用
+- 長短對照聽：範圍內有其中一個就列出（`vowelLengthPairs`），排除已停用時 ฦ／ฦๅ 整組不列
 
 ## 3. 音檔
 - 「第N課」分類裡的字（`inCategory` 的單字、常用語原形、`variants`）會出現在 `/downloader` 的「待抓」，打包後放 `public/audio/TH/`

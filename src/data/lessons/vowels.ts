@@ -12,6 +12,15 @@ export const vowelThaiItem = (v: LessonVowel): ThaiItem | undefined =>
 export const vowelPosition = (v: LessonVowel): string | undefined =>
   vowelThaiItem(v)?.meaning.match(/\(([^)]+)\)/)?.[1]
 
+export type VowelPositionKey = '前' | '後' | '上' | '下' | '夾'
+export const VOWEL_POSITION_KEYS: readonly VowelPositionKey[] = ['前', '後', '上', '下', '夾']
+
+/** 位置題的答案：位置說明的第一段（ใ、ไ 的「前/心卷」「前/木卷」算「前」）；不是五種之一就是 undefined */
+export const vowelPositionKey = (v: LessonVowel): VowelPositionKey | undefined => {
+  const key = vowelPosition(v)?.split('/')[0]
+  return VOWEL_POSITION_KEYS.find((k) => k === key)
+}
+
 /** 母音的寫法（อ 表示子音位置，例如 อะ）：thaiData 的 writeBase（單一來源）；找不到時用課本字形把 - 換成 อ */
 export const vowelWriteBase = (v: LessonVowel): string => vowelThaiItem(v)?.writeBase ?? v.form.replace(/-/g, 'อ')
 

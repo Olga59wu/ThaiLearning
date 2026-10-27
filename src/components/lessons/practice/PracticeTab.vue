@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { blocksOf } from '@/data/lessons'
+import { blocksOf, lessonVowels } from '@/data/lessons'
 import { LESSON_CATEGORY_ICON } from '@/data/vocabCategories'
 import type { Lesson } from '@/types/lesson'
 import NumberReadingPractice from './NumberReadingPractice.vue'
+import VowelPractice from './VowelPractice.vue'
 
 const props = defineProps<{ lesson: Lesson }>()
 const numberPool = computed(() => blocksOf(props.lesson, 'practice').find((b) => b.numberReading)?.numberReading)
+// 母音練習：題目是本課的母音
+const vowelModes = computed(() => blocksOf(props.lesson, 'practice').find((b) => b.vowels)?.vowels)
+const vowels = computed(() => lessonVowels(props.lesson))
 
 // 打字練習要打泰文字母，學字母之前先不放（見 TODO.md）
 const playerLink = computed(() => ({ path: '/player', query: { cat: props.lesson.category } }))
@@ -15,6 +19,7 @@ const playerLink = computed(() => ({ path: '/player', query: { cat: props.lesson
 <template>
   <div class="w-full flex flex-col gap-5">
     <NumberReadingPractice v-if="numberPool" :pool="numberPool" />
+    <VowelPractice v-if="vowelModes?.length && vowels.length" :vowels="vowels" :modes="vowelModes" />
 
     <div class="w-full bg-white dark:bg-slate-800 rounded-3xl shadow-md border border-gray-100 dark:border-slate-700 p-5 md:p-6">
       <h2 class="mb-4 text-lg font-bold text-gray-800 dark:text-white">📚 單字練習</h2>

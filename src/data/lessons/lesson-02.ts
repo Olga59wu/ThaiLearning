@@ -1,4 +1,4 @@
-// 第 2 課 母音 & 子音（泰語基礎 1 p37–p49、泰語會話練習 p256–p257、p260–p261）；子音還沒教，這次只有母音
+// 第 2 課 母音（泰語基礎 1 p37–p49、泰語會話練習 p256–p257、p260–p261）
 // 重複的字詞用 ref 連結現有資料（thaiVocab 的 id、thaiData 的 char），不複製
 // 音節用課本寫法 sy('泰文 拼音 聲調')：— 中、ˇ 低、ˋ 降、~ 高、/ 升
 // 課本的「第 N 聲」：第 1 聲＝中、第 2 聲＝低、第 3 聲＝降、第 4 聲＝高、第 5 聲＝升
@@ -117,7 +117,7 @@ const pronounCells: PronounCell[] = [
 const lesson: Lesson = {
   no: 2,
   date: '2026-10-19',
-  title: '母音 & 子音',
+  title: '母音',
   category: '第2課',
   blocks: [
     {
@@ -209,6 +209,10 @@ const lesson: Lesson = {
       ],
     },
     {
+      type: 'practice',
+      vowels: ['sound', 'listen', 'length', 'position', 'handwrite', 'pairs'],
+    },
+    {
       type: 'exam',
       config: {
         // 手寫母音只出有筆順的（目前沒有，題數會自動變 0，畫好筆順後才出現）
@@ -217,6 +221,7 @@ const lesson: Lesson = {
           { type: 'vowelListen', count: 4 },
           { type: 'vowelLength', count: 3 },
           { type: 'vowelHandwrite', count: 2 },
+          { type: 'vowelPosition', count: 3 },
           { type: 'pronounChoice', count: 4 },
           { type: 'phraseMeaning', count: 4 },
         ],

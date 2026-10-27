@@ -14,7 +14,8 @@ import HandwritingPad from '@/components/common/HandwritingPad.vue'
 import VowelForm from '../VowelForm.vue'
 
 // 一道考題（換題時父層以 :key 重建，狀態自動歸零）
-const props = defineProps<{ question: ExamQuestion; index: number; total: number }>()
+// practice：母音練習共用（不顯示進度與題號，手寫題一出現就念發音）
+const props = withDefaults(defineProps<{ question: ExamQuestion; index?: number; total?: number; practice?: boolean }>(), { index: 0, total: 1, practice: false })
 const emit = defineEmits<{ answer: [result: { correct: boolean; given: string | null }]; next: [] }>()
 
 const { play } = useLessonAudioContext()
@@ -22,7 +23,7 @@ const { isDark } = storeToRefs(useThaiLearnStore())
 const hw = useHandwriting({ isDark })
 
 const q = computed(() => props.question)
-const isLast = computed(() => props.index === props.total - 1)
+const isLast = computed(() => !props.practice && props.index === props.total - 1)
 const answered = ref(false)
 const isCorrect = ref(false)
 const selectedKey = ref<string | null>(null)
@@ -33,6 +34,8 @@ const revealed = ref(false) // 手寫題：看答案
 const isListen = computed(() => q.value.type === 'listenNumber' || q.value.type === 'vowelListen')
 const isHandwrite = computed(() => q.value.type === 'digitHandwrite' || q.value.type === 'vowelHandwrite')
 const LENGTH_LABEL = { short: '短音', long: '長音' } as const
+// 母音的位置說明（例如「後」、「前/心卷」）
+const vowelPositionText = computed(() => (q.value.vowel?.position ? `位置：${q.value.vowel.position}` : ''))
 const answerOption = computed(() => q.value.options?.find((o) => o.key === q.value.answerKey))
 
 const numReading = computed(() =>
@@ -107,7 +110,7 @@ const optionClass = (key: string) => {
 }
 
 onMounted(() => {
-  if (isListen.value) speakPrompt()
+  if (isListen.value || (props.practice && q.value.type === 'vowelHandwrite')) speakPrompt()
   if (q.value.type === 'digitInput') nextTick(() => inputEl.value?.focus())
   if (isHandwrite.value) nextTick(() => hw.initCanvas())
 })
@@ -115,14 +118,15 @@ onMounted(() => {
 
 <template>
   <div class="w-full bg-white dark:bg-slate-800 rounded-3xl shadow-md border border-gray-100 dark:border-slate-700 overflow-hidden">
-    <!-- 進度 -->
-    <div class="h-1.5 bg-gray-100 dark:bg-slate-700">
+    <!-- 進度（練習沒有） -->
+    <div v-if="practice" class="h-1.5 bg-linear-to-r/srgb from-emerald-400 to-teal-500"></div>
+    <div v-else class="h-1.5 bg-gray-100 dark:bg-slate-700">
       <div class="h-full bg-linear-to-r/srgb from-emerald-400 to-teal-500 transition-all" :style="{ width: `${((index + (answered ? 1 : 0)) / total) * 100}%` }"></div>
     </div>
     <div class="p-5 md:p-6">
       <div class="flex items-center justify-between mb-6 text-xs font-bold text-gray-400 dark:text-gray-500">
         <span>{{ QUESTION_TYPE_LABEL[q.type] }}</span>
-        <span>第 {{ index + 1 }} / {{ total }} 題</span>
+        <span v-if="!practice">第 {{ index + 1 }} / {{ total }} 題</span>
       </div>
 
       <!-- 題目 -->
@@ -136,7 +140,7 @@ onMounted(() => {
           </svg>
         </button>
         <!-- 母音寫法（不受「泰文字」開關影響）＋สระ 名稱（同 /thai） -->
-        <div v-else-if="(q.type === 'vowelSound' || q.type === 'vowelLength') && q.vowel" class="flex flex-col items-center gap-1">
+        <div v-else-if="(q.type === 'vowelSound' || q.type === 'vowelLength' || q.type === 'vowelPosition') && q.vowel" class="flex flex-col items-center gap-1">
           <div class="text-7xl font-bold leading-tight thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="72" :line-height="1.25" /></div>
           <div class="text-2xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.label }}</div>
         </div>
@@ -169,7 +173,7 @@ onMounted(() => {
       </div>
 
       <!-- 作答：選擇題 -->
-      <div v-if="q.options" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div v-if="q.options" class="grid gap-3" :class="q.type === 'vowelPosition' ? 'grid-cols-5' : 'grid-cols-1 sm:grid-cols-2'">
         <button v-for="opt in q.options" :key="opt.key" @click="choose(opt.key)" :disabled="answered"
           class="flex items-center justify-center min-h-16 px-4 py-3 border-2 rounded-2xl transition-all active:scale-95 font-bold text-gray-800 dark:text-white"
           :class="optionClass(opt.key)">
@@ -208,9 +212,10 @@ onMounted(() => {
             <span class="text-4xl thai-font text-emerald-600 dark:text-emerald-400">{{ toThaiDigits(q.num) }}</span>
             <ThaiReading v-if="numReading" :syllables="numReading.syllables" :th="numReading.th" size="sm" />
           </div>
-          <div v-else-if="q.vowel" class="flex items-baseline gap-3">
+          <div v-else-if="q.vowel" class="flex flex-wrap items-baseline justify-center gap-3">
             <span class="text-4xl font-bold thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="36" :line-height="40 / 36" /></span>
             <span class="text-2xl thai-font text-gray-500 dark:text-gray-400">{{ q.vowel.label }}</span>
+            <span v-if="vowelPositionText" class="text-sm font-bold text-gray-500 dark:text-gray-400">{{ vowelPositionText }}</span>
           </div>
           <div class="flex items-center gap-3">
             <span class="text-sm text-gray-500 dark:text-gray-400">寫對了嗎？</span>
@@ -238,6 +243,7 @@ onMounted(() => {
           <ToneSyllables :syllables="vowelReading" />
           <span v-if="q.vowel.zhuyin" class="font-bold text-gray-500 dark:text-gray-400">（{{ q.vowel.zhuyin }}）</span>
           <span class="text-sm font-bold text-gray-500 dark:text-gray-400">{{ TONE_MARK[q.vowel.tone] }} {{ toneOrdinalLabel(q.vowel.tone) }}<template v-if="q.vowel.length">・{{ LENGTH_LABEL[q.vowel.length] }}</template></span>
+          <span v-if="vowelPositionText" class="text-sm font-bold text-gray-500 dark:text-gray-400">{{ vowelPositionText }}</span>
         </div>
         <ThaiReading v-else-if="q.type === 'pronounChoice' && answerOption?.syllables" :syllables="answerOption.syllables" :th="answerOption.th!" />
         <div v-else class="text-lg font-bold text-gray-800 dark:text-white">{{ q.answerLabel }}</div>

@@ -1,8 +1,8 @@
 // 每週課程考試：出題（純函式，方便測試）
 import { blocksOf, lessonPhrases, lessonPronounCells, lessonUnits, lessonVowels, resolveWord } from '@/data/lessons'
-import { vowelLabel, vowelSpeakText, vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
+import { VOWEL_POSITION_KEYS, vowelDeprecated, vowelLabel, vowelPosition, vowelPositionKey, vowelSpeakText, vowelStrokes, vowelWriteBase } from '@/data/lessons/vowels'
 import { PARTICLE_SYLLABLE } from '@/data/lessons/helpers'
-import type { ExamQuestionType, Lesson, LessonPhrase, LessonVowel, PronounCell, ResolvedWord, Syllable, Tone } from '@/types/lesson'
+import type { ExamQuestionType, Lesson, VowelGroup, LessonPhrase, LessonVowel, PronounCell, ResolvedWord, Syllable, Tone } from '@/types/lesson'
 import { poolNumbers } from '@/utils/numberPool'
 import { shuffleArray } from '@/utils/shuffle'
 import { numberToSyllables, numberToThai, readingDistractorSyllables, toThaiDigits } from '@/utils/thaiNumber'
@@ -26,6 +26,8 @@ export interface ExamOption {
 
 /** 母音題的題目資料 */
 export interface ExamVowel {
+  /** LessonVowel 的 id（練習時避免連續出同一個） */
+  id: string
   form: string
   /** 搭配 อ 的寫法（VowelForm 畫，淺色 อ）；結果頁文字也用它（不用「-ิ」：iPhone 會出現 ◌） */
   writeBase: string
@@ -36,6 +38,8 @@ export interface ExamVowel {
   zhuyin?: string
   tone: Tone
   length?: 'short' | 'long'
+  /** 位置說明（thaiData，例如「後」、「前/心卷」） */
+  position?: string
 }
 
 export interface ExamQuestion {
@@ -75,6 +79,7 @@ export const QUESTION_TYPE_LABEL: Record<ExamQuestionType, string> = {
   vowelListen: '聽發音 → 選母音',
   vowelLength: '看母音 → 長音／短音',
   vowelHandwrite: '聽發音 → 手寫母音',
+  vowelPosition: '看母音 → 位置',
   pronounChoice: '人稱代名詞 → 選拼音',
 }
 
@@ -234,7 +239,9 @@ export const vowelDistractors = (v: LessonVowel, pool: readonly LessonVowel[], c
   return result
 }
 
-const examVowel = (v: LessonVowel): ExamVowel => ({ form: v.form, writeBase: vowelWriteBase(v), withO: v.withO, label: vowelLabel(v), roman: v.roman, zhuyin: v.zhuyin, tone: v.tone, length: v.length })
+const examVowel = (v: LessonVowel): ExamVowel => ({
+  id: v.id, form: v.form, writeBase: vowelWriteBase(v), withO: v.withO, label: vowelLabel(v), roman: v.roman, zhuyin: v.zhuyin, tone: v.tone, length: v.length, position: vowelPosition(v),
+})
 const vowelSyllables = (v: LessonVowel): Syllable[] => [{ th: v.withO, roman: v.roman, tone: v.tone }]
 const LENGTH_LABEL = { short: '短音', long: '長音' } as const
 
@@ -277,6 +284,15 @@ const vowelQuestion = (type: ExamQuestionType, v: LessonVowel, pool: readonly Le
         guideText: vowelWriteBase(v),
         promptLabel: `${vowelSoundLabel(v)} → 手寫`,
         answerLabel: vowelWriteBase(v),
+      }
+    case 'vowelPosition':
+      return {
+        ...base,
+        // 固定順序：前、後、上、下、夾
+        options: VOWEL_POSITION_KEYS.map((p) => ({ key: p, text: p })),
+        answerKey: vowelPositionKey(v)!,
+        promptLabel: vowelWriteBase(v),
+        answerLabel: vowelPositionKey(v)!,
       }
     default:
       throw new Error(`不是母音題：${type}`)
@@ -346,10 +362,11 @@ export interface ExamPlan extends ExamPools {
 
 /** 各題型的題庫（題數不能超過題庫大小） */
 const NUMBER_TYPES: readonly ExamQuestionType[] = ['digitChoice', 'digitInput', 'digitHandwrite', 'readingChoice', 'listenNumber']
-const vowelPool = (type: ExamQuestionType, vowels: readonly LessonVowel[]): LessonVowel[] => {
+export const vowelPool = (type: ExamQuestionType, vowels: readonly LessonVowel[]): LessonVowel[] => {
   if (type === 'vowelLength') return vowels.filter((v) => v.length !== undefined)
-  // 手寫：有筆順的才出（目前沒有母音筆順，等使用者在 /path 畫）
+  // 手寫：有筆順的才出（在 /path 畫）
   if (type === 'vowelHandwrite') return vowels.filter((v) => vowelStrokes(v) !== undefined)
+  if (type === 'vowelPosition') return vowels.filter((v) => vowelPositionKey(v) !== undefined)
   return [...vowels]
 }
 const poolSize = (type: ExamQuestionType, pools: ExamPools): number => {
@@ -435,6 +452,43 @@ export const buildExam = (plan: ExamPlan): ExamQuestion[] => {
   })
   return shuffleArray(questions)
 }
+
+// ---- 母音練習（不計分、題數不限）：出題沿用考試的 vowelPool、vowelQuestion ----
+/** 練習範圍：全部或某一組 */
+export type VowelPracticeFilter = 'all' | VowelGroup
+
+/** 練習的母音：依範圍篩選，預設排除已停用的（ฦ、ฦๅ） */
+export const practiceVowels = (vowels: readonly LessonVowel[], filter: VowelPracticeFilter, excludeDeprecated: boolean): LessonVowel[] =>
+  vowels.filter((v) => (filter === 'all' || v.group === filter) && !(excludeDeprecated && vowelDeprecated(v)))
+
+/**
+ * 練習出一題：從該題型的題庫隨機抽（題庫超過 1 個時不和上一題重複）；錯誤選項從 distractorPool 挑（不受範圍限制，長短配對才出得來）。
+ * 題庫是空的回傳 undefined
+ */
+export const practiceVowelQuestion = (
+  type: ExamQuestionType,
+  vowels: readonly LessonVowel[],
+  distractorPool: readonly LessonVowel[],
+  id: string,
+  prevVowelId?: string,
+): ExamQuestion | undefined => {
+  const pool = vowelPool(type, vowels)
+  const candidates = pool.length > 1 ? pool.filter((v) => v.id !== prevVowelId) : pool
+  const v = candidates[Math.floor(Math.random() * candidates.length)]
+  return v && vowelQuestion(type, v, distractorPool, id)
+}
+
+/** 長短音配對（อะ／อา…）：範圍內有其中一個就列出；排除已停用時整組不列 */
+export const vowelLengthPairs = (vowels: readonly LessonVowel[], filter: VowelPracticeFilter, excludeDeprecated: boolean): [LessonVowel, LessonVowel][] =>
+  vowels.flatMap((v) => {
+    if (v.length !== 'short') return []
+    const long = vowels.find((x) => x.no === vowelPartnerNo(v))
+    if (!long) return []
+    const pair = [v, long] as const
+    if (excludeDeprecated && pair.some(vowelDeprecated)) return []
+    if (filter !== 'all' && !pair.some((x) => x.group === filter)) return []
+    return [[v, long]]
+  })
 
 /** 只重考錯題：同樣的題目，重新打亂題目與選項順序 */
 export const reshuffleQuestions = (questions: readonly ExamQuestion[]): ExamQuestion[] =>

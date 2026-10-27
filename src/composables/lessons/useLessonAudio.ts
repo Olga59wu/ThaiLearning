@@ -14,10 +14,14 @@ export const useLessonAudio = () => {
   let playToken = 0
   let disposed = false
 
-  const speakTTS = (text: string, token: number) => {
+  // onEnd：念完才呼叫（被下一次播放中斷就不呼叫），連續播放用
+  const speakTTS = (text: string, token: number, onEnd?: () => void) => {
     if (!window.speechSynthesis) return
     cancelTTS()
     const ut = thaiUtterance(text, 0.9)
+    if (onEnd) ut.onend = () => {
+      if (token === playToken && !disposed) onEnd()
+    }
     const wait = ttsDelay()
     // 不用等就同步 speak：iOS 第一次 speak 必須在點擊事件內（setTimeout 會脫離使用者操作）
     if (wait === 0) {
@@ -30,13 +34,14 @@ export const useLessonAudio = () => {
     }, wait)
   }
 
-  /** 沒有音檔（或 ttsOnly）直接用 TTS，不發請求 */
-  const play = async (text: string, ttsOnly = false) => {
+  /** 沒有音檔（或 ttsOnly）直接用 TTS，不發請求；onEnd 在念完時呼叫（被中斷就不呼叫） */
+  const play = async (text: string, ttsOnly = false, onEnd?: () => void) => {
     const token = ++playToken
     cancelTTS()
     audio.pause()
+    audio.onended = null
     if (ttsOnly || !hasAudioFile(text, 'th')) {
-      speakTTS(text, token)
+      speakTTS(text, token, onEnd)
       return
     }
 
@@ -44,7 +49,11 @@ export const useLessonAudio = () => {
     const fallback = () => {
       if (isResolved || token !== playToken || disposed) return
       isResolved = true
-      speakTTS(text, token)
+      speakTTS(text, token, onEnd)
+    }
+    audio.onended = () => {
+      audio.onended = null
+      if (token === playToken && !disposed) onEnd?.()
     }
     audio.onerror = () => {
       audio.onerror = null
@@ -62,6 +71,24 @@ export const useLessonAudio = () => {
     }
   }
 
+  /** 依序播放（念完一個，隔 gapMs 再念下一個）；中途有其他播放就停止。全部念完呼叫 onDone */
+  const playSequence = (texts: readonly string[], onDone?: () => void, gapMs = 500) => {
+    const step = (i: number) => {
+      const text = texts[i]
+      if (text === undefined) {
+        onDone?.()
+        return
+      }
+      void play(text, false, () => {
+        const token = playToken
+        later(() => {
+          if (token === playToken && !disposed) step(i + 1)
+        }, i === texts.length - 1 ? 0 : gapMs)
+      })
+    }
+    step(0)
+  }
+
   const stop = () => {
     playToken++
     audio.pause()
@@ -72,10 +99,11 @@ export const useLessonAudio = () => {
     disposed = true
     stop()
     audio.onerror = null
+    audio.onended = null
     audio.removeAttribute('src')
   })
 
-  return { play, stop }
+  return { play, playSequence, stop }
 }
 
 type LessonAudio = ReturnType<typeof useLessonAudio>

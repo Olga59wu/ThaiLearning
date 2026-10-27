@@ -161,7 +161,11 @@ export type ExamQuestionType =
   | 'vowelListen' // 聽母音發音 → 選字形
   | 'vowelLength' // 看母音 → 判斷長音／短音
   | 'vowelHandwrite' // 看發音 → 手寫母音（有筆順的才出；自評 ✓／✗）
+  | 'vowelPosition' // 看母音 → 選位置（前／後／上／下／夾）
   | 'pronounChoice' // 人稱代名詞：看情境 → 選拼音
+
+/** 母音練習的模式：看字選音、聽音選字、長短音、位置、手寫、長短對照聽 */
+export type VowelPracticeMode = 'sound' | 'listen' | 'length' | 'position' | 'handwrite' | 'pairs'
 
 export interface ExamConfig {
   /** 數字題的範圍（沒有數字題時不用填） */
@@ -190,7 +194,7 @@ export type LessonBlock =
   | { type: 'phrases'; title: string; phrases: LessonPhrase[] }
   | { type: 'notes'; title: string; items: string[] }
   | { type: 'homework'; title: string; task: string; numbers: NumberPool }
-  | { type: 'practice'; numberReading?: NumberPool }
+  | { type: 'practice'; numberReading?: NumberPool; /** 母音練習的模式（題目是本課的母音） */ vowels?: VowelPracticeMode[] }
   | { type: 'exam'; config: ExamConfig }
   | {
       type: 'vowels'
