@@ -36,6 +36,8 @@ const guideStyle = ref({ fontSize: `${GUIDE_BOX_SIZE * GUIDE_FONT_RATIO}px`, tra
 const vowelGuideText = ref<string | undefined>(undefined)
 const previewD = ref('')
 const outputValue = ref('')
+// 輸出要貼到哪裡：標明取代 thai.ts 的哪一筆（曾把 ฤๅ 的輸出貼到 ฤ 那一筆）
+const outputTarget = ref('')
 const smoothVal = ref('0.5')
 const importText = ref('')
 const IMPORT_PLACEHOLDER = '在此貼上完整物件代碼 (包含 char 和 strokes)'
@@ -393,12 +395,17 @@ const render = () => {
       const newObj: Record<string, unknown> = { ...currentCharObj }
       newObj.strokes = resultStrings
       outputValue.value = lessonOnlyNote(currentCharObj.char) + objectToString(newObj) + ','
+      outputTarget.value = lessonOnlyVowelOf(currentCharObj.char)
+        ? ''
+        : `貼到 thai.ts：取代 char: '${currentCharObj.char}'${currentCharObj.thaiLabel ? `（${currentCharObj.thaiLabel}）` : ''} 那一筆`
     } else {
       // 無物件時 (自創字)：只輸出 strokes 陣列
+      outputTarget.value = ''
       outputValue.value = `strokes: [\n${resultStrings.map((s) => `      ${quote(s)},`).join('\n')}\n    ],`
     }
   } else {
     outputValue.value = ''
+    outputTarget.value = ''
   }
 }
 
@@ -612,6 +619,7 @@ onMounted(() => {
 
       <div class="flex flex-col gap-1 pt-1 border-t border-gray-200 flex-1 min-h-0">
         <h1 class="text-xs font-bold text-gray-700 uppercase tracking-wide">4. 輸出結果 (完整物件)</h1>
+        <p v-if="outputTarget" id="output-target" class="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 thai-font">{{ outputTarget }}</p>
         <textarea id="output-path" :value="outputValue" class="w-full flex-1 p-2 text-[9px] font-mono border rounded-lg bg-slate-800 text-emerald-400 resize-none focus:outline-hidden leading-tight" readonly></textarea>
         <button id="btn-copy" :class="copyBg" class="w-full px-4 py-2 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm" @click="copyCode">
           <span>{{ copyLabel }}</span>

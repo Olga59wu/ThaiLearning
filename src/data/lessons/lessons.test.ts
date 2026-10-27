@@ -209,6 +209,19 @@ describe('第 2 課', () => {
     expect(thaiVowelSpeak({ type: 'vowel', char: '◌ะ' })).toBe('สระอะ')
   })
 
+  it('有 thaiChar 的母音：thaiData 找得到，writeBase 與課本字形一致（- 換成 อ），獨立母音的念法同 withO', () => {
+    vowels.forEach((v) => {
+      if (!v.thaiChar) return
+      const item = thaiData.find((t) => t.type === 'vowel' && t.char === v.thaiChar)
+      expect(item, `${v.no} ${v.thaiChar}`).toBeDefined()
+      expect(item!.writeBase, `${v.no} ${v.form}`).toBe(v.form.replace(/-/g, 'อ'))
+      if (v.group === 'independent') expect(item!.speakText, `${v.no} ${v.form}`).toBe(v.withO)
+    })
+    // /path 輸出貼錯位置會造成重複的 char（例如兩筆 ฤๅ）
+    const thaiVowelChars = thaiData.filter((t) => t.type === 'vowel').map((t) => t.char)
+    expect(new Set(thaiVowelChars).size).toBe(thaiVowelChars.length)
+  })
+
   it('有連結的母音都有位置說明', () => {
     vowels.forEach((v) => {
       if (v.thaiChar) expect(vowelPosition(v), v.thaiChar).toBeTruthy()
