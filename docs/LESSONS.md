@@ -71,7 +71,7 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 | `homework` | 作業 | `numbers` 範圍（格子可翻開唸法、✍️ 練寫） |
 | `practice` | 練習設定 | `numberReading` 數字範圍 |
 | `exam` | 考試設定 | `numbers` 數字範圍（沒有數字題可省略）、`questions` 題型與題數 |
-| `vowels` | 母音表 | `vowels`（`LessonVowel`：課本字形 `form`、搭配 อ `withO`、拼音、注音、聲調、長短、分組、`thaiChar` 連結 thaiData）、`groupPencil`；寫法（`writeBase`）與筆順一律用 thaiData 的，不在 thaiData 的（ฦ、ฦๅ）才寫在課程檔 |
+| `vowels` | 母音表 | `vowels`（`LessonVowel`：課本字形 `form`、搭配 อ `withO`、拼音、注音、聲調、長短、分組、`thaiChar` 必填，連結 thaiData）、`groupPencil`；寫法（`writeBase`）、筆順、念法、位置、已停用（`deprecated`）一律用 thaiData 的，課程檔不自己存 |
 | `pronouns` | 人稱代名詞表 | `words`（不重複的字）、`cells`（人稱 × 男女 × 等級 → `wordId`） |
 | `usage` | 用法 | `items`：`label`（例如「複數」）＋ `word` ＋ `pattern`（例如「＋人稱代名詞」）＋ `examples` |
 
@@ -99,7 +99,7 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
 - 「第N課」分類裡的字（`inCategory` 的單字、常用語原形、`variants`）會出現在 `/downloader` 的「待抓」，打包後放 `public/audio/TH/`
 - **`pnpm audio:fetch`**（`scripts/audio-fetch.ts`）：掃描 `ALL_VOCAB_CATEGORIES` 與 `public/audio/TH/`，從 Node 直接請求 Google TTS（同 /downloader 的來源與語速：`translate_tts`、`client=tw-ob`、泰文 `th`、中文 `zh-TW`），每個檔案間隔 1.2 秒、每 20 個多休息 1 秒、失敗重試 2 次；`--dry-run` 只列出缺檔；完成後列出成功／失敗
   - 透過 Vite `ssrLoadModule` 載入網站的資料與 `audioFileName()`，檔名規則與網站一致
-  - 另外抓**母音的念法**（只有泰文，例如 `th_สระอะ.mp3`）：`src/data/lessons/vowels.ts` 的 `VOWEL_AUDIO_TEXTS`（thaiData 母音的 `speakText`＋課程限定母音），母音不在分類裡（隨身聽不播）
+  - 另外抓**母音的念法**（只有泰文，例如 `th_สระอะ.mp3`）：`src/data/lessons/vowels.ts` 的 `VOWEL_AUDIO_TEXTS`（thaiData 母音的 `speakText`），母音不在分類裡（隨身聽不播）
   - 自訂單字存在瀏覽器 localStorage，腳本讀不到；要補自訂單字的音檔仍用 `/downloader`
   - 中文念的文字（檔名不變）：字詞有 `zhSpeak` 就念它；沒有才清理：括號與括號內容不念、「/」改成「，」，例如「你好/再見 (女用)」念「你好，再見」。只套用在新抓的檔案；現有的 mp3（例如「我 (男用)」）不重抓
 - `/downloader` 保留（頁面上方提示改用 `pnpm audio:fetch`），依 `public/audio/TH/` 實際的檔案判斷（build／dev 啟動時掃描，`hasAudioFile()`）；泰文、中文都有才算就緒
@@ -115,7 +115,7 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
   - `speakText`：念法，照課本 p40「สระ＋母音發音」（`สระอะ`）；獨立母音不加 สระ（`รึ`、`รือ`）。/thai、課程頁、考試都念它，音檔是 `th_สระอะ.mp3`
   - `strokes`：筆順，對著 writeBase 畫（/path「泰語元音」tab 的底字就是 writeBase）
   - `char`（`◌ะ`）不改：它是收藏、錯題、課程 ref 的識別碼
-- 不在 thaiData 的母音（ฦ、ฦๅ）寫在課程檔的 `LessonVowel`（`writeBase`、`strokes`；念法用 `withO`）。/path 的「泰語元音」tab 也會列出來，輸出開頭會標示要寫進哪個課程檔
+- 課本的母音一律先加進 thaiData（照 ฤ、ฤๅ、ฦ、ฦๅ 的格式），課程檔只用 `thaiChar` 連結；已停用的字在 thaiData 標 `deprecated: true`（/thai 卡片、課程頁顯示「已停用」並降低透明度，測驗、考試照常出題）。筆順在 /path 畫，輸出框上方會標明要取代 thai.ts 的哪一筆
 - 查詢一律用 `src/data/lessons/vowels.ts`（`vowelWriteBase`、`vowelSpeakText`、`vowelStrokes`）或 `src/data/thaiWriteBase.ts`（/thai：用 char 查，舊錯題物件沒有這些欄位）
 - **全站母音一律用淺色 อ 寫法，不使用 -**（課本表格的 `-ิ` 只存在資料的 `form`，不顯示在畫面上；iPhone Safari 也會在「-」加上下母音前面補虛線圈 ◌）
   - 畫法：`components/common/VowelText.vue`（canvas，淺色 อ＋深色母音、粗體；獨立母音 ฤ、ฤๅ、ฦ、ฦๅ 沒有 อ，整個字深色）。/thai 直接用它，課程頁、考試用 `components/lessons/VowelForm.vue`（同一個元件，配色從 store 取）

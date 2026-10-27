@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { thaiData } from '@/data/thai'
-import { LESSON_ONLY_VOWELS } from '@/data/lessons/vowels'
 
 // 原版 #picker-modal：只保留泰語輔音／元音／數字 tab（日語平假名／片假名已移除）
 type PickerType = 'thai_con' | 'thai_vow' | 'thai_num'
@@ -34,11 +33,8 @@ const tabs: { type: PickerType; label: string }[] = [
 const list = computed<PickerItem[]>(() => {
   if (pickerType.value === 'thai_con') return thaiData.filter((d) => d.type === 'consonant').map((d) => ({ char: d.char, label: d.reading }))
   if (pickerType.value === 'thai_num') return thaiData.filter((d) => d.type === 'numbers').map((d) => ({ char: d.char, label: d.reading }))
-  // 元音顯示 writeBase（อ 表示子音位置，同課本；刻意和原版不同）；不在 thaiData 的 ฦ、ฦๅ 也列在後面，筆順寫進課程檔
-  return [
-    ...thaiData.filter((d) => d.type === 'vowel').map((d) => ({ char: d.char.replace(/◌/g, '-'), realChar: d.char, display: d.writeBase, label: d.reading })),
-    ...LESSON_ONLY_VOWELS.map(({ lessonNo, vowel }) => ({ char: vowel.form, display: vowel.writeBase, label: `${vowel.roman}・第${lessonNo}課` })),
-  ]
+  // 元音顯示 writeBase（อ 表示子音位置，同課本；刻意和原版不同）
+  return thaiData.filter((d) => d.type === 'vowel').map((d) => ({ char: d.char.replace(/◌/g, '-'), realChar: d.char, display: d.writeBase, label: d.reading }))
 })
 
 const renderPicker = (type: PickerType) => {

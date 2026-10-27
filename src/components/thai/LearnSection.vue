@@ -72,7 +72,7 @@ const VOWEL_LINE_HEIGHT = 36 / 30
       <div v-for="(item, index) in filteredLearnData" :key="item.soundText || item.char"
         @click="clickLearnCard(item)"
         :style="{ animationDelay: (index * 0.05) + 's' }"
-        :class="['bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-xs border border-gray-100 dark:border-slate-700 card-hover cursor-pointer transition-all duration-200 flex flex-col relative overflow-hidden group select-none h-full justify-between min-h-[160px]', (item.char === 'ฃ' || item.char === 'ฅ') ? 'opacity-60 grayscale-[0.8]' : '', animatingCards[item.soundText || item.char] ? 'ring-2 ring-emerald-400 ring-offset-2 dark:ring-offset-slate-900' : '']">
+        :class="['bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-xs border border-gray-100 dark:border-slate-700 card-hover cursor-pointer transition-all duration-200 flex flex-col relative overflow-hidden group select-none h-full justify-between min-h-[160px]', (item.char === 'ฃ' || item.char === 'ฅ') ? 'opacity-60 grayscale-[0.8]' : '', item.deprecated ? 'opacity-60' : '', animatingCards[item.soundText || item.char] ? 'ring-2 ring-emerald-400 ring-offset-2 dark:ring-offset-slate-900' : '']">
 
         <div v-if="item.char === 'ฃ' || item.char === 'ฅ'" class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <span class="rotate-12 border-2 border-red-500/40 text-red-500/40 text-[10px] font-bold px-1 rounded uppercase tracking-tighter">淘汰字根</span>
@@ -105,6 +105,8 @@ const VOWEL_LINE_HEIGHT = 36 / 30
             <div class="absolute bottom-0 left-0">
               <span v-if="item.toneClass" :class="item.toneClass === 'Mid' ? 'bg-green-100 text-green-600 border-green-200' : item.toneClass === 'High' ? 'bg-red-100 text-red-600 border-red-200' : 'bg-blue-100 text-blue-600 border-blue-200'" class="text-[10px] px-1.5 py-0.5 rounded border">{{ item.toneClass === 'Mid' ? '中' : item.toneClass === 'High' ? '高' : '低' }}</span>
               <span v-if="item.duration" :class="item.duration === 'Long' ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-orange-100 text-orange-600 border-orange-200'" class="text-[10px] px-1.5 py-0.5 rounded border">{{ item.duration === 'Long' ? '長' : '短' }}</span>
+              <!-- 已停用（ฦ、ฦๅ）：樣式同課程頁母音卡片（刻意和原版不同，原版沒有這兩個字） -->
+              <span v-if="item.deprecated" class="ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 dark:bg-slate-600 dark:text-gray-300">已停用</span>
             </div>
             <div class="font-bold text-gray-800 dark:text-white thai-font mb-2 text-center" :class="(item.type === 'vowel' || (item.char && item.char.length > 3)) ? 'text-3xl' : 'text-5xl'"><VowelText v-if="thaiWriteBase(item)" :text="thaiWriteBase(item)!" :is-dark="isDark" :font-size="VOWEL_FONT_SIZE" :line-height="VOWEL_LINE_HEIGHT" bold /><template v-else>{{ item.char }}</template></div>
             <div class="mb-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 thai-font text-center min-h-[1.25rem]">{{ item.thaiLabel || '' }}</div>

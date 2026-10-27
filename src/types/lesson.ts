@@ -92,7 +92,7 @@ export interface LessonPhrase {
 /** 母音分組：短音、長音、特殊、獨立 */
 export type VowelGroup = 'short' | 'long' | 'special' | 'independent'
 
-/** 母音（課本寫法；和 thaiData 重複的用 thaiChar 連結，共用筆順與位置說明） */
+/** 母音（課本寫法；一律用 thaiChar 連結 thaiData，寫法、筆順、念法、位置說明、已停用都以 thaiData 為準） */
 export interface LessonVowel {
   /** 固定 id（`l02-v01` 格式） */
   id: string
@@ -102,10 +102,6 @@ export interface LessonVowel {
   form: string
   /** 搭配 อ 的寫法（獨立母音是借用的唸法，例如 รึ）；發音用它 */
   withO: string
-  /** 手寫練習的底圖：只有不在 thaiData 的母音（ฦ、ฦๅ）才寫；有 thaiChar 的一律用 thaiData 的 writeBase */
-  writeBase?: string
-  /** 筆順：只有不在 thaiData 的母音（ฦ、ฦๅ）才寫；有 thaiChar 的共用 thaiData 的 strokes */
-  strokes?: string[]
   /** 課本拼音 */
   roman: string
   /** 課本括號內的注音（有的才填） */
@@ -115,13 +111,11 @@ export interface LessonVowel {
   length?: 'short' | 'long'
   group: VowelGroup
   /** thaiData 的 char（例如 ◌ะ） */
-  thaiChar?: string
+  thaiChar: string
   /** 母音名稱（例如 ไม้ม้วน） */
   name?: Syllable[]
   /** 課本上的補充（例如只有 20 個單字） */
   note?: string
-  /** 已停用 */
-  deprecated?: boolean
   pencil?: PencilNote[]
 }
 

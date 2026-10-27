@@ -7,7 +7,7 @@ import { usePageShell } from '@/composables/usePageShell'
 import { useTimers } from '@/composables/useTimers'
 import { GUIDE_FONT_RATIO, PATH_GUIDE_COLORS, guideTextLayoutFor } from '@/utils/guideLayout'
 import { PATH_CANVAS_SIZE, canvasToStroke, strokeToCanvas } from '@/utils/strokeFrame'
-import { LESSON_ONLY_VOWELS, writeBaseOfChar } from '@/data/lessons/vowels'
+import { thaiWriteBaseOfChar } from '@/data/thaiWriteBase'
 import VowelGuide from '@/components/common/VowelGuide.vue'
 
 usePageShell({
@@ -100,8 +100,7 @@ const selectChar = (char: string) => {
     foundItem = thaiData.find((d) => d.char.replace(/◌/g, '-') === char)
   }
 
-  // 不在 thaiData 的課程母音（ฦ、ฦๅ）：記住 char，輸出完整結構並標示要寫進課程檔
-  currentCharObj = foundItem ?? (lessonOnlyVowelOf(char) ? { char } : null)
+  currentCharObj = foundItem ?? null
 
   if (foundItem && foundItem.strokes && foundItem.strokes.length > 0) {
     strokes = []
@@ -122,7 +121,7 @@ const drawGuide = () => {
   // 1. 改用 textContent 取得 div 內的文字 (針對 contenteditable)
   const char = inputCharEl.value!.textContent ?? ''
   guideChar.value = char
-  vowelGuideText.value = writeBaseOfChar(char)
+  vowelGuideText.value = thaiWriteBaseOfChar(char)
   guideTextLayoutFor(char, GUIDE_BOX_SIZE).then(({ fontSize, shiftX, shiftY }) => {
     if (guideChar.value !== char) return
     guideStyle.value = { fontSize: `${fontSize}px`, transform: shiftX || shiftY ? `translate(${shiftX}px, ${shiftY}px)` : '' }
@@ -394,10 +393,8 @@ const render = () => {
       // 有物件時：複製物件並替換 strokes，輸出完整結構
       const newObj: Record<string, unknown> = { ...currentCharObj }
       newObj.strokes = resultStrings
-      outputValue.value = lessonOnlyNote(currentCharObj.char) + objectToString(newObj) + ','
-      outputTarget.value = lessonOnlyVowelOf(currentCharObj.char)
-        ? ''
-        : `貼到 thai.ts：取代 char: '${currentCharObj.char}'${currentCharObj.thaiLabel ? `（${currentCharObj.thaiLabel}）` : ''} 那一筆`
+      outputValue.value = objectToString(newObj) + ','
+      outputTarget.value = `貼到 thai.ts：取代 char: '${currentCharObj.char}'${currentCharObj.thaiLabel ? `（${currentCharObj.thaiLabel}）` : ''} 那一筆`
     } else {
       // 無物件時 (自創字)：只輸出 strokes 陣列
       outputTarget.value = ''
@@ -407,17 +404,6 @@ const render = () => {
     outputValue.value = ''
     outputTarget.value = ''
   }
-}
-
-// 不在 thaiData 的課程母音（ฦ、ฦๅ）
-const lessonOnlyVowelOf = (char: string) => LESSON_ONLY_VOWELS.find(({ vowel }) => vowel.form === char)
-
-// 課程母音的輸出開頭加註：筆順要寫進課程檔（不是 thai.ts）
-const lessonOnlyNote = (char: string): string => {
-  const found = lessonOnlyVowelOf(char)
-  if (!found) return ''
-  const file = `src/data/lessons/lesson-${String(found.lessonNo).padStart(2, '0')}.ts`
-  return `// ⚠️ ${char} 不在 thaiData：strokes 請寫進 ${file} 的 ${found.vowel.id}\n`
 }
 
 // 輸出成單引號字串，跳脫反斜線與單引號

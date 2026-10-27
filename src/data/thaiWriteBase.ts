@@ -10,7 +10,7 @@ type CharItem = { type?: string; char?: string } | null | undefined
 export const thaiWriteBase = (item: CharItem): string | undefined =>
   item?.type === 'vowel' && item.char ? VOWELS.get(item.char)?.writeBase : undefined
 
-/** 用 char 查寫法（/path、課程限定母音以外） */
+/** 用 char 查寫法（/path 底字用） */
 export const thaiWriteBaseOfChar = (char: string): string | undefined => VOWELS.get(char)?.writeBase
 
 // Google TTS 會把這些 สระX 的 สระ 念成「sa」：實際播放改念 สะ-หระ-X。

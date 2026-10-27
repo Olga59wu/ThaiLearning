@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LESSONS, lessonVowels } from '@/data/lessons'
 import { vowelStrokes } from '@/data/lessons/vowels'
+import { thaiData } from '@/data/thai'
 import {
   buildExam,
   cumulativeCount,
@@ -194,22 +195,23 @@ describe('examPlan（第 2 課）', () => {
     expect(plan.phrases).toHaveLength(9)
   })
   it('題數不超過題庫：有筆順的母音才出手寫題', () => {
-    // 假的課程：只有 2 個母音，其中 1 個有筆順（課程限定母音的 strokes）
-    const fake = (strokes?: string[]): Lesson => ({
+    // 假的課程：只有 2 個母音；筆順來自 thaiData，連結不到（thaiChar 不存在）就沒有筆順
+    const NONE = '（thaiData 沒有）'
+    const fake = (hasStrokes: boolean): Lesson => ({
       no: 99, date: '2026-01-01', title: '測試', category: '第99課',
       blocks: [
         { type: 'vowels', title: '母音', vowels: [
-          { id: 't-v1', no: 1, form: '-ะ', withO: 'อะ', roman: 'a', tone: 'low', length: 'short', group: 'short', strokes },
-          { id: 't-v2', no: 2, form: '-า', withO: 'อา', roman: 'a', tone: 'mid', length: 'long', group: 'long' },
+          { id: 't-v1', no: 1, form: '-ะ', withO: 'อะ', roman: 'a', tone: 'low', length: 'short', group: 'short', thaiChar: hasStrokes ? '◌ะ' : NONE },
+          { id: 't-v2', no: 2, form: '-า', withO: 'อา', roman: 'a', tone: 'mid', length: 'long', group: 'long', thaiChar: NONE },
         ] },
         { type: 'exam', config: { questions: [{ type: 'vowelHandwrite', count: 2 }, { type: 'vowelSound', count: 5 }] } },
       ],
     })
-    expect(examPlan([fake()], 99, 'lesson').questions).toEqual([{ type: 'vowelSound', count: 2 }])
-    const plan = examPlan([fake(['M 1 1 L 2 2'])], 99, 'lesson')
+    expect(examPlan([fake(false)], 99, 'lesson').questions).toEqual([{ type: 'vowelSound', count: 2 }])
+    const plan = examPlan([fake(true)], 99, 'lesson')
     expect(plan.questions).toEqual([{ type: 'vowelHandwrite', count: 1 }, { type: 'vowelSound', count: 2 }])
     const hw = buildExam(plan).find((q) => q.type === 'vowelHandwrite')!
-    expect(hw.strokes).toEqual(['M 1 1 L 2 2'])
+    expect(hw.strokes).toEqual(thaiData.find((t) => t.char === '◌ะ')!.strokes)
     expect(hw.guideText).toBe('อะ')
   })
 })

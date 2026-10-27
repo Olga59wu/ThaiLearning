@@ -33,6 +33,8 @@ export interface ThaiItem {
   speakText?: string
   finalType?: string
   strokes?: string[]
+  /** 已停用的字（ฦ、ฦๅ）：/thai 卡片、課程頁顯示「已停用」並降低透明度；測驗、考試照常出題 */
+  deprecated?: boolean
 }
 
 export type SentenceCategory = 'Basic' | 'Shopping' | 'Food' | 'Travel' | 'Emergency'

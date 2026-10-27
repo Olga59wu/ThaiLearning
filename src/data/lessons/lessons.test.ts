@@ -5,7 +5,7 @@ import { ALL_VOCAB_CATEGORIES, lessonNoOfCategory } from '@/data/vocabCategories
 import {
   blocksOf, LESSON_VOCAB_CATEGORIES, LESSON_ZH_SPEAK, LESSONS, lessonPhrases, lessonPronounCells, lessonRawWords, lessonUnits, lessonVowels, lessonWords, resolveWord,
 } from '@/data/lessons'
-import { VOWEL_AUDIO_TEXTS, vowelPosition, vowelSpeakText, vowelThaiItem, vowelWriteBase } from '@/data/lessons/vowels'
+import { VOWEL_AUDIO_TEXTS, vowelDeprecated, vowelPosition, vowelSpeakText, vowelStrokes, vowelThaiItem, vowelWriteBase } from '@/data/lessons/vowels'
 import { sy } from '@/data/lessons/helpers'
 import { thaiVowelSpeak } from '@/data/thaiWriteBase'
 import { audioFileName } from '@/services/offlineAudio'
@@ -154,20 +154,17 @@ describe('第 2 課', () => {
     })
   })
 
-  it('連結 thaiData 的母音：30 個都找得到，只有 ฦ、ฦๅ 沒有（已停用）', () => {
-    vowels.forEach((v) => {
-      if (v.thaiChar) expect(vowelThaiItem(v), v.thaiChar).toBeDefined()
-    })
-    expect(vowels.filter((v) => v.thaiChar).length).toBe(30)
-    expect(vowels.filter((v) => !v.thaiChar).map((v) => v.form)).toEqual(['ฦ', 'ฦๅ'])
-    expect(vowels.filter((v) => v.deprecated).map((v) => v.form)).toEqual(['ฦ', 'ฦๅ'])
+  it('連結 thaiData 的母音：32 個都找得到；已停用（thaiData deprecated）只有 ฦ、ฦๅ', () => {
+    vowels.forEach((v) => expect(vowelThaiItem(v), v.thaiChar).toBeDefined())
+    expect(vowels.filter(vowelDeprecated).map((v) => v.form)).toEqual(['ฦ', 'ฦๅ'])
+    expect(thaiData.filter((t) => t.deprecated).map((t) => t.char)).toEqual(['ฦ', 'ฦๅ'])
     // 每個 thaiData 母音只連結一次
-    const chars = vowels.flatMap((v) => (v.thaiChar ? [v.thaiChar] : []))
+    const chars = vowels.map((v) => v.thaiChar)
     expect(new Set(chars).size).toBe(chars.length)
     expect(thaiData.filter((t) => t.type === 'vowel').every((t) => chars.includes(t.char))).toBe(true)
   })
 
-  it('寫法（writeBase）單一來源：thaiData 母音都有，有連結的課程母音不自己寫；ฦ、ฦๅ 寫在課程檔', () => {
+  it('寫法（writeBase）、筆順單一來源：都在 thaiData，課程母音不自己存', () => {
     thaiData.filter((t) => t.type === 'vowel').forEach((t) => {
       expect(t.writeBase, t.char).toBeTruthy()
       // ◌ 換成 อ 表示子音位置；獨立母音（ฤ、ฤๅ）寫字本身
@@ -175,11 +172,10 @@ describe('第 2 課', () => {
       else expect(t.writeBase).toBe(t.char)
     })
     vowels.forEach((v) => {
-      if (v.thaiChar) {
-        expect(v.writeBase, `${v.no} 用 thaiData 的 writeBase`).toBeUndefined()
-        expect(v.strokes, `${v.no} 用 thaiData 的 strokes`).toBeUndefined()
-      } else expect(v.writeBase).toBe(v.form)
+      expect('writeBase' in v, `${v.no} 用 thaiData 的 writeBase`).toBe(false)
+      expect('strokes' in v, `${v.no} 用 thaiData 的 strokes`).toBe(false)
     })
+    expect(vowelStrokes(vowels.find((v) => v.no === 31)!)).toBe(thaiData.find((t) => t.char === 'ฦ')!.strokes)
     expect(vowelWriteBase(vowels.find((v) => v.no === 6)!)).toBe('อื')
     expect(vowelWriteBase(vowels.find((v) => v.no === 1)!)).toBe('อะ')
     expect(vowelWriteBase(vowels.find((v) => v.no === 31)!)).toBe('ฦ')
@@ -209,9 +205,8 @@ describe('第 2 課', () => {
     expect(thaiVowelSpeak({ type: 'vowel', char: '◌ะ' })).toBe('สระอะ')
   })
 
-  it('有 thaiChar 的母音：thaiData 找得到，writeBase 與課本字形一致（- 換成 อ），獨立母音的念法同 withO', () => {
+  it('每個母音：thaiData 找得到，writeBase 與課本字形一致（- 換成 อ），獨立母音的念法同 withO', () => {
     vowels.forEach((v) => {
-      if (!v.thaiChar) return
       const item = thaiData.find((t) => t.type === 'vowel' && t.char === v.thaiChar)
       expect(item, `${v.no} ${v.thaiChar}`).toBeDefined()
       expect(item!.writeBase, `${v.no} ${v.form}`).toBe(v.form.replace(/-/g, 'อ'))
@@ -224,7 +219,7 @@ describe('第 2 課', () => {
 
   it('有連結的母音都有位置說明', () => {
     vowels.forEach((v) => {
-      if (v.thaiChar) expect(vowelPosition(v), v.thaiChar).toBeTruthy()
+      expect(vowelPosition(v), v.thaiChar).toBeTruthy()
     })
   })
 

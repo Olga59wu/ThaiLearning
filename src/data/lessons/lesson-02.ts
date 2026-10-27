@@ -73,11 +73,11 @@ const vowels: LessonVowel[] = [
   { id: 'l02-v28', no: 28, form: 'เ-า', withO: 'เอา', roman: 'ao', zhuyin: 'ㄠ', tone: 'mid', group: 'special', thaiChar: 'เ◌า' },
 
   // 獨立母音 4 個（p48）：借用子音 ร、ล 搭配 -ึ、-ื 來發音；短音第 4 聲、長音第 1 聲；練習頁（p49）不搭配 อ
-  // ฦ、ฦๅ 不在 thaiData，writeBase 與筆順寫在這裡（筆順用 /path 畫好後補 strokes）
+  // ฦ、ฦๅ 已停用：「已停用」標示、writeBase、筆順都在 thaiData
   { id: 'l02-v29', no: 29, form: 'ฤ', withO: 'รึ', roman: 'reu', tone: 'high', length: 'short', group: 'independent', thaiChar: 'ฤ' },
   { id: 'l02-v30', no: 30, form: 'ฤๅ', withO: 'รือ', roman: 'reu', tone: 'mid', length: 'long', group: 'independent', thaiChar: 'ฤๅ' },
-  { id: 'l02-v31', no: 31, form: 'ฦ', withO: 'ลึ', writeBase: 'ฦ', roman: 'leu', tone: 'high', length: 'short', group: 'independent', deprecated: true },
-  { id: 'l02-v32', no: 32, form: 'ฦๅ', withO: 'ลือ', writeBase: 'ฦๅ', roman: 'leu', tone: 'mid', length: 'long', group: 'independent', deprecated: true },
+  { id: 'l02-v31', no: 31, form: 'ฦ', withO: 'ลึ', roman: 'leu', tone: 'high', length: 'short', group: 'independent', thaiChar: 'ฦ' },
+  { id: 'l02-v32', no: 32, form: 'ฦๅ', withO: 'ลือ', roman: 'leu', tone: 'mid', length: 'long', group: 'independent', thaiChar: 'ฦๅ' },
 ]
 
 // ---- 人稱代名詞（p256）：不重複的字只建一次，表格格子用 id 指向 ----

@@ -132,7 +132,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
   - 筆圖示是 `absolute` 定位，拿掉不影響星號位置、卡片高度與間距
   - 上方提示文字在這 5 個分類只顯示「點擊卡片發音」，隱藏「，點擊筆圖示可手寫練習」
 - **元音一律用 อ 表示子音位置**（2026-10-20 使用者決定，和課本、每週課程同一套寫法）：
-  - thaiData 母音新增 `writeBase`（例如 `◌ะ` → `อะ`、`◌ือ` → `อื`、`ฤ` → `ฤ`），是唯一來源；每週課程的母音從 thaiData 讀取（不在 thaiData 的 ฦ、ฦๅ 寫在 lesson-02）
+  - thaiData 母音新增 `writeBase`（例如 `◌ะ` → `อะ`、`◌ือ` → `อื`、`ฤ` → `ฤ`），是唯一來源；每週課程的母音從 thaiData 讀取（ฦ、ฦๅ 也在 thaiData，標 `deprecated`）
   - `char`（`◌ะ` 等）**不改**：它是收藏、錯題、課程 ref 的識別碼
   - 所有顯示元音字形的地方都改顯示 `writeBase`，อ 淺色、母音正常顏色（`components/common/VowelText.vue`，canvas 畫，配色同手寫底圖 `fillVowelText`；字級同原本的 class）：學習卡片（含收藏）、看字選音的題目、聽音辨字的選項（作答前後）、翻牌記憶的字卡（`MemoryCard.vowelText`，其他字卡照原版 `v-html`）；錯題複習、收藏範圍都走同一個測驗畫面。只改顯示，判斷與紀錄仍用 `char`／`soundText`
   - 寫法一律用 `char` 查 thaiData（`data/thaiWriteBase.ts` 的 `thaiWriteBase()`），**不讀物件身上的 `writeBase`**：錯題清單（localStorage `thai_mistakes`／雲端 `mistakeList`）存的是整個題目物件，加 writeBase 之前存的舊錯題沒有這個欄位，曾因此在錯題複習顯示 ◌ 寫法（2026-10-20 修正）
@@ -210,7 +210,7 @@ pnpm dev                               # 新版：http://localhost:5173/player
 - 刻意和原版不同（2026-10-20）：
   - 底字的字級與位置改用 `utils/guideLayout`（和課程頁、/thai 的手寫底圖同一套規則）：框的 68%（＝原版 340px），寬或高超過扣掉 8% 邊距就等比例縮小，置中後超出邊距就平移推回。已有筆順的輔音、數字都在邊距內，大小、位置和原版相同
   - 「泰語元音」tab：選字表顯示 `writeBase`（อะ…），底字用 `VowelGuide`（canvas，อ 淺色）畫 writeBase；輸出的 `char` 仍是 `◌ะ`
-  - 「泰語元音」tab 後面加上不在 thaiData 的課程母音（ฦ、ฦๅ，標「第2課」）；輸出開頭加註「strokes 請寫進 lesson-02.ts 的 l02-v31」
+  - 輸出框上方標明「貼到 thai.ts：取代 char: 'X' 那一筆」（曾把 ฤๅ 的輸出貼到 ฤ 那一筆）；ฦ、ฦๅ 已加進 thaiData，跟其他元音一樣列在「泰語元音」tab
   - 開發用的 `/dev/vowel-guides`（只在 `pnpm dev` 註冊、不需登入）：檢查 32 個母音底圖、已有筆順的字有沒有被縮放／平移、手寫彈窗捲軸（`?modal=เอือะ`）、/thai 元音卡片預覽
 
 ### 第 5 步對照檢查結論（2026-10-13）
