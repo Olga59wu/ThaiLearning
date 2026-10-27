@@ -110,7 +110,8 @@ const optionClass = (key: string) => {
 }
 
 onMounted(() => {
-  if (isListen.value || (props.practice && q.value.type === 'vowelHandwrite')) speakPrompt()
+  // 位置題看不到字形，一出現就念發音
+  if (isListen.value || q.value.type === 'vowelPosition' || (props.practice && q.value.type === 'vowelHandwrite')) speakPrompt()
   if (q.value.type === 'digitInput') nextTick(() => inputEl.value?.focus())
   if (isHandwrite.value) nextTick(() => hw.initCanvas())
 })
@@ -140,7 +141,7 @@ onMounted(() => {
           </svg>
         </button>
         <!-- 母音寫法（不受「泰文字」開關影響）＋สระ 名稱（同 /thai） -->
-        <div v-else-if="(q.type === 'vowelSound' || q.type === 'vowelLength' || q.type === 'vowelPosition') && q.vowel" class="flex flex-col items-center gap-1">
+        <div v-else-if="(q.type === 'vowelSound' || q.type === 'vowelLength') && q.vowel" class="flex flex-col items-center gap-1">
           <div class="text-7xl font-bold leading-tight thai-font text-gray-800 dark:text-white"><VowelForm :write-base="q.vowel.writeBase" :font-size="72" :line-height="1.25" /></div>
           <div class="text-2xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.label }}</div>
         </div>
@@ -156,6 +157,23 @@ onMounted(() => {
                 d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
           </button>
+        </div>
+        <!-- 位置：不顯示字形，只有 สระ 名稱＋發音（拼音＋注音＋聲調），答完才看到字形 -->
+        <div v-else-if="q.type === 'vowelPosition' && q.vowel && vowelReading" class="flex flex-col items-center gap-2">
+          <div class="text-3xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.label }}</div>
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <ToneSyllables :syllables="vowelReading" size="xl" />
+            <span v-if="q.vowel.zhuyin" class="text-3xl font-bold text-gray-500 dark:text-gray-400">（{{ q.vowel.zhuyin }}）</span>
+            <span class="text-sm font-bold text-gray-400 dark:text-gray-500">{{ toneOrdinalLabel(q.vowel.tone) }}</span>
+            <button @click="speakPrompt" title="播放發音"
+              class="flex items-center justify-center w-11 h-11 shrink-0 rounded-full text-emerald-600 bg-emerald-50 hover:bg-emerald-100 active:scale-90 transition-all dark:bg-emerald-900/30 dark:text-emerald-400">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            </button>
+          </div>
+          <div class="text-sm text-gray-400 dark:text-gray-500">母音寫在子音的哪裡？</div>
         </div>
         <!-- 人稱代名詞：情境 -->
         <div v-else-if="q.type === 'pronounChoice'" class="text-3xl font-black text-gray-800 dark:text-white">{{ q.context }}</div>

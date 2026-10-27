@@ -348,6 +348,16 @@ describe('位置題', () => {
     expect(vowelPositionKey(vowelNo(1))).toBe('後')
     expect(vowelPositionKey(vowelNo(9))).toBe('夾')
   })
+  it('獨立母音（ฤ、ฤๅ、ฦ、ฦๅ）不出', () => {
+    for (let t = 0; t < 30; t++) {
+      buildExam(lesson2Plan()).filter((q) => q.type === 'vowelPosition').forEach((q) => {
+        expect(['ฤ', 'ฤๅ', 'ฦ', 'ฦๅ']).not.toContain(q.vowel!.form)
+      })
+      const q = practiceVowelQuestion('vowelPosition', lesson2Plan().vowels, lesson2Plan().vowels, 'x')!
+      expect(['ฤ', 'ฤๅ', 'ฦ', 'ฦๅ']).not.toContain(q.vowel!.form)
+    }
+    expect(practiceVowelQuestion('vowelPosition', practiceVowels(lesson2Plan().vowels, 'independent', false), lesson2Plan().vowels, 'x')).toBeUndefined()
+  })
   it('選項固定 前、後、上、下、夾，答案顯示完整位置說明', () => {
     const q = buildExam(lesson2Plan()).find((x) => x.type === 'vowelPosition')!
     expect(q.options!.map((o) => o.key)).toEqual(['前', '後', '上', '下', '夾'])

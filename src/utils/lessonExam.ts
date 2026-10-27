@@ -79,7 +79,7 @@ export const QUESTION_TYPE_LABEL: Record<ExamQuestionType, string> = {
   vowelListen: '聽發音 → 選母音',
   vowelLength: '看母音 → 長音／短音',
   vowelHandwrite: '聽發音 → 手寫母音',
-  vowelPosition: '看母音 → 位置',
+  vowelPosition: '聽發音 → 母音位置',
   pronounChoice: '人稱代名詞 → 選拼音',
 }
 
@@ -366,7 +366,8 @@ export const vowelPool = (type: ExamQuestionType, vowels: readonly LessonVowel[]
   if (type === 'vowelLength') return vowels.filter((v) => v.length !== undefined)
   // 手寫：有筆順的才出（在 /path 畫）
   if (type === 'vowelHandwrite') return vowels.filter((v) => vowelStrokes(v) !== undefined)
-  if (type === 'vowelPosition') return vowels.filter((v) => vowelPositionKey(v) !== undefined)
+  // 位置：獨立母音（ฤ、ฤๅ、ฦ、ฦๅ）是單獨一個字，不出
+  if (type === 'vowelPosition') return vowels.filter((v) => v.group !== 'independent' && vowelPositionKey(v) !== undefined)
   return [...vowels]
 }
 const poolSize = (type: ExamQuestionType, pools: ExamPools): number => {
