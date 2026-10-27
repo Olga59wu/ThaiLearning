@@ -158,9 +158,8 @@ onMounted(() => {
             </svg>
           </button>
         </div>
-        <!-- 位置：不顯示字形，只有 สระ 名稱＋發音（拼音＋注音＋聲調），答完才看到字形 -->
+        <!-- 位置：不顯示字形與 สระ 名稱（泰文寫法就看得出位置），只有發音（拼音＋注音＋聲調），答完才看到 -->
         <div v-else-if="q.type === 'vowelPosition' && q.vowel && vowelReading" class="flex flex-col items-center gap-2">
-          <div class="text-3xl thai-font text-emerald-600 dark:text-emerald-400">{{ q.vowel.label }}</div>
           <div class="flex flex-wrap items-center justify-center gap-3">
             <ToneSyllables :syllables="vowelReading" size="xl" />
             <span v-if="q.vowel.zhuyin" class="text-3xl font-bold text-gray-500 dark:text-gray-400">（{{ q.vowel.zhuyin }}）</span>
