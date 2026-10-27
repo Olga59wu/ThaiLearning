@@ -33,7 +33,7 @@ export interface ThaiItem {
   speakText?: string
   finalType?: string
   strokes?: string[]
-  /** 已停用的字（ฦ、ฦๅ）：/thai 卡片、課程頁顯示「已停用」並降低透明度；測驗、考試照常出題 */
+  /** 已停用的字（ฦ、ฦๅ）：/thai 卡片、課程頁顯示「已停用」並降低透明度；/thai 聽音辨字、看字選音、翻牌記憶不出，課程考試照常出題 */
   deprecated?: boolean
 }
 

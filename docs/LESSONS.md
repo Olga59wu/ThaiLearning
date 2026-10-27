@@ -115,7 +115,7 @@ sy('ยี่ yi ˋ | สิบ sib ˇ | เอ็ด ed ˇ')
   - `speakText`：念法，照課本 p40「สระ＋母音發音」（`สระอะ`）；獨立母音不加 สระ（`รึ`、`รือ`）。/thai、課程頁、考試都念它，音檔是 `th_สระอะ.mp3`
   - `strokes`：筆順，對著 writeBase 畫（/path「泰語元音」tab 的底字就是 writeBase）
   - `char`（`◌ะ`）不改：它是收藏、錯題、課程 ref 的識別碼
-- 課本的母音一律先加進 thaiData（照 ฤ、ฤๅ、ฦ、ฦๅ 的格式），課程檔只用 `thaiChar` 連結；已停用的字在 thaiData 標 `deprecated: true`（/thai 卡片、課程頁顯示「已停用」並降低透明度，測驗、考試照常出題）。筆順在 /path 畫，輸出框上方會標明要取代 thai.ts 的哪一筆
+- 課本的母音一律先加進 thaiData（照 ฤ、ฤๅ、ฦ、ฦๅ 的格式），課程檔只用 `thaiChar` 連結；已停用的字在 thaiData 標 `deprecated: true`（/thai 卡片、課程頁顯示「已停用」並降低透明度；/thai 聽音辨字、看字選音、翻牌記憶不出，課程考試照常出題）。筆順在 /path 畫，輸出框上方會標明要取代 thai.ts 的哪一筆
 - 查詢一律用 `src/data/lessons/vowels.ts`（`vowelWriteBase`、`vowelSpeakText`、`vowelStrokes`）或 `src/data/thaiWriteBase.ts`（/thai：用 char 查，舊錯題物件沒有這些欄位）
 - **全站母音一律用淺色 อ 寫法，不使用 -**（課本表格的 `-ิ` 只存在資料的 `form`，不顯示在畫面上；iPhone Safari 也會在「-」加上下母音前面補虛線圈 ◌）
   - 畫法：`components/common/VowelText.vue`（canvas，淺色 อ＋深色母音、粗體；獨立母音 ฤ、ฤๅ、ฦ、ฦๅ 沒有 อ，整個字深色）。/thai 直接用它，課程頁、考試用 `components/lessons/VowelForm.vue`（同一個元件，配色從 store 取）

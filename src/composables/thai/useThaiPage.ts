@@ -11,6 +11,12 @@ import { shuffleArray } from '@/utils/shuffle'
 import { safeStorage } from '@/utils/storage'
 import type { Sentence, ThaiItem, ThaiItemType, ToneKey } from '@/types/thai'
 
+// 聽音辨字、看字選音、翻牌記憶不出已停用的字（ฦ、ฦๅ）；學習卡片照常顯示，課程考試另有規則（照常出題）。
+// 用 char 查 thaiData：錯題清單存的是整個物件，可能是加 deprecated 之前存的
+const DEPRECATED_CHARS = new Set(thaiData.flatMap((t) => (t.deprecated ? [t.char] : [])))
+const isDeprecated = (item: ThaiItem) => DEPRECATED_CHARS.has(item.char)
+const quizData = thaiData.filter((i) => !isDeprecated(i))
+
 export type ThaiMode =
   | 'learn'
   | 'tone_training'
@@ -221,14 +227,14 @@ export const createThaiPage = () => {
   const startQuiz = (modeFilter: 'normal' | 'mistakes' | 'favorites') => {
     quiz.score = 0; quiz.finished = false; quiz.filter = modeFilter
     let deck: ThaiItem[] = []
-    if (modeFilter === 'mistakes') deck = [...mistakeList.value]
-    else if (modeFilter === 'favorites') deck = thaiData.filter((i) => favorites.value.includes(i.soundText || i.char))
+    if (modeFilter === 'mistakes') deck = mistakeList.value.filter((i) => !isDeprecated(i))
+    else if (modeFilter === 'favorites') deck = quizData.filter((i) => favorites.value.includes(i.soundText || i.char))
     else {
-      if (quiz.scope === 'basic') deck = thaiData.filter((i) => i.type === 'consonant' || i.type === 'vowel')
-      else if (quiz.scope === 'vocab') deck = thaiData.filter((i) => ['fruits', 'animals', 'colors', 'days', 'family'].includes(i.type))
+      if (quiz.scope === 'basic') deck = quizData.filter((i) => i.type === 'consonant' || i.type === 'vowel')
+      else if (quiz.scope === 'vocab') deck = quizData.filter((i) => ['fruits', 'animals', 'colors', 'days', 'family'].includes(i.type))
       // 新增「收藏」範圍：只出收藏過的題目（收藏 id 為 soundText 或 char，與 toggleStar 一致）
-      else if (quiz.scope === 'favorites') deck = thaiData.filter((i) => favorites.value.includes(i.soundText || i.char))
-      else deck = thaiData.filter((i) => i.type === 'toneMark' || i.type === 'numbers')
+      else if (quiz.scope === 'favorites') deck = quizData.filter((i) => favorites.value.includes(i.soundText || i.char))
+      else deck = quizData.filter((i) => i.type === 'toneMark' || i.type === 'numbers')
     }
     quiz.deck = shuffleArray(deck)
     quiz.total = quiz.deck.length
@@ -239,10 +245,10 @@ export const createThaiPage = () => {
     if (quiz.deck.length === 0) { quiz.finished = true; return }
     const current = quiz.deck.shift() as ThaiItem
     quiz.currentItem = current
-    const pool = thaiData.filter((i) => i.type === current.type)
+    const pool = quizData.filter((i) => i.type === current.type)
     const opts: ThaiItem[] = [current]
     while (opts.length < 4) {
-      const randomItem = pool.length >= 4 ? pool[Math.floor(Math.random() * pool.length)] : thaiData[Math.floor(Math.random() * thaiData.length)]
+      const randomItem = pool.length >= 4 ? pool[Math.floor(Math.random() * pool.length)] : quizData[Math.floor(Math.random() * quizData.length)]
       if (!opts.find((o) => o.name === randomItem.name)) opts.push(randomItem)
     }
     quiz.options = shuffleArray(opts)
@@ -293,7 +299,7 @@ export const createThaiPage = () => {
   // Memory Game
   const initMemoryGame = () => {
     memory.moves = 0; memory.matched = 0; memory.lock = false; memory.flipped = []
-    const pool = shuffleArray([...thaiData]).slice(0, 6)
+    const pool = shuffleArray([...quizData]).slice(0, 6)
     const cards: Omit<MemoryCard, 'flipped' | 'matched' | 'shake'>[] = []
     pool.forEach((i) => {
       const fs = i.char.length > 2 ? 'text-xl' : 'text-3xl'
