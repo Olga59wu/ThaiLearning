@@ -16,6 +16,7 @@ import {
   reshuffleQuestions,
   vowelDistractors,
   vowelLengthPairs,
+  vowelListenKey,
   vowelSoundKey,
 } from '@/utils/lessonExam'
 import { vowelDeprecated, vowelPositionKey } from '@/data/lessons/vowels'
@@ -234,7 +235,7 @@ describe('vowelDistractors', () => {
       expect(vowelDistractors(vowelNo(9), pool()).map((v) => v.no)).toEqual(expect.arrayContaining([10, 11]))
     }
   })
-  it('3 個、不重複、不和答案或彼此同音（ใ-／ไ- 不同時出現）', () => {
+  it('看字選音：3 個、不重複、不和答案或彼此同音（ใ-／ไ- 選項一樣，不同時出現）', () => {
     for (let t = 0; t < 30; t++) {
       pool().forEach((v) => {
         const d = vowelDistractors(v, pool())
@@ -243,6 +244,20 @@ describe('vowelDistractors', () => {
         expect(new Set(sounds).size, v.form).toBe(4)
       })
     }
+  })
+  it('聽音選字：ใ-／ไ- 念法帶名稱，可以同時出現；念法相同的仍不重複', () => {
+    expect(vowelListenKey(vowelNo(26))).toBe('สระใอ ไม้ม้วน')
+    expect(vowelListenKey(vowelNo(27))).toBe('สระไอ ไม้มะลาย')
+    let together = false
+    for (let t = 0; t < 300; t++) {
+      pool().forEach((v) => {
+        const d = vowelDistractors(v, pool(), 3, vowelListenKey)
+        expect(new Set([v, ...d].map(vowelListenKey)).size, v.form).toBe(4)
+        const nos = [v, ...d].map((x) => x.no)
+        if (nos.includes(26) && nos.includes(27)) together = true
+      })
+    }
+    expect(together).toBe(true)
   })
 })
 

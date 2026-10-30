@@ -181,7 +181,9 @@ describe('第 2 課', () => {
     expect(vowelWriteBase(vowels.find((v) => v.no === 31)!)).toBe('ฦ')
   })
 
-  it('念法（speakText）：一般母音 สระ＋母音、獨立母音直接念；音檔清單 32 個', () => {
+  // ใ、ไ 同音：念法加上名稱（課本 p46）
+  const WITH_NAME: Record<string, string> = { ใอ: 'สระใอ ไม้ม้วน', ไอ: 'สระไอ ไม้มะลาย' }
+  it('念法（speakText）：一般母音 สระ＋母音、獨立母音直接念、ใ ไ 加名稱；音檔清單 32 個', () => {
     expect(vowelSpeakText(vowels.find((v) => v.no === 1)!)).toBe('สระอะ')
     expect(vowelSpeakText(vowels.find((v) => v.no === 6)!)).toBe('สระอือ')
     expect(vowelSpeakText(vowels.find((v) => v.no === 29)!)).toBe('รึ')
@@ -189,9 +191,13 @@ describe('第 2 課', () => {
     vowels.forEach((v) => {
       const s = vowelSpeakText(v)
       if (v.group === 'independent') expect(s).toBe(v.withO)
+      else if (WITH_NAME[v.withO]) expect(s, v.form).toBe(WITH_NAME[v.withO])
       else expect(s, v.form).toBe((SA_RA.includes(v.withO) ? 'สะ-หระ-' : 'สระ') + v.withO)
     })
     expect(VOWEL_AUDIO_TEXTS).toHaveLength(32)
+    // 舊念法（th_สระใอ.mp3、th_สระไอ.mp3）不在清單裡：檔名不同，手機才會抓新檔
+    expect(VOWEL_AUDIO_TEXTS).not.toContain('สระใอ')
+    expect(VOWEL_AUDIO_TEXTS).not.toContain('สระไอ')
   })
 
   it('改念 สะ-หระ-X 的 10 個母音：音檔清單用新念法（檔名和舊的 th_สระX.mp3 不同），舊念法不在清單裡', () => {

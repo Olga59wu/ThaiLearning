@@ -217,23 +217,31 @@ export const vowelSoundKey = (v: LessonVowel): string => `${v.roman}|${v.tone}`
 export const vowelSoundLabel = (v: LessonVowel): string =>
   `${v.roman}${v.zhuyin ? `（${v.zhuyin}）` : ''} ${TONE_MARK[v.tone]} ${toneOrdinalLabel(v.tone)}`
 
+/** 聽音題的「同音」：念法相同（ใ、ไ 念法帶名稱 ไม้ม้วน／ไม้มะลาย，聽得出差別，可以同時出現） */
+export const vowelListenKey = (v: LessonVowel): string => vowelSpeakText(v)
+
 /**
  * 母音的錯誤選項：先放長短音的另一半（อิ／อี）、再放發音相近的（โอะ／เอาะ、เอะ／แอะ…），不足再隨機；
- * 發音相同的不重複出現，也不和答案同音（ใ-／ไ-）
+ * 同音（sameSound，預設拼音＋聲調）的不重複出現，也不和答案同音：看字選音的 ใ-／ไ- 選項一樣，不同時出現；聽音選字用 vowelListenKey
  */
-export const vowelDistractors = (v: LessonVowel, pool: readonly LessonVowel[], count = OPTION_COUNT - 1): LessonVowel[] => {
+export const vowelDistractors = (
+  v: LessonVowel,
+  pool: readonly LessonVowel[],
+  count = OPTION_COUNT - 1,
+  sameSound: (v: LessonVowel) => string = vowelSoundKey,
+): LessonVowel[] => {
   const byNo = (n: number | undefined) => (n === undefined ? undefined : pool.find((x) => x.no === n))
   const similar = SIMILAR_VOWELS.flatMap(([a, b]) => (a === v.no ? [b] : b === v.no ? [a] : []))
   const ordered = [
     ...[vowelPartnerNo(v), ...similar].map(byNo).filter((x): x is LessonVowel => x !== undefined),
     ...shuffleArray(pool),
   ]
-  const usedSounds = new Set([vowelSoundKey(v)])
+  const usedSounds = new Set([sameSound(v)])
   const result: LessonVowel[] = []
   for (const x of ordered) {
     if (result.length >= count) break
-    if (usedSounds.has(vowelSoundKey(x))) continue
-    usedSounds.add(vowelSoundKey(x))
+    if (usedSounds.has(sameSound(x))) continue
+    usedSounds.add(sameSound(x))
     result.push(x)
   }
   return result
@@ -262,7 +270,7 @@ const vowelQuestion = (type: ExamQuestionType, v: LessonVowel, pool: readonly Le
     case 'vowelListen':
       return {
         ...base,
-        options: shuffleArray([v, ...vowelDistractors(v, pool)]).map((x) => ({ key: x.id, vowelWriteBase: vowelWriteBase(x), text: vowelWriteBase(x) })),
+        options: shuffleArray([v, ...vowelDistractors(v, pool, OPTION_COUNT - 1, vowelListenKey)]).map((x) => ({ key: x.id, vowelWriteBase: vowelWriteBase(x), text: vowelWriteBase(x) })),
         answerKey: v.id,
         promptLabel: `🔊 ${vowelSoundLabel(v)}`,
         answerLabel: vowelWriteBase(v),
